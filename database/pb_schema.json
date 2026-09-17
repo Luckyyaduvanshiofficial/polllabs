@@ -120,6 +120,18 @@
           "max": null,
           "noDecimal": false
         }
+      },
+      {
+        "system": false,
+        "id": "ugvszf94",
+        "name": "appearance",
+        "type": "json",
+        "required": false,
+        "presentable": false,
+        "unique": false,
+        "options": {
+          "maxSize": 0
+        }
       }
     ],
     "indexes": [

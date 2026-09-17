@@ -12,6 +12,7 @@ This document tracks all tasks, deliverables, and implementation phases accordin
 - **Phase 4: Embeddable Widgets (Svelte & SVG)** — **100%** (Completed & Reviewed)
 - **Phase 5: Frontend Web & Dashboard (Astro + React)** — **100%** (Completed & Standards/Spec Hardened)
 - **Phase 6: Testing, Polish & Documentation** — **95%** (In Progress)
+- **Phase 7: Custom Poll Themes** — **15%** (In Progress, Phase 1 done)
 
 ---
 
@@ -130,3 +131,13 @@ This document tracks all tasks, deliverables, and implementation phases accordin
 - [x] Agent memory file (`memory.md`) created for fast onboarding and context handoff
 - [ ] End-to-end integration with frontend & PocketBase running concurrently
 - [ ] Verify SEO meta tags and social open-graph previews
+
+---
+
+## 🎨 Phase 7: Custom Poll Themes (Telegram / WhatsApp / Instagram / YouTube styles + user customization)
+- [x] Phase 1 — Data model: `PollAppearance` Pydantic schema (theme, bg/accent/ink hex, radius, font, effect, layout) with server-side validation, `appearance` JSON field migration (`1789638852_poll_appearance.js`, field `ugvszf94`), create/update/response endpoint wiring with legacy-None fallback, 9 new tests (29/29 pass)
+- [ ] Phase 2 — Preset theme pack in widget (whatsapp, telegram, story, youtube-grid + researched extras, gzip < 15KB guard)
+- [ ] Phase 3 — Creator studio theme picker + customizer (bg, accent, corners, font, effect) with live iframe preview
+- [ ] Phase 4 — Image uploads (`POST /polls/{id}/images` + PB file storage) + YouTube-style grid layout
+- [ ] Phase 5 — Behaviors: multiple answers, quiz mode, visible voters
+- [ ] Phase 6 — Hand-rolled confetti celebration + docs + bundle verification

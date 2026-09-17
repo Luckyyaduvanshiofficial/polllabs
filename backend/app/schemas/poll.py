@@ -1,9 +1,40 @@
 from datetime import datetime
 from typing import Literal
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, field_validator
+import re
 
 VisibilityType = Literal["public", "private"]
 ResultDisplayType = Literal["show_counts", "show_percentage", "hidden_until_close"]
+
+ThemeType = Literal["minimal", "whatsapp", "telegram", "story", "youtube-grid"]
+RadiusType = Literal["pill", "rounded", "sharp"]
+AppearanceFontType = Literal["system", "serif", "mono", "condensed"]
+EffectType = Literal["none", "confetti"]
+LayoutType = Literal["list", "grid"]
+
+_HEX_COLOR_RE = re.compile(r"^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$")
+
+class PollAppearance(BaseModel):
+    """Per-poll visual customization (Phase 7 poll themes). All color fields are optional hex overrides."""
+
+    model_config = ConfigDict(from_attributes=True)
+    theme: ThemeType = "minimal"
+    bg: str | None = Field(default=None, max_length=7)
+    accent: str | None = Field(default=None, max_length=7)
+    ink: str | None = Field(default=None, max_length=7)
+    radius: RadiusType = "rounded"
+    font: AppearanceFontType = "system"
+    effect: EffectType = "none"
+    layout: LayoutType = "list"
+
+    @field_validator("bg", "accent", "ink")
+    @classmethod
+    def validate_hex_color(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        if not _HEX_COLOR_RE.match(value):
+            raise ValueError("must be a hex color like #fff or #00a884")
+        return value.lower()
 
 class PollOptionCreate(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -26,6 +57,7 @@ class PollCreate(BaseModel):
     visibility: VisibilityType = "public"
     result_display: ResultDisplayType = "show_counts"
     close_at: datetime | str | None = None
+    appearance: PollAppearance | None = None
 
 class PollUpdate(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -34,6 +66,7 @@ class PollUpdate(BaseModel):
     visibility: VisibilityType | None = None
     result_display: ResultDisplayType | None = None
     close_at: datetime | str | None = None
+    appearance: PollAppearance | None = None
 
 class PollResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -48,6 +81,7 @@ class PollResponse(BaseModel):
     created: str
     updated: str
     close_at: datetime | str | None = None
+    appearance: PollAppearance | None = None
 
 class PollListResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)

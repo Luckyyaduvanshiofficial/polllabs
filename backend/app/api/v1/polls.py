@@ -13,7 +13,7 @@ from app.schemas.poll import (
 from app.core.dependencies import CurrentUser, OptionalUser, PocketBaseDep
 from app.core.rate_limit import hash_ip
 from app.services.moderation import validate_content_safety
-from app.services.poll_utils import is_poll_closed
+from app.services.poll_utils import coerce_appearance, is_poll_closed
 
 router = APIRouter(prefix="/polls", tags=["Polls"])
 
@@ -89,6 +89,7 @@ def map_poll_to_response(poll: dict[str, Any], is_owner: bool = False) -> PollRe
         created=poll.get("created", ""),
         updated=poll.get("updated", ""),
         close_at=poll.get("close_at"),
+        appearance=coerce_appearance(poll.get("appearance")),
     )
 
 @router.get("", response_model=PollListResponse)
@@ -187,6 +188,7 @@ async def create_poll(
         "close_at": close_at_val,
         "owner": owner_id,
         "total_votes": 0,
+        "appearance": poll_in.appearance.model_dump(exclude_none=True) if poll_in.appearance else {},
     }
 
     try:
@@ -240,6 +242,8 @@ async def update_poll(
     if poll_update.close_at is not None:
         close_val = poll_update.close_at.isoformat() if hasattr(poll_update.close_at, "isoformat") else str(poll_update.close_at)
         update_dict["close_at"] = close_val
+    if poll_update.appearance is not None:
+        update_dict["appearance"] = poll_update.appearance.model_dump(exclude_none=True)
 
     try:
         updated = await pb.update_poll(poll_id, update_dict)
