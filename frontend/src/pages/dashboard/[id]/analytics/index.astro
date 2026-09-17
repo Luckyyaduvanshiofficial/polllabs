@@ -1,0 +1,34 @@
+---
+import RootLayout from '../../../../layouts/RootLayout.astro';
+import PollAnalytics from '../../../../components/dashboard/PollAnalytics';
+
+export function getStaticPaths() {
+  return [
+    { params: { id: 'demo-frameworks' } },
+    { params: { id: 'poll-state-manager' } },
+    { params: { id: 'poll-backend-lang' } },
+    { params: { id: 'poll-astro-deploy' } },
+    { params: { id: 'poll-private-team-sync' } },
+  ];
+}
+
+const { id } = Astro.params;
+---
+
+<RootLayout title={`Poll Analytics — PollLabs`}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    <!-- Breadcrumb Nav -->
+    <div class="mb-8 flex items-center justify-between">
+      <div class="flex items-center gap-2 text-xs text-[#94a3b8]">
+        <a href="/dashboard" class="hover:text-white transition flex items-center gap-1">
+          <span>← Back to Dashboard</span>
+        </a>
+        <span>/</span>
+        <span class="text-white font-medium">Poll Analytics</span>
+      </div>
+      <span class="text-xs font-mono text-[#64748b]">v1.0 Telemetry</span>
+    </div>
+
+    <PollAnalytics client:load pollId={id || 'demo-frameworks'} />
+  </div>
+</RootLayout>

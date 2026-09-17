@@ -1,4 +1,5 @@
 ---
+import { ClientRouter } from 'astro:transitions';
 import Navbar from '../components/common/Navbar.astro';
 import Footer from '../components/common/Footer.astro';
 import '../styles/global.css';
@@ -9,13 +10,13 @@ interface Props {
 }
 
 const { 
-  title = "PollLabs — Open-Source Polls & Leaderboards", 
-  description = "Embeddable polls and leaderboards for developers and static sites."
+  title = "PollLabs — Embeddable Polls & Public Leaderboards for Developers", 
+  description = "Embed lightning-fast polls, live SVG badges, and real-time leaderboards into GitHub READMEs, markdown docs, and static sites."
 } = Astro.props;
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang="en" class="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -23,12 +24,26 @@ const {
     <meta name="generator" content={Astro.generator} />
     <title>{title}</title>
     <meta name="description" content={description} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <ClientRouter />
   </head>
-  <body class="bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen flex flex-col antialiased">
+  <body class="bg-[#0b0f19] text-[#f8fafc] min-h-screen flex flex-col antialiased selection:bg-blue-600 selection:text-white">
+    <a 
+      href="#main-content" 
+      class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 z-50 px-4 py-2 bg-blue-600 text-white font-medium rounded-lg text-sm shadow-lg"
+    >
+      Skip to content
+    </a>
     <Navbar />
-    <main class="flex-1">
+    <main id="main-content" class="flex-1 transition-opacity duration-200">
       <slot />
     </main>
     <Footer />
   </body>
 </html>
+

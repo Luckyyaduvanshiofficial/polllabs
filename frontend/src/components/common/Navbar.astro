@@ -1,24 +1,177 @@
 ---
+const currentPath = Astro.url.pathname;
+const isActive = (path: string) => {
+  if (path === '/' && currentPath === '/') return true;
+  if (path !== '/' && currentPath.startsWith(path)) return true;
+  return false;
+};
 ---
-<header class="border-b border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-900/80 backdrop-blur sticky top-0 z-50">
+
+<header class="sticky top-0 z-50 border-b border-[#1e293b] bg-[#0b0f19]/90 backdrop-blur-md transition-colors">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+    <!-- Brand & Telemetry Badge -->
     <div class="flex items-center gap-6">
-      <a href="/" class="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-        PollLabs
+      <a href="/" class="flex items-center gap-2.5 group focus-visible:outline-hidden">
+        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center font-mono font-bold text-white shadow-xs group-hover:scale-105 transition-transform duration-150">
+          PL
+        </div>
+        <div class="flex flex-col">
+          <span class="font-bold text-base tracking-tight text-white group-hover:text-blue-400 transition-colors">
+            PollLabs
+          </span>
+          <span class="text-[10px] font-mono text-emerald-400/90 flex items-center gap-1 leading-none -mt-0.5">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span>4.9KB embed</span>
+          </span>
+        </div>
       </a>
-      <nav class="hidden md:flex items-center gap-4 text-sm font-medium text-gray-600 dark:text-gray-300">
-        <a href="/leaderboard" class="hover:text-blue-600 dark:hover:text-blue-400 transition">Leaderboard</a>
-        <a href="/dashboard" class="hover:text-blue-600 dark:hover:text-blue-400 transition">Dashboard</a>
-        <a href="/docs" class="hover:text-blue-600 dark:hover:text-blue-400 transition">Docs</a>
+
+      <!-- Desktop Navigation -->
+      <nav class="hidden md:flex items-center gap-1 text-sm font-medium">
+        <a
+          href="/leaderboard"
+          class={`px-3 py-1.5 rounded-md transition duration-150 ${
+            isActive('/leaderboard')
+              ? 'bg-[#1e293b] text-white font-semibold'
+              : 'text-[#94a3b8] hover:text-white hover:bg-[#111827]'
+          }`}
+        >
+          Leaderboard
+        </a>
+        <a
+          href="/dashboard"
+          class={`px-3 py-1.5 rounded-md transition duration-150 ${
+            isActive('/dashboard')
+              ? 'bg-[#1e293b] text-white font-semibold'
+              : 'text-[#94a3b8] hover:text-white hover:bg-[#111827]'
+          }`}
+        >
+          Dashboard
+        </a>
+        <a
+          href="/docs"
+          class={`px-3 py-1.5 rounded-md transition duration-150 ${
+            isActive('/docs')
+              ? 'bg-[#1e293b] text-white font-semibold'
+              : 'text-[#94a3b8] hover:text-white hover:bg-[#111827]'
+          }`}
+        >
+          Docs
+        </a>
       </nav>
     </div>
+
+    <!-- Actions & Mobile Menu Toggle -->
     <div class="flex items-center gap-3">
+      <!-- GitHub Link -->
+      <a
+        href="https://github.com/Luckyyaduvanshiofficial/polllabs"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="GitHub Repository"
+        class="hidden sm:inline-flex items-center justify-center w-9 h-9 rounded-lg border border-[#1e293b] text-[#94a3b8] hover:text-white hover:border-[#334155] hover:bg-[#111827] transition"
+      >
+        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path fill-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clip-rule="evenodd" />
+        </svg>
+      </a>
+
+      <!-- Primary CTA -->
       <a
         href="/dashboard/create"
-        class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-xs text-white bg-blue-600 hover:bg-blue-700 transition"
+        class="btn-interactive inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold shadow-xs transition"
       >
-        Create Poll
+        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+        </svg>
+        <span>Create Poll</span>
+      </a>
+
+      <!-- Mobile Hamburger Menu Button -->
+      <button
+        id="mobile-menu-btn"
+        type="button"
+        aria-label="Toggle navigation menu"
+        aria-expanded="false"
+        class="md:hidden inline-flex items-center justify-center p-2 rounded-lg text-[#94a3b8] hover:text-white hover:bg-[#1e293b] transition"
+      >
+        <svg id="menu-icon-open" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+        </svg>
+        <svg id="menu-icon-close" class="w-5 h-5 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Mobile Drawer -->
+  <div id="mobile-menu" class="hidden md:hidden border-t border-[#1e293b] bg-[#0b0f19] px-4 pt-2 pb-4 space-y-1">
+    <a
+      href="/leaderboard"
+      class={`block px-3 py-2 rounded-md text-base font-medium ${
+        isActive('/leaderboard') ? 'bg-[#1e293b] text-white' : 'text-[#94a3b8] hover:text-white hover:bg-[#111827]'
+      }`}
+    >
+      Leaderboard
+    </a>
+    <a
+      href="/dashboard"
+      class={`block px-3 py-2 rounded-md text-base font-medium ${
+        isActive('/dashboard') ? 'bg-[#1e293b] text-white' : 'text-[#94a3b8] hover:text-white hover:bg-[#111827]'
+      }`}
+    >
+      Dashboard
+    </a>
+    <a
+      href="/docs"
+      class={`block px-3 py-2 rounded-md text-base font-medium ${
+        isActive('/docs') ? 'bg-[#1e293b] text-white' : 'text-[#94a3b8] hover:text-white hover:bg-[#111827]'
+      }`}
+    >
+      Documentation
+    </a>
+    <div class="pt-2 border-t border-[#1e293b] flex justify-between items-center px-3">
+      <span class="text-xs text-[#94a3b8] font-mono">PollLabs v1.0</span>
+      <a
+        href="https://github.com/Luckyyaduvanshiofficial/polllabs"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="text-xs text-blue-400 hover:underline flex items-center gap-1"
+      >
+        GitHub Repository
       </a>
     </div>
   </div>
 </header>
+
+<script>
+  function setupMobileMenu() {
+    const btn = document.getElementById('mobile-menu-btn');
+    const menu = document.getElementById('mobile-menu');
+    const iconOpen = document.getElementById('menu-icon-open');
+    const iconClose = document.getElementById('menu-icon-close');
+
+    if (btn && menu && iconOpen && iconClose) {
+      btn.onclick = () => {
+        const isOpen = !menu.classList.contains('hidden');
+        if (isOpen) {
+          menu.classList.add('hidden');
+          iconOpen.classList.remove('hidden');
+          iconClose.classList.add('hidden');
+          btn.setAttribute('aria-expanded', 'false');
+        } else {
+          menu.classList.remove('hidden');
+          iconOpen.classList.add('hidden');
+          iconClose.classList.remove('hidden');
+          btn.setAttribute('aria-expanded', 'true');
+        }
+      };
+    }
+  }
+
+  // Support both fresh load and Astro view transition swaps
+  setupMobileMenu();
+  document.addEventListener('astro:page-load', setupMobileMenu);
+</script>
+

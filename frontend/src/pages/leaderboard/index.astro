@@ -1,29 +1,349 @@
 ---
 import RootLayout from '../../layouts/RootLayout.astro';
+
+// Fallback sample community polls for static generation
+const defaultTrending = [
+  {
+    id: 'poll-state-manager',
+    title: 'Which state management library do you prefer in React?',
+    total_votes: 1248,
+    created: '2026-03-14T10:00:00Z',
+    options: [
+      { id: '1', text: 'Zustand', vote_count: 724, percentage: 58 },
+      { id: '2', text: 'Redux Toolkit', vote_count: 337, percentage: 27 },
+      { id: '3', text: 'Jotai', vote_count: 187, percentage: 15 },
+    ],
+  },
+  {
+    id: 'poll-backend-lang',
+    title: 'FastAPI vs Go for high-throughput microservices?',
+    total_votes: 932,
+    created: '2026-03-12T14:30:00Z',
+    options: [
+      { id: '1', text: 'FastAPI (Python async)', vote_count: 485, percentage: 52 },
+      { id: '2', text: 'Go (Standard library / Chi)', vote_count: 447, percentage: 48 },
+    ],
+  },
+  {
+    id: 'poll-astro-deploy',
+    title: 'Where do you deploy production Astro static sites?',
+    total_votes: 814,
+    created: '2026-03-10T09:15:00Z',
+    options: [
+      { id: '1', text: 'Cloudflare Pages', vote_count: 521, percentage: 64 },
+      { id: '2', text: 'Vercel', vote_count: 203, percentage: 25 },
+      { id: '3', text: 'Fly.io / Self-hosted VM', vote_count: 90, percentage: 11 },
+    ],
+  },
+  {
+    id: 'poll-db-primary',
+    title: 'Default database for indie projects and tools in 2026',
+    total_votes: 692,
+    created: '2026-03-08T18:00:00Z',
+    options: [
+      { id: '1', text: 'PocketBase / SQLite', vote_count: 401, percentage: 58 },
+      { id: '2', text: 'PostgreSQL (Supabase/Neon)', vote_count: 228, percentage: 33 },
+      { id: '3', text: 'MongoDB / DocumentDB', vote_count: 63, percentage: 9 },
+    ],
+  },
+];
+
+const defaultTop = [...defaultTrending].sort((a, b) => b.total_votes - a.total_votes);
+
+const defaultOptions = [
+  { text: 'Zustand', votes: 724, poll_id: 'poll-state-manager', poll_title: 'Which state management library do you prefer in React?' },
+  { text: 'Svelte 5 (Runes)', votes: 654, poll_id: 'demo-frameworks', poll_title: 'Which web framework is your team prioritizing in 2026?' },
+  { text: 'Cloudflare Pages', votes: 521, poll_id: 'poll-astro-deploy', poll_title: 'Where do you deploy production Astro static sites?' },
+  { text: 'FastAPI (Python async)', votes: 485, poll_id: 'poll-backend-lang', poll_title: 'FastAPI vs Go for high-throughput microservices?' },
+  { text: 'PocketBase / SQLite', votes: 401, poll_id: 'poll-db-primary', poll_title: 'Default database for indie projects and tools in 2026' },
+];
 ---
 
 <RootLayout title="Public Leaderboards — PollLabs">
-  <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-    <div class="mb-8">
-      <h1 class="text-3xl font-bold">Trending & Top Polls</h1>
-      <p class="text-gray-600 dark:text-gray-400 mt-1">Discover what the developer community is voting on.</p>
-    </div>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-8 border-b border-[#1e293b]">
+      <div>
+        <span class="text-xs font-mono text-emerald-400 uppercase tracking-wider">Public Intelligence</span>
+        <h1 class="text-3xl sm:text-4xl font-extrabold text-white mt-1">Community Leaderboard</h1>
+        <p class="text-sm text-[#94a3b8] mt-1 max-w-xl">
+          Real-time developer consensus across open-source polls. Transparent, unmanipulated, and verified via anti-abuse telemetry.
+        </p>
+      </div>
 
-    <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-      <div class="p-5 border border-gray-200 dark:border-gray-800 rounded-xl bg-white dark:bg-gray-800/50 shadow-xs hover:border-blue-500 transition">
-        <div class="flex items-center justify-between text-xs text-gray-500 mb-2">
-          <span>Trending #1</span>
-          <span>1,248 votes</span>
-        </div>
-        <h3 class="font-semibold text-lg mb-4">
-          <a href="/polls/sample-1" class="hover:text-blue-600">Which state manager do you use in React?</a>
-        </h3>
-        <div class="space-y-1 text-sm text-gray-600 dark:text-gray-300">
-          <div class="flex justify-between"><span>Zustand</span><span class="font-semibold">58%</span></div>
-          <div class="flex justify-between"><span>Redux Toolkit</span><span class="font-semibold">27%</span></div>
-          <div class="flex justify-between"><span>Jotai</span><span class="font-semibold">15%</span></div>
-        </div>
+      <!-- Search Box -->
+      <div class="w-full md:w-72 relative">
+        <input
+          id="poll-search-input"
+          type="text"
+          placeholder="Filter polls by topic..."
+          class="w-full pl-9 pr-4 py-2 bg-[#111827] border border-[#1e293b] rounded-lg text-xs text-white placeholder-[#64748b] focus:border-blue-500 focus:outline-none transition"
+        />
+        <svg class="w-4 h-4 text-[#64748b] absolute left-3 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
       </div>
     </div>
+
+    <!-- Leaderboard View Tabs -->
+    <div class="flex items-center gap-2 pt-6 pb-8 text-xs font-medium" id="leaderboard-tabs">
+      <button
+        type="button"
+        data-view="trending"
+        class="tab-btn px-4 py-2 rounded-lg bg-[#1e293b] text-white font-semibold flex items-center gap-2 transition"
+      >
+        <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+        </svg>
+        <span>Trending (Last 7 Days)</span>
+      </button>
+      <button
+        type="button"
+        data-view="top"
+        class="tab-btn px-4 py-2 rounded-lg text-[#94a3b8] hover:text-white hover:bg-[#1e293b]/60 flex items-center gap-2 transition"
+      >
+        <svg class="w-3.5 h-3.5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+        </svg>
+        <span>All-Time Top</span>
+      </button>
+      <button
+        type="button"
+        data-view="options"
+        class="tab-btn px-4 py-2 rounded-lg text-[#94a3b8] hover:text-white hover:bg-[#1e293b]/60 flex items-center gap-2 transition"
+      >
+        <svg class="w-3.5 h-3.5 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+        </svg>
+        <span>Most-Voted Options</span>
+      </button>
+    </div>
+
+    <!-- Polls Grid: Trending -->
+    <div id="view-trending" class="view-panel grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {defaultTrending.map((poll, idx) => (
+        <div class="poll-card p-5 rounded-2xl bg-[#111827] border border-[#1e293b] hover:border-[#334155] transition flex flex-col justify-between space-y-4 shadow-sm" data-title={poll.title.toLowerCase()}>
+          <div class="space-y-2">
+            <div class="flex items-center justify-between text-xs font-mono">
+              <span class="px-2 py-0.5 rounded bg-emerald-950/60 border border-emerald-800/40 text-emerald-400">
+                Trending #{idx + 1}
+              </span>
+              <span class="text-[#64748b]">{poll.total_votes.toLocaleString()} votes</span>
+            </div>
+            <h3 class="text-base font-semibold text-white leading-snug">
+              <a href={`/polls/${poll.id}`} class="hover:text-blue-400 transition">
+                {poll.title}
+              </a>
+            </h3>
+          </div>
+
+          <!-- Options Distribution -->
+          <div class="space-y-2 pt-2 border-t border-[#1e293b]">
+            {poll.options.map((opt) => (
+              <div class="space-y-1 text-xs">
+                <div class="flex justify-between font-medium">
+                  <span class="text-[#94a3b8] truncate">{opt.text}</span>
+                  <span class="text-white font-mono">{opt.percentage}%</span>
+                </div>
+                <div class="w-full bg-[#1e293b] h-1.5 rounded-full overflow-hidden">
+                  <div class="bg-blue-500 h-full rounded-full" style={`width: ${opt.percentage}%`}></div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <!-- Action Footer -->
+          <div class="flex items-center justify-between pt-2 text-xs border-t border-[#1e293b]">
+            <a
+              href={`/polls/${poll.id}`}
+              class="text-blue-400 hover:text-blue-300 font-medium flex items-center gap-1"
+            >
+              <span>Vote live</span>
+              <span>→</span>
+            </a>
+            <button
+              type="button"
+              data-id={poll.id}
+              data-title={poll.title}
+              class="embed-btn text-[#94a3b8] hover:text-white flex items-center gap-1 transition"
+            >
+              <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+              </svg>
+              <span>Get Embed</span>
+            </button>
+          </div>
+        </div>
+      ))}
+    </div>
+
+    <!-- Polls Grid: Top All-Time -->
+    <div id="view-top" class="view-panel hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {defaultTop.map((poll, idx) => (
+        <div class="poll-card p-5 rounded-2xl bg-[#111827] border border-[#1e293b] hover:border-[#334155] transition flex flex-col justify-between space-y-4 shadow-sm" data-title={poll.title.toLowerCase()}>
+          <div class="space-y-2">
+            <div class="flex items-center justify-between text-xs font-mono">
+              <span class="px-2 py-0.5 rounded bg-blue-950/60 border border-blue-800/40 text-blue-400">
+                Rank #{idx + 1}
+              </span>
+              <span class="text-[#64748b]">{poll.total_votes.toLocaleString()} votes</span>
+            </div>
+            <h3 class="text-base font-semibold text-white leading-snug">
+              <a href={`/polls/${poll.id}`} class="hover:text-blue-400 transition">
+                {poll.title}
+              </a>
+            </h3>
+          </div>
+
+          <div class="space-y-2 pt-2 border-t border-[#1e293b]">
+            {poll.options.map((opt) => (
+              <div class="space-y-1 text-xs">
+                <div class="flex justify-between font-medium">
+                  <span class="text-[#94a3b8] truncate">{opt.text}</span>
+                  <span class="text-white font-mono">{opt.percentage}%</span>
+                </div>
+                <div class="w-full bg-[#1e293b] h-1.5 rounded-full overflow-hidden">
+                  <div class="bg-indigo-500 h-full rounded-full" style={`width: ${opt.percentage}%`}></div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div class="flex items-center justify-between pt-2 text-xs border-t border-[#1e293b]">
+            <a href={`/polls/${poll.id}`} class="text-blue-400 hover:text-blue-300 font-medium">
+              Vote live →
+            </a>
+            <button
+              type="button"
+              data-id={poll.id}
+              data-title={poll.title}
+              class="embed-btn text-[#94a3b8] hover:text-white"
+            >
+              Get Embed
+            </button>
+          </div>
+        </div>
+      ))}
+    </div>
+
+    <!-- Options Ranking View -->
+    <div id="view-options" class="view-panel hidden max-w-4xl mx-auto space-y-3">
+      {defaultOptions.map((opt, idx) => (
+        <div class="p-4 rounded-xl bg-[#111827] border border-[#1e293b] flex items-center justify-between gap-4">
+          <div class="flex items-center gap-4">
+            <span class="w-7 h-7 rounded-lg bg-[#1e293b] text-[#94a3b8] font-mono text-xs flex items-center justify-center font-bold">
+              #{idx + 1}
+            </span>
+            <div>
+              <div class="font-semibold text-white text-sm">{opt.text}</div>
+              <div class="text-xs text-[#64748b]">from: <a href={`/polls/${opt.poll_id}`} class="hover:text-blue-400">{opt.poll_title}</a></div>
+            </div>
+          </div>
+          <div class="text-right">
+            <span class="font-mono text-emerald-400 font-bold text-sm">{opt.votes.toLocaleString()}</span>
+            <span class="text-xs text-[#64748b] block">votes</span>
+          </div>
+        </div>
+      ))}
+    </div>
   </div>
+
+  <!-- Quick Embed Code Modal Dialog -->
+  <dialog id="embed-dialog" class="bg-[#0b0f19] text-[#f8fafc] p-6 rounded-2xl border border-[#1e293b] max-w-md w-full shadow-2xl backdrop:bg-black/70">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-base font-bold text-white">Embed Code Generator</h3>
+      <button id="close-dialog-btn" type="button" class="text-[#94a3b8] hover:text-white text-sm">✕</button>
+    </div>
+    <div class="space-y-4 text-xs">
+      <div>
+        <label class="block font-medium text-[#94a3b8] mb-1">GitHub README (SVG Badge)</label>
+        <pre class="bg-[#111827] p-2.5 rounded-lg text-emerald-300 font-mono text-[11px] overflow-x-auto select-all"><code id="modal-badge-code"></code></pre>
+      </div>
+      <div>
+        <label class="block font-medium text-[#94a3b8] mb-1">Website / Blog (Interactive Iframe)</label>
+        <pre class="bg-[#111827] p-2.5 rounded-lg text-cyan-300 font-mono text-[11px] overflow-x-auto select-all"><code id="modal-iframe-code"></code></pre>
+      </div>
+      <button
+        id="modal-copy-btn"
+        type="button"
+        class="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white font-medium rounded-lg transition"
+      >
+        Copy Iframe Code
+      </button>
+    </div>
+  </dialog>
 </RootLayout>
+
+<script>
+  function setupLeaderboard() {
+    const tabs = document.querySelectorAll('#leaderboard-tabs .tab-btn');
+    const search = document.getElementById('poll-search-input') as HTMLInputElement | null;
+    const dialog = document.getElementById('embed-dialog') as HTMLDialogElement | null;
+    const closeDialog = document.getElementById('close-dialog-btn');
+    const badgeCode = document.getElementById('modal-badge-code');
+    const iframeCode = document.getElementById('modal-iframe-code');
+    const copyBtn = document.getElementById('modal-copy-btn');
+
+    // Tab switcher
+    tabs.forEach((tab) => {
+      tab.addEventListener('click', () => {
+        const view = tab.getAttribute('data-view');
+        if (!view) return;
+
+        tabs.forEach((t) => {
+          t.classList.remove('bg-[#1e293b]', 'text-white', 'font-semibold');
+          t.classList.add('text-[#94a3b8]');
+        });
+        tab.classList.add('bg-[#1e293b]', 'text-white', 'font-semibold');
+        tab.classList.remove('text-[#94a3b8]');
+
+        document.querySelectorAll('.view-panel').forEach((panel) => panel.classList.add('hidden'));
+        document.getElementById(`view-${view}`)?.classList.remove('hidden');
+      });
+    });
+
+    // Search filter
+    search?.addEventListener('input', (e) => {
+      const q = (e.target as HTMLInputElement).value.toLowerCase().trim();
+      document.querySelectorAll('.poll-card').forEach((card) => {
+        const title = card.getAttribute('data-title') || '';
+        if (title.includes(q)) {
+          card.classList.remove('hidden');
+        } else {
+          card.classList.add('hidden');
+        }
+      });
+    });
+
+    // Embed dialog trigger
+    document.querySelectorAll('.embed-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const id = btn.getAttribute('data-id') || 'demo';
+        const title = btn.getAttribute('data-title') || 'Poll';
+        if (badgeCode) badgeCode.textContent = `[![${title}](http://localhost:8000/api/v1/badges/${id}.svg)](http://localhost:4321/embed/${id})`;
+        if (iframeCode) iframeCode.textContent = `<iframe src="http://localhost:4321/embed/${id}" width="100%" height="340" style="border:none;border-radius:16px;max-width:440px;" title="${title}"></iframe>`;
+        dialog?.showModal();
+      });
+    });
+
+    closeDialog?.addEventListener('click', () => dialog?.close());
+    dialog?.addEventListener('click', (e) => {
+      if (e.target === dialog) dialog.close();
+    });
+
+    copyBtn?.addEventListener('click', () => {
+      if (iframeCode?.textContent) {
+        navigator.clipboard.writeText(iframeCode.textContent).then(() => {
+          copyBtn.textContent = '✓ Copied Iframe Code!';
+          setTimeout(() => {
+            copyBtn.textContent = 'Copy Iframe Code';
+          }, 2000);
+        });
+      }
+    });
+  }
+
+  setupLeaderboard();
+  document.addEventListener('astro:page-load', setupLeaderboard);
+</script>
+

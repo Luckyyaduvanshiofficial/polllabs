@@ -2,23 +2,241 @@
 import RootLayout from '../../layouts/RootLayout.astro';
 ---
 
-<RootLayout title="Documentation — PollLabs">
-  <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-    <h1 class="text-3xl font-bold mb-4">Documentation & Integration Guide</h1>
-    <p class="text-gray-600 dark:text-gray-400 mb-8">Learn how to embed PollLabs widgets into your READMEs and websites.</p>
-
-    <div class="grid gap-6 md:grid-cols-2">
-      <div class="p-6 border border-gray-200 dark:border-gray-800 rounded-xl bg-white dark:bg-gray-800/40">
-        <h3 class="font-semibold text-lg mb-2">1. Static GitHub Badge</h3>
-        <p class="text-sm text-gray-500 mb-4">Ideal for GitHub README.md where script tags are blocked.</p>
-        <pre class="bg-gray-100 dark:bg-gray-900 p-3 rounded text-xs overflow-x-auto"><code>[![Poll](https://polllabs.dev/api/v1/badges/&#123;id&#125;.svg)](https://polllabs.dev/polls/&#123;id&#125;)</code></pre>
-      </div>
-
-      <div class="p-6 border border-gray-200 dark:border-gray-800 rounded-xl bg-white dark:bg-gray-800/40">
-        <h3 class="font-semibold text-lg mb-2">2. Interactive Iframe Embed</h3>
-        <p class="text-sm text-gray-500 mb-4">Ideal for blogs, documentation sites, and custom websites.</p>
-        <pre class="bg-gray-100 dark:bg-gray-900 p-3 rounded text-xs overflow-x-auto"><code>&lt;iframe src="https://polllabs.dev/embed/&#123;id&#125;" width="100%" height="320" frameborder="0"&gt;&lt;/iframe&gt;</code></pre>
-      </div>
+<RootLayout title="Documentation & API Reference — PollLabs">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-16">
+    <!-- Header -->
+    <div class="max-w-3xl space-y-2 pb-8 border-b border-[#1e293b]">
+      <span class="text-xs font-mono text-cyan-400 uppercase tracking-wider">Developer Reference</span>
+      <h1 class="text-3xl sm:text-4xl font-extrabold text-white">Documentation & Integration</h1>
+      <p class="text-sm text-[#94a3b8] leading-relaxed">
+        Everything you need to drop interactive widgets, embed dynamic README badges, or automate polls via the PollLabs REST API.
+      </p>
     </div>
+
+    <!-- Section 1: Interactive Embed Playground -->
+    <section class="space-y-6">
+      <div>
+        <h2 class="text-xl font-bold text-white flex items-center gap-2">
+          <span class="w-6 h-6 rounded bg-blue-600/20 text-blue-400 font-mono text-xs flex items-center justify-center font-bold">01</span>
+          <span>Interactive Embed Playground</span>
+        </h2>
+        <p class="text-xs text-[#94a3b8] mt-1">
+          Select a format to preview and copy production-ready snippets for any poll.
+        </p>
+      </div>
+
+      <div class="bg-[#111827] border border-[#1e293b] rounded-2xl p-6 shadow-xl space-y-6">
+        <!-- Controls -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label for="docs-poll-id" class="block text-xs font-medium text-white mb-1">
+              Poll ID
+            </label>
+            <input
+              id="docs-poll-id"
+              type="text"
+              value="demo-frameworks"
+              placeholder="e.g. demo-frameworks"
+              class="w-full px-3.5 py-2 bg-[#0b0f19] border border-[#1e293b] rounded-xl text-xs text-white font-mono focus:border-blue-500 focus:outline-hidden"
+            />
+          </div>
+
+          <div>
+            <label for="docs-embed-format" class="block text-xs font-medium text-white mb-1">
+              Embed Format
+            </label>
+            <select
+              id="docs-embed-format"
+              class="w-full px-3.5 py-2 bg-[#0b0f19] border border-[#1e293b] rounded-xl text-xs text-white focus:border-blue-500 focus:outline-hidden"
+            >
+              <option value="badge-svg">GitHub README (SVG Badge)</option>
+              <option value="badge-png">Email / Forum (PNG Badge)</option>
+              <option value="iframe-html">HTML / Blog (Interactive Iframe)</option>
+              <option value="iframe-react">React / Next.js (JSX Component)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Live Visual Preview Box -->
+        <div class="p-4 rounded-xl bg-[#0b0f19] border border-[#1e293b] space-y-2">
+          <span class="text-[11px] font-mono text-[#64748b] uppercase tracking-wider block">Live Render Preview</span>
+          <div id="docs-preview-container" class="flex items-center justify-center p-4 min-h-[60px]">
+            <img
+              id="docs-badge-img"
+              src="http://localhost:8000/api/v1/badges/demo-frameworks.svg"
+              alt="Live Badge Preview"
+              class="h-5"
+            />
+          </div>
+        </div>
+
+        <!-- Generated Code Box -->
+        <div class="space-y-2">
+          <div class="flex items-center justify-between text-xs">
+            <span class="font-mono text-[#94a3b8]">Generated Snippet:</span>
+            <button
+              id="docs-copy-btn"
+              type="button"
+              class="px-3 py-1 rounded-lg bg-[#1e293b] hover:bg-[#334155] text-white text-xs font-medium transition"
+            >
+              Copy Code
+            </button>
+          </div>
+          <pre class="bg-[#080c14] border border-[#1e293b] rounded-xl p-3.5 text-xs font-mono text-emerald-300 overflow-x-auto select-all"><code id="docs-code-output">[![Poll](http://localhost:8000/api/v1/badges/demo-frameworks.svg)](http://localhost:4321/embed/demo-frameworks)</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 2: REST API Reference (v1) -->
+    <section class="space-y-6">
+      <div>
+        <h2 class="text-xl font-bold text-white flex items-center gap-2">
+          <span class="w-6 h-6 rounded bg-emerald-600/20 text-emerald-400 font-mono text-xs flex items-center justify-center font-bold">02</span>
+          <span>REST API Reference (`/api/v1`)</span>
+        </h2>
+        <p class="text-xs text-[#94a3b8] mt-1">
+          FastAPI backend with OpenAPI 3.1 documentation, strict Pydantic v2 typing, and scoped CORS.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Endpoint 1: Create Poll -->
+        <div class="p-5 rounded-2xl bg-[#111827] border border-[#1e293b] space-y-3 shadow-sm">
+          <div class="flex items-center gap-2 font-mono text-xs">
+            <span class="px-2 py-0.5 rounded bg-blue-950 text-blue-400 font-bold border border-blue-800/40">POST</span>
+            <span class="text-white">/api/v1/polls</span>
+          </div>
+          <p class="text-xs text-[#94a3b8]">Create a new poll with profanity moderation and option media.</p>
+          <pre class="bg-[#0b0f19] p-2.5 rounded-lg text-[11px] font-mono text-[#94a3b8] overflow-x-auto"><code>curl -X POST http://localhost:8000/api/v1/polls \
+  -H "Authorization: Bearer &lt;token&gt;" \
+  -H "Content-Type: application/json" \
+  -d '&#123;
+    "title": "Favorite language?",
+    "options": ["Python", "Rust", "Go"],
+    "visibility": "public"
+  &#125;'</code></pre>
+        </div>
+
+        <!-- Endpoint 2: Submit Vote -->
+        <div class="p-5 rounded-2xl bg-[#111827] border border-[#1e293b] space-y-3 shadow-sm">
+          <div class="flex items-center gap-2 font-mono text-xs">
+            <span class="px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 font-bold border border-emerald-800/40">POST</span>
+            <span class="text-white">/api/v1/votes/&#123;poll_id&#125;</span>
+          </div>
+          <p class="text-xs text-[#94a3b8]">Submit a vote. Issues httpOnly device token with duplicate protection.</p>
+          <pre class="bg-[#0b0f19] p-2.5 rounded-lg text-[11px] font-mono text-[#94a3b8] overflow-x-auto"><code>curl -X POST http://localhost:8000/api/v1/votes/demo-frameworks \
+  -H "Content-Type: application/json" \
+  -d '&#123;"option_id": "1"&#125;'</code></pre>
+        </div>
+
+        <!-- Endpoint 3: Public Leaderboard -->
+        <div class="p-5 rounded-2xl bg-[#111827] border border-[#1e293b] space-y-3 shadow-sm">
+          <div class="flex items-center gap-2 font-mono text-xs">
+            <span class="px-2 py-0.5 rounded bg-purple-950 text-purple-300 font-bold border border-purple-800/40">GET</span>
+            <span class="text-white">/api/v1/leaderboard/trending</span>
+          </div>
+          <p class="text-xs text-[#94a3b8]">Get trending public polls filtered to the last 7 days and sorted by velocity.</p>
+          <pre class="bg-[#0b0f19] p-2.5 rounded-lg text-[11px] font-mono text-[#94a3b8] overflow-x-auto"><code>curl http://localhost:8000/api/v1/leaderboard/trending?limit=10</code></pre>
+        </div>
+
+        <!-- Endpoint 4: Export Raw Data -->
+        <div class="p-5 rounded-2xl bg-[#111827] border border-[#1e293b] space-y-3 shadow-sm">
+          <div class="flex items-center gap-2 font-mono text-xs">
+            <span class="px-2 py-0.5 rounded bg-purple-950 text-purple-300 font-bold border border-purple-800/40">GET</span>
+            <span class="text-white">/api/v1/analytics/&#123;poll_id&#125;/export</span>
+          </div>
+          <p class="text-xs text-[#94a3b8]">Download complete raw poll vote records as CSV or JSON (Owner only).</p>
+          <pre class="bg-[#0b0f19] p-2.5 rounded-lg text-[11px] font-mono text-[#94a3b8] overflow-x-auto"><code>curl "http://localhost:8000/api/v1/analytics/demo/export?format=csv" \
+  -H "Authorization: Bearer &lt;token&gt;"</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 3: Self-Hosting & Deployment -->
+    <section class="space-y-6">
+      <div>
+        <h2 class="text-xl font-bold text-white flex items-center gap-2">
+          <span class="w-6 h-6 rounded bg-purple-600/20 text-purple-400 font-mono text-xs flex items-center justify-center font-bold">03</span>
+          <span>Self-Hosting Architecture</span>
+        </h2>
+        <p class="text-xs text-[#94a3b8] mt-1">
+          PocketBase SQLite single-binary design ensures anyone can run PollLabs offline or in production.
+        </p>
+      </div>
+
+      <div class="p-6 rounded-2xl bg-[#111827] border border-[#1e293b] space-y-4 shadow-xl text-xs text-[#94a3b8]">
+        <p class="leading-relaxed">
+          PollLabs is designed around zero operational friction. The persistence layer runs on standalone PocketBase SQLite, allowing local testing without Docker, and production deployment on Azure Free VMs, Linux VPS, or Fly.io persistent NVMe volumes.
+        </p>
+        <div class="flex gap-4 pt-2">
+          <a
+            href="https://github.com/Luckyyaduvanshiofficial/polllabs/blob/main/docs/self-hosting.md"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-semibold transition"
+          >
+            Read Complete Self-Hosting Guide (Fly.io & Azure) →
+          </a>
+        </div>
+      </div>
+    </section>
   </div>
 </RootLayout>
+
+<script>
+  function setupDocsPlayground() {
+    const pollIdInput = document.getElementById('docs-poll-id') as HTMLInputElement | null;
+    const formatSelect = document.getElementById('docs-embed-format') as HTMLSelectElement | null;
+    const codeOutput = document.getElementById('docs-code-output');
+    const previewContainer = document.getElementById('docs-preview-container');
+    const copyBtn = document.getElementById('docs-copy-btn');
+
+    function updateSnippet() {
+      const pollId = pollIdInput?.value.trim() || 'demo-frameworks';
+      const format = formatSelect?.value || 'badge-svg';
+      let snippet = '';
+
+      if (format === 'badge-svg') {
+        snippet = `[![Poll](http://localhost:8000/api/v1/badges/${pollId}.svg)](http://localhost:4321/embed/${pollId})`;
+        if (previewContainer) {
+          previewContainer.innerHTML = `<a href="http://localhost:8000/api/v1/badges/${pollId}.svg" target="_blank"><img src="http://localhost:8000/api/v1/badges/${pollId}.svg" alt="Badge" class="h-5" /></a>`;
+        }
+      } else if (format === 'badge-png') {
+        snippet = `[![Poll](http://localhost:8000/api/v1/badges/${pollId}.png)](http://localhost:4321/embed/${pollId})`;
+        if (previewContainer) {
+          previewContainer.innerHTML = `<a href="http://localhost:8000/api/v1/badges/${pollId}.png" target="_blank"><img src="http://localhost:8000/api/v1/badges/${pollId}.png" alt="Badge" class="h-5" /></a>`;
+        }
+      } else if (format === 'iframe-html') {
+        snippet = `<iframe src="http://localhost:4321/embed/${pollId}" width="100%" height="340" style="border:none;border-radius:16px;max-width:440px;" title="PollLabs"></iframe>`;
+        if (previewContainer) {
+          previewContainer.innerHTML = `<span class="text-xs text-[#94a3b8] font-mono">Interactive Iframe Preview (width: 100%, height: 340px)</span>`;
+        }
+      } else if (format === 'iframe-react') {
+        snippet = `<iframe\n  src="http://localhost:4321/embed/${pollId}"\n  width="100%"\n  height={340}\n  style={{ border: 'none', borderRadius: 16, maxWidth: 440 }}\n  title="PollLabs"\n/>`;
+        if (previewContainer) {
+          previewContainer.innerHTML = `<span class="text-xs text-[#94a3b8] font-mono">React JSX Component Preview</span>`;
+        }
+      }
+
+      if (codeOutput) codeOutput.textContent = snippet;
+    }
+
+    pollIdInput?.addEventListener('input', updateSnippet);
+    formatSelect?.addEventListener('change', updateSnippet);
+
+    copyBtn?.addEventListener('click', () => {
+      if (codeOutput?.textContent) {
+        navigator.clipboard.writeText(codeOutput.textContent).then(() => {
+          copyBtn.textContent = '✓ Copied';
+          setTimeout(() => { copyBtn.textContent = 'Copy Code'; }, 2000);
+        });
+      }
+    });
+
+    updateSnippet();
+  }
+
+  setupDocsPlayground();
+  document.addEventListener('astro:page-load', setupDocsPlayground);
+</script>
+

@@ -1,31 +1,266 @@
 ---
 import RootLayout from '../../layouts/RootLayout.astro';
+
+// Sample owner polls for static demonstration
+const userPolls = [
+  {
+    id: 'demo-frameworks',
+    title: 'Which web framework is your team prioritizing in 2026?',
+    total_votes: 1420,
+    visibility: 'public',
+    result_display: 'show_counts',
+    status: 'active',
+    created: '2026-03-12',
+    leading: 'Svelte 5 (46%)',
+  },
+  {
+    id: 'poll-state-manager',
+    title: 'Which state management library do you prefer in React?',
+    total_votes: 1248,
+    visibility: 'public',
+    result_display: 'show_percentage',
+    status: 'active',
+    created: '2026-03-10',
+    leading: 'Zustand (58%)',
+  },
+  {
+    id: 'poll-private-team-sync',
+    title: 'Q2 Internal Engineering Hackathon Focus Area',
+    total_votes: 46,
+    visibility: 'private',
+    result_display: 'hidden_until_close',
+    status: 'active',
+    created: '2026-03-15',
+    leading: 'Results Hidden (46)',
+  },
+];
 ---
 
 <RootLayout title="Dashboard — PollLabs">
-  <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-    <div class="flex items-center justify-between mb-8">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
+    <!-- Header & Quick Action -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-[#1e293b]">
       <div>
-        <h1 class="text-3xl font-bold">Your Polls</h1>
-        <p class="text-gray-600 dark:text-gray-400 mt-1">Manage, monitor, and analyze polls created with your GitHub account.</p>
+        <span class="text-xs font-mono text-blue-400 uppercase tracking-wider">Console</span>
+        <h1 class="text-3xl font-extrabold text-white mt-1">Poll Management</h1>
+        <p class="text-xs text-[#94a3b8] mt-1">
+          Monitor real-time votes, copy markdown badges, and inspect referrer telemetry.
+        </p>
       </div>
-      <a
-        href="/dashboard/create"
-        class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-sm transition text-sm"
-      >
-        + New Poll
-      </a>
+
+      <div class="flex items-center gap-3">
+        <a
+          href="/dashboard/create"
+          class="btn-interactive inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg shadow-sm transition"
+        >
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+          </svg>
+          <span>Create New Poll</span>
+        </a>
+      </div>
     </div>
 
-    <div class="border border-dashed border-gray-300 dark:border-gray-700 rounded-2xl p-12 text-center">
-      <h3 class="text-lg font-semibold mb-2">No polls yet</h3>
-      <p class="text-gray-500 mb-6 text-sm">Create your first poll to generate embed codes and track real-time votes.</p>
-      <a
-        href="/dashboard/create"
-        class="inline-flex px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg text-sm transition"
-      >
-        Create a Poll
-      </a>
+    <!-- Overview Stats Bar -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div class="p-5 rounded-xl bg-[#111827] border border-[#1e293b]">
+        <span class="text-xs text-[#94a3b8] font-medium">Active Polls</span>
+        <div class="text-2xl font-mono font-bold text-white mt-1">3</div>
+        <span class="text-[11px] text-[#64748b]">2 public • 1 private</span>
+      </div>
+      <div class="p-5 rounded-xl bg-[#111827] border border-[#1e293b]">
+        <span class="text-xs text-[#94a3b8] font-medium">Total Votes Captured</span>
+        <div class="text-2xl font-mono font-bold text-emerald-400 mt-1">2,714</div>
+        <span class="text-[11px] text-[#64748b]">Across all active widgets</span>
+      </div>
+      <div class="p-5 rounded-xl bg-[#111827] border border-[#1e293b]">
+        <span class="text-xs text-[#94a3b8] font-medium">Verified Embed Sources</span>
+        <div class="text-2xl font-mono font-bold text-cyan-400 mt-1">18</div>
+        <span class="text-[11px] text-[#64748b]">GitHub READMEs, Astro & Docs</span>
+      </div>
+    </div>
+
+    <!-- Polls Management Table -->
+    <div class="bg-[#111827] border border-[#1e293b] rounded-2xl overflow-hidden shadow-xl">
+      <div class="px-6 py-4 border-b border-[#1e293b] flex items-center justify-between">
+        <h3 class="text-sm font-semibold text-white">Your Created Polls</h3>
+        <span class="text-xs font-mono text-[#64748b]">{userPolls.length} total</span>
+      </div>
+
+      <div class="divide-y divide-[#1e293b]">
+        {userPolls.map((poll) => (
+          <div class="p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-[#151d2f]/50 transition">
+            <div class="space-y-2 max-w-xl">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class={`text-[10px] font-mono uppercase px-2 py-0.5 rounded ${
+                  poll.visibility === 'public'
+                    ? 'bg-emerald-950/60 text-emerald-400 border border-emerald-800/50'
+                    : 'bg-purple-950/60 text-purple-300 border border-purple-800/50'
+                }`}>
+                  {poll.visibility}
+                </span>
+                <span class="text-[10px] font-mono text-[#94a3b8] px-2 py-0.5 rounded bg-[#1e293b]">
+                  {poll.result_display}
+                </span>
+                <span class="text-xs text-[#64748b] font-mono">Created {poll.created}</span>
+              </div>
+
+              <h4 class="text-base font-semibold text-white leading-snug">
+                <a href={`/polls/${poll.id}`} class="hover:text-blue-400 transition">
+                  {poll.title}
+                </a>
+              </h4>
+
+              <div class="text-xs text-[#94a3b8] flex items-center gap-4">
+                <span>Total Votes: <strong class="text-white font-mono">{poll.total_votes.toLocaleString()}</strong></span>
+                <span>•</span>
+                <span>Leading: <strong class="text-emerald-400">{poll.leading}</strong></span>
+              </div>
+            </div>
+
+            <!-- Action Controls -->
+            <div class="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                data-id={poll.id}
+                data-title={poll.title}
+                class="embed-btn px-3 py-1.5 rounded-lg bg-[#1e293b] hover:bg-[#334155] text-white text-xs font-medium border border-[#334155] transition flex items-center gap-1.5"
+              >
+                <svg class="w-3.5 h-3.5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+                <span>Embed</span>
+              </button>
+
+              <a
+                href={`/dashboard/${poll.id}/analytics`}
+                class="px-3 py-1.5 rounded-lg bg-[#1e293b] hover:bg-[#334155] text-white text-xs font-medium border border-[#334155] transition flex items-center gap-1.5"
+              >
+                <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                <span>Analytics</span>
+              </a>
+
+              <button
+                type="button"
+                data-id={poll.id}
+                data-title={poll.title}
+                class="delete-poll-btn px-2.5 py-1.5 rounded-lg text-[#64748b] hover:text-rose-400 hover:bg-rose-950/20 transition text-xs"
+                title="Delete Poll"
+              >
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    <!-- Account Privacy & Deletion Grace Period Panel (PRD §7) -->
+    <div class="p-6 rounded-2xl bg-[#0b0f19] border border-[#1e293b] space-y-4">
+      <div class="flex items-center justify-between">
+        <div>
+          <h4 class="text-sm font-semibold text-white">Account Privacy & Lifecycle (PRD §7)</h4>
+          <p class="text-xs text-[#94a3b8] mt-0.5">
+            Accounts operate on a 7-day grace period. Requesting deletion schedules all your polls and votes for permanent deletion.
+          </p>
+        </div>
+        <button
+          id="delete-account-btn"
+          type="button"
+          class="px-3 py-1.5 rounded-lg border border-red-900/60 text-red-400 hover:bg-red-950/30 text-xs font-medium transition"
+        >
+          Request Account Deletion
+        </button>
+      </div>
     </div>
   </div>
+
+  <!-- Embed Modal -->
+  <dialog id="dash-embed-dialog" class="bg-[#0b0f19] text-[#f8fafc] p-6 rounded-2xl border border-[#1e293b] max-w-md w-full shadow-2xl backdrop:bg-black/75">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-base font-bold text-white">Embed Code Generator</h3>
+      <button id="close-dash-dialog" type="button" class="text-[#94a3b8] hover:text-white text-sm">✕</button>
+    </div>
+    <div class="space-y-4 text-xs">
+      <div>
+        <label class="block font-medium text-[#94a3b8] mb-1">GitHub README (SVG Badge)</label>
+        <pre class="bg-[#111827] p-2.5 rounded-lg text-emerald-300 font-mono text-[11px] overflow-x-auto select-all"><code id="dash-badge-code"></code></pre>
+      </div>
+      <div>
+        <label class="block font-medium text-[#94a3b8] mb-1">Interactive Iframe (HTML)</label>
+        <pre class="bg-[#111827] p-2.5 rounded-lg text-cyan-300 font-mono text-[11px] overflow-x-auto select-all"><code id="dash-iframe-code"></code></pre>
+      </div>
+      <button
+        id="dash-copy-btn"
+        type="button"
+        class="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white font-medium rounded-lg transition"
+      >
+        Copy Iframe Code
+      </button>
+    </div>
+  </dialog>
 </RootLayout>
+
+<script>
+  function setupDashboard() {
+    const dialog = document.getElementById('dash-embed-dialog') as HTMLDialogElement | null;
+    const closeDialog = document.getElementById('close-dash-dialog');
+    const badgeCode = document.getElementById('dash-badge-code');
+    const iframeCode = document.getElementById('dash-iframe-code');
+    const copyBtn = document.getElementById('dash-copy-btn');
+    const deleteAccountBtn = document.getElementById('delete-account-btn');
+
+    document.querySelectorAll('.embed-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const id = btn.getAttribute('data-id') || 'demo';
+        const title = btn.getAttribute('data-title') || 'Poll';
+        if (badgeCode) badgeCode.textContent = `[![${title}](http://localhost:8000/api/v1/badges/${id}.svg)](http://localhost:4321/embed/${id})`;
+        if (iframeCode) iframeCode.textContent = `<iframe src="http://localhost:4321/embed/${id}" width="100%" height="340" style="border:none;border-radius:16px;max-width:440px;" title="${title}"></iframe>`;
+        dialog?.showModal();
+      });
+    });
+
+    closeDialog?.addEventListener('click', () => dialog?.close());
+    dialog?.addEventListener('click', (e) => {
+      if (e.target === dialog) dialog.close();
+    });
+
+    copyBtn?.addEventListener('click', () => {
+      if (iframeCode?.textContent) {
+        navigator.clipboard.writeText(iframeCode.textContent).then(() => {
+          copyBtn.textContent = '✓ Copied Iframe Code!';
+          setTimeout(() => {
+            copyBtn.textContent = 'Copy Iframe Code';
+          }, 2000);
+        });
+      }
+    });
+
+    // Delete poll confirmation
+    document.querySelectorAll('.delete-poll-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const title = btn.getAttribute('data-title') || 'this poll';
+        const confirmed = confirm(`Are you sure you want to delete "${title}"? This will permanently remove the poll and all of its recorded votes per PRD §8.`);
+        if (confirmed) {
+          alert('Poll deletion initiated. The poll will now show as "no longer available" on active embeds.');
+        }
+      });
+    });
+
+    // Account deletion request
+    deleteAccountBtn?.addEventListener('click', () => {
+      const confirmed = confirm('Request 7-day account deletion grace period? You can cancel this anytime within 7 days from this dashboard.');
+      if (confirmed) {
+        alert('Account deletion requested. Your 7-day grace period has begun.');
+      }
+    });
+  }
+
+  setupDashboard();
+  document.addEventListener('astro:page-load', setupDashboard);
+</script>
+

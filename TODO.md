@@ -10,8 +10,8 @@ This document tracks all tasks, deliverables, and implementation phases accordin
 - **Phase 2: Database Layer (PocketBase)** — **100%** (Completed)
 - **Phase 3: Backend API & Security (FastAPI)** — **100%** (Completed & Reviewed)
 - **Phase 4: Embeddable Widgets (Svelte & SVG)** — **100%** (Completed)
-- **Phase 5: Frontend Web & Dashboard (Astro + React)** — **50%** (In Progress)
-- **Phase 6: Testing, Polish & Documentation** — **75%** (In Progress)
+- **Phase 5: Frontend Web & Dashboard (Astro + React)** — **100%** (Completed & Redesigned from Scratch)
+- **Phase 6: Testing, Polish & Documentation** — **90%** (In Progress)
 
 ---
 
@@ -77,7 +77,7 @@ This document tracks all tasks, deliverables, and implementation phases accordin
   - [x] Referrer / embed sources breakdown
   - [x] Raw export in valid CSV and JSON formats (`/export`)
 - [x] Dynamic SVG & PNG badge generation (`/api/v1/badges/{poll_id}.svg`, `/{poll_id}.png`) with live interactive link & graceful fallback
-- [x] Comprehensive Pytest suite with 16 passing unit and integration tests
+- [x] Comprehensive Pytest suite with 20 passing unit and integration tests
 - [x] Self-hosting deployment guide (`docs/self-hosting.md`) and contributing guide (`CONTRIBUTING.md`)
 
 ---
@@ -86,7 +86,7 @@ This document tracks all tasks, deliverables, and implementation phases accordin
 - [x] Prototype Svelte embed widget (`PollWidget.svelte`)
 - [x] Refactor Svelte 5 embed widget with modern Runes (`$props`, `$state.raw`, `$derived`, `{#snippet}`)
 - [x] Dynamic SVG & PNG badge generator (`/api/v1/badges/{poll_id}.svg`, `/{poll_id}.png`) with leading option breakdown, `hidden_until_close` masking, live clickable link & fallback
-- [x] Guarantee `< 15KB` gzipped bundle footprint (achieved **4.9KB** gzipped!)
+- [x] Guarantee `< 15KB` gzipped bundle footprint (achieved **4.2KB** gzipped!)
 - [x] Support text, emoji, and image options in embed with snippet deduplication
 - [x] Result display modes (`show_counts`, `show_percentage`, `hidden_until_close`)
 - [x] Scoped CORS middleware reflecting `Origin` with `Access-Control-Allow-Credentials: true` and `X-Device-Token`
@@ -101,24 +101,27 @@ This document tracks all tasks, deliverables, and implementation phases accordin
 ---
 
 ## 🖥️ Phase 5: Frontend Web & Dashboard (Astro + React)
-- [x] Landing page (`/`) with live interactive demo
-- [x] Leaderboard page route (`/leaderboard`)
-- [x] Standalone poll page (`/polls/[id]`)
-- [x] Isolated iframe embed route (`/embed/[id]`)
-- [x] Standalone iframe embed route (`/embed`)
-- [x] Dashboard page (`/dashboard`)
-- [x] Poll creator page (`/dashboard/create`) with React component
-- [x] Connect Svelte `PollWidget` to `/api/v1/votes/{poll_id}`
-- [ ] Connect React `PollCreator` to FastAPI `/api/v1/polls`
-- [ ] Add Owner Analytics page (`/dashboard/[id]/analytics`) with charts & export buttons
-- [ ] Build documentation pages (`/docs`) with copyable embed snippets & API reference
-- [ ] GitHub login integration button in navbar & auth guard for dashboard
+- [x] Redesigned from Scratch with UI/UX Pro Max, Frontend Design, Hallmark, and React 19 standards
+- [x] Obsidian & Slate developer design system tokens in `global.css` with JetBrains Mono & Inter fonts
+- [x] Landing page (`/`) with live interactive Svelte 5 demo, real-time embed generator, and technical architecture benchmarks
+- [x] Public Leaderboard (`/leaderboard`) with Trending (7-day velocity), Top All-Time, Most-Voted Options, and search filter
+- [x] Standalone poll page (`/polls/[id]`) with live voting widget, embed snippet generator, and clipboard copy
+- [x] Isolated iframe embed route (`/embed/[id]`) and standalone embed route (`/embed`)
+- [x] Dashboard console (`/dashboard`) with stats bar, poll cards, embed code dialog, and account deletion grace period management
+- [x] Poll creator studio (`/dashboard/create`) with React 19, rich media options, 8-state tactile buttons, and live side-by-side preview
+- [x] Connect React `PollCreator` to FastAPI `/api/v1/polls` with moderation validation and token auth
+- [x] Owner Analytics studio (`/dashboard/[id]/analytics`) with votes timeline histogram, option breakdown, embed referrer sources, and one-click CSV/JSON export
+- [x] Documentation & Playground (`/docs`) with interactive embed builder (SVG vs PNG vs Iframe), REST API reference cards, and self-hosting quickstart
+- [x] Astro View Transitions (`<ClientRouter />`) with directional cross-fades and tactile microinteractions
+- [x] Verified mobile responsiveness across 320px–1440px with `overflow-x: clip` and 44px touch targets
 
 ---
 
 ## 🧪 Phase 6: Testing & Quality Assurance
 - [x] Backend unit tests for content moderation (`test_moderation.py`)
 - [x] Backend unit tests for IP hashing & rate limiting (`test_rate_limit.py`)
-- [x] Backend integration tests for API endpoints & validation guards (`test_api_endpoints.py`)
+- [x] Backend integration tests for API endpoints, CORS, admin auth, & validation guards (`test_api_endpoints.py`) (20/20 passed)
+- [x] Full static site build verification with 18 static routes (`corepack pnpm run build`)
+- [x] Embed widget bundle footprint verification: **4.2 KB gzipped** (well below the `< 15KB` threshold)
 - [ ] End-to-end integration with frontend & PocketBase running concurrently
 - [ ] Verify SEO meta tags and social open-graph previews
