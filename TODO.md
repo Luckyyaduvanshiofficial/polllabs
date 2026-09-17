@@ -127,5 +127,6 @@ This document tracks all tasks, deliverables, and implementation phases accordin
 - [x] Full static site build verification with 20 static routes (`corepack pnpm run build`)
 - [x] Embed widget bundle footprint verification: **4.2 KB gzipped** (well below the `< 15KB` threshold)
 - [x] Zero-tolerance secret hygiene verification: clean `git diff` with zero tracked secrets
+- [x] Agent memory file (`memory.md`) created for fast onboarding and context handoff
 - [ ] End-to-end integration with frontend & PocketBase running concurrently
 - [ ] Verify SEO meta tags and social open-graph previews
