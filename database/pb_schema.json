@@ -42,7 +42,7 @@
         "presentable": false,
         "unique": false,
         "options": {
-          "maxSize": 0
+          "maxSize": 20000
         }
       },
       {
@@ -130,7 +130,7 @@
         "presentable": false,
         "unique": false,
         "options": {
-          "maxSize": 0
+          "maxSize": 5000
         }
       }
     ],

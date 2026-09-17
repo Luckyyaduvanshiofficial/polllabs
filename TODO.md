@@ -136,7 +136,7 @@ This document tracks all tasks, deliverables, and implementation phases accordin
 
 ## 🎨 Phase 7: Custom Poll Themes (Telegram / WhatsApp / Instagram / YouTube styles + user customization)
 - [x] Phase 1 — Data model: `PollAppearance` Pydantic schema (theme, bg/accent/ink hex, radius, font, effect, layout) with server-side validation, `appearance` JSON field migration (`1789638852_poll_appearance.js`, field `ugvszf94`), create/update/response endpoint wiring with legacy-None fallback, 9 new tests (29/29 pass)
-- [ ] Phase 2 — Preset theme pack in widget (whatsapp, telegram, story, youtube-grid + researched extras, gzip < 15KB guard)
+- [x] Phase 2 — Preset theme pack in widget (minimal/whatsapp/telegram/story/youtube-grid via data-theme + CSS vars, radius/font hooks, grid layout, data-effect hook for Phase 6, gzip 4.9KB < 15KB, live PB→API appearance round-trip verified) + fixed pre-existing 0-byte JSON write block (options 20000 / appearance 5000)
 - [ ] Phase 3 — Creator studio theme picker + customizer (bg, accent, corners, font, effect) with live iframe preview
 - [ ] Phase 4 — Image uploads (`POST /polls/{id}/images` + PB file storage) + YouTube-style grid layout
 - [ ] Phase 5 — Behaviors: multiple answers, quiz mode, visible voters
