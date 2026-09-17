@@ -32,7 +32,7 @@ const {
     <meta name="twitter:description" content={description} />
     <ClientRouter />
   </head>
-  <body class="bg-[#0b0f19] text-[#f8fafc] min-h-screen flex flex-col antialiased selection:bg-blue-600 selection:text-white">
+  <body class="bg-[#0b0f19] text-[#f8fafc] min-h-screen antialiased selection:bg-blue-600 selection:text-white">
     <a 
       href="#main-content" 
       class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 z-50 px-4 py-2 bg-blue-600 text-white font-medium rounded-lg text-sm shadow-lg"
@@ -40,7 +40,7 @@ const {
       Skip to content
     </a>
     <Navbar />
-    <main id="main-content" class="flex-1 transition-opacity duration-200">
+    <main id="main-content" class="transition-opacity duration-200">
       <slot />
     </main>
     <Footer />

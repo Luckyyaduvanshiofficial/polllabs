@@ -7,91 +7,80 @@ const isActive = (path: string) => {
 };
 ---
 
-<header class="sticky top-0 z-50 border-b border-[#1e293b] bg-[#0b0f19]/90 backdrop-blur-md transition-colors">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-    <!-- Brand & Telemetry Badge -->
-    <div class="flex items-center gap-6">
-      <a href="/" class="flex items-center gap-2.5 group focus-visible:outline-hidden">
-        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center font-mono font-bold text-white shadow-xs group-hover:scale-105 transition-transform duration-150">
-          PL
-        </div>
-        <div class="flex flex-col">
-          <span class="font-bold text-base tracking-tight text-white group-hover:text-blue-400 transition-colors">
-            PollLabs
-          </span>
-          <span class="text-[10px] font-mono text-emerald-400/90 flex items-center gap-1 leading-none -mt-0.5">
-            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-            <span>4.9KB embed</span>
-          </span>
-        </div>
-      </a>
+<header class="fixed top-0 left-0 right-0 z-50 flex justify-center px-4 pt-4 pointer-events-none">
+  <nav class="pointer-events-auto flex items-center justify-between gap-6 px-5 py-2.5 rounded-full bg-white/[0.04] backdrop-blur-xl border border-white/[0.06] shadow-[0_8px_32px_rgba(0,0,0,0.3)] max-w-5xl w-full">
+    <!-- Brand -->
+    <a href="/" class="flex items-center gap-2.5 group focus-visible:outline-hidden shrink-0">
+      <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center font-mono font-bold text-[11px] text-white group-hover:scale-110 transition-transform duration-300">
+        PL
+      </div>
+      <span class="font-bold text-sm tracking-tight text-white group-hover:text-blue-400 transition-colors hidden sm:block">
+        PollLabs
+      </span>
+    </a>
 
-      <!-- Desktop Navigation -->
-      <nav class="hidden md:flex items-center gap-1 text-sm font-medium">
-        <a
-          href="/leaderboard"
-          class={`px-3 py-1.5 rounded-md transition duration-150 ${
-            isActive('/leaderboard')
-              ? 'bg-[#1e293b] text-white font-semibold'
-              : 'text-[#94a3b8] hover:text-white hover:bg-[#111827]'
-          }`}
-        >
-          Leaderboard
-        </a>
-        <a
-          href="/dashboard"
-          class={`px-3 py-1.5 rounded-md transition duration-150 ${
-            isActive('/dashboard')
-              ? 'bg-[#1e293b] text-white font-semibold'
-              : 'text-[#94a3b8] hover:text-white hover:bg-[#111827]'
-          }`}
-        >
-          Dashboard
-        </a>
-        <a
-          href="/docs"
-          class={`px-3 py-1.5 rounded-md transition duration-150 ${
-            isActive('/docs')
-              ? 'bg-[#1e293b] text-white font-semibold'
-              : 'text-[#94a3b8] hover:text-white hover:bg-[#111827]'
-          }`}
-        >
-          Docs
-        </a>
-      </nav>
+    <!-- Desktop Navigation — center -->
+    <div class="hidden md:flex items-center gap-1 text-[13px] font-medium">
+      <a
+        href="/leaderboard"
+        class={`px-3 py-1.5 rounded-full transition duration-200 ${
+          isActive('/leaderboard')
+            ? 'bg-white/10 text-white'
+            : 'text-[#94a3b8] hover:text-white hover:bg-white/[0.05]'
+        }`}
+      >
+        Leaderboard
+      </a>
+      <a
+        href="/dashboard"
+        class={`px-3 py-1.5 rounded-full transition duration-200 ${
+          isActive('/dashboard')
+            ? 'bg-white/10 text-white'
+            : 'text-[#94a3b8] hover:text-white hover:bg-white/[0.05]'
+        }`}
+      >
+        Dashboard
+      </a>
+      <a
+        href="/docs"
+        class={`px-3 py-1.5 rounded-full transition duration-200 ${
+          isActive('/docs')
+            ? 'bg-white/10 text-white'
+            : 'text-[#94a3b8] hover:text-white hover:bg-white/[0.05]'
+        }`}
+      >
+        Docs
+      </a>
     </div>
 
-    <!-- Actions & Mobile Menu Toggle -->
-    <div class="flex items-center gap-3">
-      <!-- GitHub Link -->
+    <!-- Actions — right -->
+    <div class="flex items-center gap-2.5 shrink-0">
+      <!-- GitHub -->
       <a
         href="https://github.com/Luckyyaduvanshiofficial/polllabs"
         target="_blank"
         rel="noopener noreferrer"
         aria-label="GitHub Repository"
-        class="hidden sm:inline-flex items-center justify-center w-9 h-9 rounded-lg border border-[#1e293b] text-[#94a3b8] hover:text-white hover:border-[#334155] hover:bg-[#111827] transition"
+        class="hidden sm:inline-flex items-center justify-center w-8 h-8 rounded-full text-[#94a3b8] hover:text-white hover:bg-white/[0.06] transition"
       >
         <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
           <path fill-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clip-rule="evenodd" />
         </svg>
       </a>
 
-      <!-- GitHub Auth Controls (PRD §2) -->
-      <div id="nav-auth-container" class="hidden sm:flex items-center gap-2">
+      <!-- Auth Controls -->
+      <div id="nav-auth-container" class="hidden sm:flex items-center gap-1.5">
         <a
           id="nav-login-btn"
           href="/auth/callback?code=github_dev_oauth"
-          class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#1e293b] hover:border-[#334155] bg-[#111827] text-white text-xs font-medium transition"
+          class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[#94a3b8] hover:text-white hover:bg-white/[0.06] text-[13px] font-medium transition"
         >
-          <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
-            <path fill-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clip-rule="evenodd" />
-          </svg>
           <span>Sign In</span>
         </a>
         <button
           id="nav-logout-btn"
           type="button"
-          class="hidden px-2.5 py-1.5 rounded-lg border border-[#1e293b] hover:border-red-900/50 hover:bg-red-950/20 text-[#94a3b8] hover:text-red-400 text-xs font-medium transition"
+          class="hidden px-3 py-1.5 rounded-full text-[#94a3b8] hover:text-red-400 hover:bg-red-500/10 text-[13px] font-medium transition"
         >
           Sign Out
         </button>
@@ -100,67 +89,64 @@ const isActive = (path: string) => {
       <!-- Primary CTA -->
       <a
         href="/dashboard/create"
-        class="btn-interactive inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold shadow-xs transition"
+        class="btn-interactive inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-blue-600 hover:bg-blue-500 text-white text-[13px] font-semibold shadow-[0_0_20px_rgba(59,130,246,0.3)] hover:shadow-[0_0_28px_rgba(59,130,246,0.4)] transition-all duration-300"
       >
-        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-        </svg>
         <span>Create Poll</span>
       </a>
 
-      <!-- Mobile Hamburger Menu Button -->
+      <!-- Mobile Hamburger -->
       <button
         id="mobile-menu-btn"
         type="button"
         aria-label="Toggle navigation menu"
         aria-expanded="false"
-        class="md:hidden inline-flex items-center justify-center p-2 rounded-lg text-[#94a3b8] hover:text-white hover:bg-[#1e293b] transition"
+        class="md:hidden inline-flex items-center justify-center w-8 h-8 rounded-full text-[#94a3b8] hover:text-white hover:bg-white/[0.06] transition"
       >
-        <svg id="menu-icon-open" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <svg id="menu-icon-open" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
           <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
         </svg>
-        <svg id="menu-icon-close" class="w-5 h-5 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <svg id="menu-icon-close" class="w-4 h-4 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
           <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
         </svg>
       </button>
     </div>
-  </div>
+  </nav>
 
   <!-- Mobile Drawer -->
-  <div id="mobile-menu" class="hidden md:hidden border-t border-[#1e293b] bg-[#0b0f19] px-4 pt-2 pb-4 space-y-1">
+  <div id="mobile-menu" class="hidden md:hidden pointer-events-auto absolute top-[72px] left-4 right-4 rounded-2xl bg-[#111827]/95 backdrop-blur-xl border border-white/[0.06] shadow-2xl p-3 space-y-1 max-w-5xl mx-auto">
     <a
       href="/leaderboard"
-      class={`block px-3 py-2 rounded-md text-base font-medium ${
-        isActive('/leaderboard') ? 'bg-[#1e293b] text-white' : 'text-[#94a3b8] hover:text-white hover:bg-[#111827]'
+      class={`block px-4 py-2.5 rounded-xl text-sm font-medium ${
+        isActive('/leaderboard') ? 'bg-white/10 text-white' : 'text-[#94a3b8] hover:text-white hover:bg-white/[0.05]'
       }`}
     >
       Leaderboard
     </a>
     <a
       href="/dashboard"
-      class={`block px-3 py-2 rounded-md text-base font-medium ${
-        isActive('/dashboard') ? 'bg-[#1e293b] text-white' : 'text-[#94a3b8] hover:text-white hover:bg-[#111827]'
+      class={`block px-4 py-2.5 rounded-xl text-sm font-medium ${
+        isActive('/dashboard') ? 'bg-white/10 text-white' : 'text-[#94a3b8] hover:text-white hover:bg-white/[0.05]'
       }`}
     >
       Dashboard
     </a>
     <a
       href="/docs"
-      class={`block px-3 py-2 rounded-md text-base font-medium ${
-        isActive('/docs') ? 'bg-[#1e293b] text-white' : 'text-[#94a3b8] hover:text-white hover:bg-[#111827]'
+      class={`block px-4 py-2.5 rounded-xl text-sm font-medium ${
+        isActive('/docs') ? 'bg-white/10 text-white' : 'text-[#94a3b8] hover:text-white hover:bg-white/[0.05]'
       }`}
     >
       Documentation
     </a>
-    <div class="pt-2 border-t border-[#1e293b] flex justify-between items-center px-3">
-      <span class="text-xs text-[#94a3b8] font-mono">PollLabs v1.0</span>
+    <div class="pt-2 mt-1 border-t border-white/[0.06] flex justify-between items-center px-4">
+      <span class="text-[11px] text-[#64748b] font-mono">PollLabs v1.0</span>
       <a
         href="https://github.com/Luckyyaduvanshiofficial/polllabs"
         target="_blank"
         rel="noopener noreferrer"
-        class="text-xs text-blue-400 hover:underline flex items-center gap-1"
+        class="text-[11px] text-blue-400 hover:underline flex items-center gap-1"
       >
-        GitHub Repository
+        GitHub
       </a>
     </div>
   </div>
@@ -210,7 +196,6 @@ const isActive = (path: string) => {
     });
   }
 
-  // Support both fresh load and Astro view transition swaps
   setupMobileMenu();
   setupAuthState();
   document.addEventListener('astro:page-load', () => {
@@ -218,4 +203,3 @@ const isActive = (path: string) => {
     setupAuthState();
   });
 </script>
-

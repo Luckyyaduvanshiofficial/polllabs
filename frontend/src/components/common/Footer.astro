@@ -2,62 +2,59 @@
 const currentYear = new Date().getFullYear();
 ---
 
-<footer class="mt-auto border-t border-[#1e293b] bg-[#080c14] py-12 text-[#94a3b8] text-sm">
+<footer class="mt-auto border-t border-white/[0.04] py-16 text-[#94a3b8] text-sm">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-10">
-      <!-- Col 1: Brand & License -->
-      <div class="md:col-span-2 space-y-3">
-        <div class="flex items-center gap-2">
-          <div class="w-6 h-6 rounded bg-blue-600 flex items-center justify-center font-mono font-bold text-xs text-white">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-10 mb-12">
+      <!-- Brand -->
+      <div class="md:col-span-2 space-y-4">
+        <div class="flex items-center gap-2.5">
+          <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center font-mono font-bold text-[10px] text-white">
             PL
           </div>
           <span class="font-bold text-base text-white tracking-tight">PollLabs</span>
-          <span class="text-xs px-2 py-0.5 rounded bg-[#1e293b] text-emerald-400 font-mono">Apache 2.0</span>
+          <span class="text-[10px] px-2 py-0.5 rounded-full bg-white/[0.06] text-emerald-400 font-mono">Apache 2.0</span>
         </div>
-        <p class="text-xs text-[#94a3b8] max-w-sm leading-relaxed">
-          Open-source developer platform for embeddable polls, Shields-compatible README badges, and transparent public leaderboards.
+        <p class="text-xs text-[#64748b] max-w-sm leading-relaxed">
+          Open-source embeddable polls, Shields-compatible README badges, and transparent public leaderboards for developer communities.
         </p>
-        <div class="flex items-center gap-3 pt-1 text-xs font-mono text-[#94a3b8]">
+        <div class="flex items-center gap-3 text-xs font-mono text-[#64748b]">
           <span>FastAPI</span>
-          <span>•</span>
+          <span class="text-[#334155]">/</span>
           <span>PocketBase</span>
-          <span>•</span>
+          <span class="text-[#334155]">/</span>
           <span>Svelte 5</span>
-          <span>•</span>
-          <span>React 19</span>
-          <span>•</span>
+          <span class="text-[#334155]">/</span>
           <span>Astro</span>
         </div>
       </div>
 
-      <!-- Col 2: Resources -->
-      <div class="space-y-2">
-        <h4 class="text-xs font-semibold uppercase tracking-wider text-white">Resources</h4>
-        <ul class="space-y-1.5 text-xs">
-          <li><a href="/docs" class="hover:text-white transition">Documentation & Embeds</a></li>
-          <li><a href="/leaderboard" class="hover:text-white transition">Public Leaderboards</a></li>
+      <!-- Resources -->
+      <div class="space-y-3">
+        <h4 class="text-[11px] font-semibold uppercase tracking-wider text-[#64748b]">Resources</h4>
+        <ul class="space-y-2 text-xs">
+          <li><a href="/docs" class="hover:text-white transition">Documentation</a></li>
+          <li><a href="/leaderboard" class="hover:text-white transition">Leaderboards</a></li>
           <li><a href="/dashboard/create" class="hover:text-white transition">Create a Poll</a></li>
-          <li><a href="https://github.com/Luckyyaduvanshiofficial/polllabs/blob/main/docs/self-hosting.md" target="_blank" rel="noopener noreferrer" class="hover:text-white transition">Self-Hosting Guide</a></li>
+          <li><a href="https://github.com/Luckyyaduvanshiofficial/polllabs/blob/main/docs/self-hosting.md" target="_blank" rel="noopener noreferrer" class="hover:text-white transition">Self-Hosting</a></li>
         </ul>
       </div>
 
-      <!-- Col 3: Community & Health -->
-      <div class="space-y-2">
-        <h4 class="text-xs font-semibold uppercase tracking-wider text-white">System & Legal</h4>
-        <ul class="space-y-1.5 text-xs">
-          <li><a href="https://github.com/Luckyyaduvanshiofficial/polllabs" target="_blank" rel="noopener noreferrer" class="hover:text-white transition">GitHub Repository</a></li>
-          <li><a href="http://localhost:8000/docs" target="_blank" rel="noopener noreferrer" class="hover:text-white transition">OpenAPI Specification</a></li>
-          <li><a href="http://localhost:8000/api/v1/health" target="_blank" rel="noopener noreferrer" class="hover:text-white transition flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> API Status: Healthy</a></li>
-          <li><a href="https://github.com/Luckyyaduvanshiofficial/polllabs/blob/main/LICENSE" target="_blank" rel="noopener noreferrer" class="hover:text-white transition">Apache-2.0 License</a></li>
+      <!-- System -->
+      <div class="space-y-3">
+        <h4 class="text-[11px] font-semibold uppercase tracking-wider text-[#64748b]">System</h4>
+        <ul class="space-y-2 text-xs">
+          <li><a href="https://github.com/Luckyyaduvanshiofficial/polllabs" target="_blank" rel="noopener noreferrer" class="hover:text-white transition">GitHub</a></li>
+          <li><a href="http://localhost:8000/docs" target="_blank" rel="noopener noreferrer" class="hover:text-white transition">OpenAPI Spec</a></li>
+          <li><a href="http://localhost:8000/api/v1/health" target="_blank" rel="noopener noreferrer" class="hover:text-white transition flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> API Status</a></li>
+          <li><a href="https://github.com/Luckyyaduvanshiofficial/polllabs/blob/main/LICENSE" target="_blank" rel="noopener noreferrer" class="hover:text-white transition">License</a></li>
         </ul>
       </div>
     </div>
 
-    <!-- Bottom copyright -->
-    <div class="pt-6 border-t border-[#1e293b] flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[#64748b]">
-      <p>© {currentYear} PollLabs. Free & open-source software built for developer communities.</p>
-      <p>Zero tracking cookies • Sub-5KB embed footprint • Privacy-first IP hashing</p>
+    <!-- Bottom -->
+    <div class="pt-8 border-t border-white/[0.04] flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-[#475569]">
+      <p>&copy; {currentYear} PollLabs. Free and open-source.</p>
+      <p className="font-mono">Zero tracking / Sub-5KB embed / Privacy-first</p>
     </div>
   </div>
 </footer>
-
