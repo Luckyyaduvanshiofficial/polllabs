@@ -73,7 +73,7 @@ const isActive = (path: string) => {
         <a
           id="nav-login-btn"
           href="/auth/callback?code=github_dev_oauth"
-          class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[#94a3b8] hover:text-white hover:bg-white/[0.06] text-[13px] font-medium transition"
+          class="hidden items-center gap-1.5 px-3 py-1.5 rounded-full text-[#94a3b8] hover:text-white hover:bg-white/[0.06] text-[13px] font-medium transition"
         >
           <span>Sign In</span>
         </a>
@@ -184,10 +184,14 @@ const isActive = (path: string) => {
 
     if (token) {
       loginBtn?.classList.add('hidden');
+      loginBtn?.classList.remove('inline-flex');
       logoutBtn?.classList.remove('hidden');
+      logoutBtn?.classList.add('inline-flex');
     } else {
       loginBtn?.classList.remove('hidden');
+      loginBtn?.classList.add('inline-flex');
       logoutBtn?.classList.add('hidden');
+      logoutBtn?.classList.remove('inline-flex');
     }
 
     logoutBtn?.addEventListener('click', () => {
