@@ -1,0 +1,24 @@
+---
+import RootLayout from '../../layouts/RootLayout.astro';
+---
+
+<RootLayout title="Documentation — PollLabs">
+  <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <h1 class="text-3xl font-bold mb-4">Documentation & Integration Guide</h1>
+    <p class="text-gray-600 dark:text-gray-400 mb-8">Learn how to embed PollLabs widgets into your READMEs and websites.</p>
+
+    <div class="grid gap-6 md:grid-cols-2">
+      <div class="p-6 border border-gray-200 dark:border-gray-800 rounded-xl bg-white dark:bg-gray-800/40">
+        <h3 class="font-semibold text-lg mb-2">1. Static GitHub Badge</h3>
+        <p class="text-sm text-gray-500 mb-4">Ideal for GitHub README.md where script tags are blocked.</p>
+        <pre class="bg-gray-100 dark:bg-gray-900 p-3 rounded text-xs overflow-x-auto"><code>[![Poll](https://polllabs.dev/api/v1/badges/&#123;id&#125;.svg)](https://polllabs.dev/polls/&#123;id&#125;)</code></pre>
+      </div>
+
+      <div class="p-6 border border-gray-200 dark:border-gray-800 rounded-xl bg-white dark:bg-gray-800/40">
+        <h3 class="font-semibold text-lg mb-2">2. Interactive Iframe Embed</h3>
+        <p class="text-sm text-gray-500 mb-4">Ideal for blogs, documentation sites, and custom websites.</p>
+        <pre class="bg-gray-100 dark:bg-gray-900 p-3 rounded text-xs overflow-x-auto"><code>&lt;iframe src="https://polllabs.dev/embed/&#123;id&#125;" width="100%" height="320" frameborder="0"&gt;&lt;/iframe&gt;</code></pre>
+      </div>
+    </div>
+  </div>
+</RootLayout>

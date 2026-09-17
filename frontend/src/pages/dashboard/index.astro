@@ -1,0 +1,31 @@
+---
+import RootLayout from '../../layouts/RootLayout.astro';
+---
+
+<RootLayout title="Dashboard — PollLabs">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div class="flex items-center justify-between mb-8">
+      <div>
+        <h1 class="text-3xl font-bold">Your Polls</h1>
+        <p class="text-gray-600 dark:text-gray-400 mt-1">Manage, monitor, and analyze polls created with your GitHub account.</p>
+      </div>
+      <a
+        href="/dashboard/create"
+        class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-sm transition text-sm"
+      >
+        + New Poll
+      </a>
+    </div>
+
+    <div class="border border-dashed border-gray-300 dark:border-gray-700 rounded-2xl p-12 text-center">
+      <h3 class="text-lg font-semibold mb-2">No polls yet</h3>
+      <p class="text-gray-500 mb-6 text-sm">Create your first poll to generate embed codes and track real-time votes.</p>
+      <a
+        href="/dashboard/create"
+        class="inline-flex px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg text-sm transition"
+      >
+        Create a Poll
+      </a>
+    </div>
+  </div>
+</RootLayout>

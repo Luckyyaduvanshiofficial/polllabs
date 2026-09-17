@@ -1,0 +1,18 @@
+---
+import RootLayout from '../../../layouts/RootLayout.astro';
+import PollCreator from '../../../components/dashboard/PollCreator';
+---
+
+<RootLayout title="Create Poll — PollLabs">
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div class="mb-8">
+      <a href="/dashboard" class="text-sm text-blue-600 dark:text-blue-400 hover:underline mb-2 inline-block">
+        ← Back to Dashboard
+      </a>
+      <h1 class="text-3xl font-bold">Create a New Poll</h1>
+      <p class="text-gray-600 dark:text-gray-400 mt-1">Set up options, configure visibility, and generate embed badges.</p>
+    </div>
+
+    <PollCreator client:load />
+  </div>
+</RootLayout>
