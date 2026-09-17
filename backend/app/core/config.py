@@ -8,8 +8,8 @@ class Settings(BaseSettings):
     
     # PocketBase config
     POCKETBASE_URL: str = os.getenv("POCKETBASE_URL", "http://127.0.0.1:8090")
-    POCKETBASE_ADMIN_EMAIL: str = os.getenv("POCKETBASE_ADMIN_EMAIL", "")
-    POCKETBASE_ADMIN_PASSWORD: str = os.getenv("POCKETBASE_ADMIN_PASSWORD", "")
+    POCKETBASE_ADMIN_EMAIL: str = os.getenv("POCKETBASE_ADMIN_EMAIL", "developer@codaipro.com")
+    POCKETBASE_ADMIN_PASSWORD: str = os.getenv("POCKETBASE_ADMIN_PASSWORD", "developer1")
 
     # CORS
     BACKEND_CORS_ORIGINS: list[str] = [
@@ -25,5 +25,7 @@ class Settings(BaseSettings):
 
     class Config:
         case_sensitive = True
+        env_file = ".env"
+        extra = "ignore"
 
 settings = Settings()
