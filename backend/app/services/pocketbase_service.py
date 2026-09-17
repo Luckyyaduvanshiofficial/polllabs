@@ -1,9 +1,14 @@
 import logging
+import re
 from typing import Any
 import httpx
 from app.core.config import settings
 
 logger = logging.getLogger("polllabs.pocketbase")
+
+def sanitize_identifier(value: str) -> str:
+    """Sanitizes alphanumeric IDs to prevent filter expression tampering."""
+    return re.sub(r"[^a-zA-Z0-9_\-]", "", value)
 
 class AsyncPocketBaseService:
     def __init__(self, base_url: str = settings.POCKETBASE_URL):
@@ -80,10 +85,11 @@ class AsyncPocketBaseService:
         resp = await self._request("GET", "/api/collections/polls/records", params=params)
         if resp and resp.status_code == 200:
             return resp.json()
-        return {"items": [], "totalItems": 0}
+        return {"items": [], "totalItems": 0, "page": page, "perPage": per_page, "totalPages": 1}
 
     async def get_poll(self, poll_id: str) -> dict[str, Any] | None:
-        resp = await self._request("GET", f"/api/collections/polls/records/{poll_id}")
+        clean_id = sanitize_identifier(poll_id)
+        resp = await self._request("GET", f"/api/collections/polls/records/{clean_id}")
         if resp and resp.status_code == 200:
             return resp.json()
         return None
@@ -103,9 +109,10 @@ class AsyncPocketBaseService:
     async def update_poll(
         self, poll_id: str, update_data: dict[str, Any], user_token: str | None = None
     ) -> dict[str, Any]:
+        clean_id = sanitize_identifier(poll_id)
         resp = await self._request(
             "PATCH",
-            f"/api/collections/polls/records/{poll_id}",
+            f"/api/collections/polls/records/{clean_id}",
             user_token=user_token,
             json_data=update_data,
         )
@@ -115,9 +122,10 @@ class AsyncPocketBaseService:
         return resp.json()
 
     async def delete_poll(self, poll_id: str, user_token: str | None = None) -> bool:
+        clean_id = sanitize_identifier(poll_id)
         resp = await self._request(
             "DELETE",
-            f"/api/collections/polls/records/{poll_id}",
+            f"/api/collections/polls/records/{clean_id}",
             user_token=user_token,
         )
         return bool(resp and resp.status_code == 204)
@@ -125,8 +133,11 @@ class AsyncPocketBaseService:
     # --- Votes CRUD ---
 
     async def has_device_voted(self, poll_id: str, device_token: str) -> bool:
-        """Checks if a device token has already cast a vote for a specific poll."""
-        filter_expr = f'poll_id="{poll_id}" && device_token="{device_token}"'
+        """Checks if a device token has already cast a vote for a specific poll with sanitized binding."""
+        clean_poll_id = sanitize_identifier(poll_id)
+        clean_token = sanitize_identifier(device_token)
+        filter_expr = f'poll_id="{clean_poll_id}" && device_token="{clean_token}"'
+
         resp = await self._request(
             "GET",
             "/api/collections/votes/records",
@@ -149,15 +160,32 @@ class AsyncPocketBaseService:
         return resp.json()
 
     async def list_votes_for_poll(self, poll_id: str) -> list[dict[str, Any]]:
-        filter_expr = f'poll_id="{poll_id}"'
-        resp = await self._request(
-            "GET",
-            "/api/collections/votes/records",
-            params={"filter": filter_expr, "perPage": 500},
-        )
-        if resp and resp.status_code == 200:
-            return resp.json().get("items", [])
-        return []
+        """Fetches all votes for a poll with automatic pagination (PRD §5)."""
+        clean_poll_id = sanitize_identifier(poll_id)
+        filter_expr = f'poll_id="{clean_poll_id}"'
+        all_votes: list[dict[str, Any]] = []
+        page = 1
+        per_page = 200
+
+        while True:
+            resp = await self._request(
+                "GET",
+                "/api/collections/votes/records",
+                params={"filter": filter_expr, "page": page, "perPage": per_page},
+            )
+            if not resp or resp.status_code != 200:
+                break
+
+            data = resp.json()
+            items = data.get("items", [])
+            all_votes.extend(items)
+
+            total_pages = data.get("totalPages", 1)
+            if page >= total_pages or len(items) == 0:
+                break
+            page += 1
+
+        return all_votes
 
 pb_service = AsyncPocketBaseService()
 

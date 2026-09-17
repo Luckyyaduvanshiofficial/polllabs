@@ -1,4 +1,3 @@
-import os
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
@@ -12,12 +11,12 @@ class Settings(BaseSettings):
     VERSION: str = "0.1.0"
     API_V1_STR: str = "/api/v1"
 
-    # PocketBase config
-    POCKETBASE_URL: str = os.getenv("POCKETBASE_URL", "http://127.0.0.1:8090")
-    POCKETBASE_ADMIN_EMAIL: str = os.getenv("POCKETBASE_ADMIN_EMAIL", "")
-    POCKETBASE_ADMIN_PASSWORD: str = os.getenv("POCKETBASE_ADMIN_PASSWORD", "")
+    # PocketBase config parsed directly by pydantic-settings
+    POCKETBASE_URL: str = "http://127.0.0.1:8090"
+    POCKETBASE_ADMIN_EMAIL: str = ""
+    POCKETBASE_ADMIN_PASSWORD: str = ""
 
-    # CORS
+    # Platform frontend origins for protected management operations
     BACKEND_CORS_ORIGINS: list[str] = [
         "http://localhost:4321",
         "http://127.0.0.1:4321",
@@ -26,7 +25,7 @@ class Settings(BaseSettings):
     ]
 
     # Security & Abuse Prevention
-    IP_HASH_SALT: str = os.getenv("IP_HASH_SALT", "dev-salt-change-in-prod")
+    IP_HASH_SALT: str = "change-in-production-salt"
     VOTE_RATE_LIMIT_PER_MINUTE: int = 30
 
 settings = Settings()

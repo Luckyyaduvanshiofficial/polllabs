@@ -1,17 +1,19 @@
 import csv
 import io
+import json
 from collections import Counter
 from fastapi import APIRouter, HTTPException, Response, status
 from app.core.dependencies import CurrentUser, PocketBaseDep
+from app.schemas.analytics import AnalyticsResponse
 
 router = APIRouter(prefix="/analytics", tags=["Analytics"])
 
-@router.get("/{poll_id}", response_model=dict)
+@router.get("/{poll_id}", response_model=AnalyticsResponse)
 async def get_poll_analytics(
     poll_id: str,
     user_id: CurrentUser,
     pb: PocketBaseDep,
-) -> dict:
+) -> AnalyticsResponse:
     """
     Returns owner-only poll analytics including vote timelines,
     option breakdowns, and embed referrers (PRD §4.3).
@@ -43,13 +45,20 @@ async def get_poll_analytics(
         option_map.get(v.get("option_id"), "Unknown") for v in votes
     )
 
-    return {
-        "poll_id": poll_id,
-        "title": poll.get("title"),
-        "total_votes": len(votes),
-        "options_breakdown": dict(option_counts),
-        "referrers_breakdown": dict(referrer_counts),
-    }
+    # Timeline breakdown (votes over time, grouped by date YYYY-MM-DD)
+    time_series = Counter(
+        (v.get("created", "")[:10] if v.get("created") else "Unknown")
+        for v in votes
+    )
+
+    return AnalyticsResponse(
+        poll_id=poll_id,
+        title=poll.get("title", ""),
+        total_votes=len(votes),
+        options_breakdown=dict(option_counts),
+        referrers_breakdown=dict(referrer_counts),
+        votes_over_time=dict(sorted(time_series.items())),
+    )
 
 @router.get("/{poll_id}/export")
 async def export_poll_data(
@@ -59,7 +68,7 @@ async def export_poll_data(
     format: str = "json",
 ) -> Response:
     """
-    Exports raw poll votes in CSV or JSON format (PRD §4.3).
+    Exports raw poll votes in valid CSV or JSON format (PRD §4.3).
     """
     poll = await pb.get_poll(poll_id)
     if not poll or poll.get("owner") != user_id:
@@ -92,7 +101,7 @@ async def export_poll_data(
             },
         )
 
-    # Default JSON
+    # Valid JSON serialization using json.dumps (fixing single-quote bug)
     export_data = [
         {
             "id": v.get("id"),
@@ -104,7 +113,7 @@ async def export_poll_data(
         for v in votes
     ]
     return Response(
-        content=str(export_data),
+        content=json.dumps(export_data, indent=2),
         media_type="application/json",
         headers={
             "Content-Disposition": f'attachment; filename="poll_{poll_id}_votes.json"'

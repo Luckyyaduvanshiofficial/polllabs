@@ -8,21 +8,21 @@ from app.api.v1.polls import sanitize_poll_options_for_display
 
 router = APIRouter(prefix="/votes", tags=["Votes"])
 
-@router.post("/{poll_id}", response_model=dict)
+@router.post("/{poll_id}", response_model=VoteResponse)
 async def submit_vote(
     poll_id: str,
     vote: VoteRequest,
     request: Request,
     response: Response,
     pb: PocketBaseDep,
-) -> dict:
+) -> VoteResponse:
     """
     Submits an anonymous vote on a poll.
     Enforces device-token check and IP-hash rate limiting per PRD §4.6.
     """
     client_ip = request.client.host if request.client else "127.0.0.1"
 
-    # 1. Secondary Signal: IP-based rate limiting (prevent burst flooding)
+    # 1. Secondary Signal: IP-based rate limiting
     if not check_ip_rate_limit(client_ip):
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
@@ -41,7 +41,7 @@ async def submit_vote(
     close_at = poll.get("close_at")
     if close_at:
         try:
-            close_time = datetime.fromisoformat(close_at.replace("Z", "+00:00"))
+            close_time = datetime.fromisoformat(str(close_at).replace("Z", "+00:00"))
             if datetime.now(timezone.utc) >= close_time:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
@@ -112,11 +112,11 @@ async def submit_vote(
     poll["options"] = options
     sanitized_options = sanitize_poll_options_for_display(poll)
 
-    return {
-        "success": True,
-        "message": "Vote recorded successfully",
-        "poll_id": poll_id,
-        "device_token": device_token,
-        "total_votes": total_votes,
-        "options": sanitized_options,
-    }
+    return VoteResponse(
+        success=True,
+        message="Vote recorded successfully",
+        poll_id=poll_id,
+        device_token=device_token,
+        total_votes=total_votes,
+        options=sanitized_options,
+    )

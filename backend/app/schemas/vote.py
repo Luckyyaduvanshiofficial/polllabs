@@ -1,4 +1,5 @@
 from pydantic import BaseModel, ConfigDict
+from app.schemas.poll import PollOptionResponse
 
 class VoteRequest(BaseModel):
     option_id: str
@@ -12,3 +13,5 @@ class VoteResponse(BaseModel):
     message: str
     poll_id: str
     device_token: str
+    total_votes: int
+    options: list[PollOptionResponse]

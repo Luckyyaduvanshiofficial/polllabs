@@ -3,6 +3,16 @@ migrate((db) => {
   const dao = new Dao(db);
   const users = dao.findCollectionByNameOrId("users");
 
+  // Enforce GitHub OAuth only on users collection per PRD §2
+  users.options = {
+    allowEmailAuth: false,
+    allowOAuth2Auth: true,
+    allowUsernameAuth: false,
+    minPasswordLength: 8,
+    requireEmail: false,
+  };
+  dao.saveCollection(users);
+
   // 1. Create 'polls' collection
   const pollsCollection = new Collection({
     name: "polls",
@@ -82,6 +92,8 @@ migrate((db) => {
   dao.saveCollection(pollsCollection);
 
   // 2. Create 'votes' collection with cascadeDelete: true
+  // createRule is null (locked) so votes MUST be submitted via FastAPI backend
+  // which validates rate limits, IP hashes, and device tokens.
   const votesCollection = new Collection({
     name: "votes",
     type: "base",
@@ -125,7 +137,7 @@ migrate((db) => {
     ],
     listRule: null,
     viewRule: null,
-    createRule: "",
+    createRule: null,
     updateRule: null,
     deleteRule: null
   });

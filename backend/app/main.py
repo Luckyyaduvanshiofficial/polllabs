@@ -1,14 +1,12 @@
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi import FastAPI, Request, Response
+from starlette.middleware.base import BaseHTTPMiddleware
 from app.core.config import settings
 from app.api.v1.router import api_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Setup resources on startup if needed (e.g. PocketBase health check)
     yield
-    # Cleanup resources on shutdown if needed
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -17,15 +15,44 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Open CORS for vote/badge endpoints, configurable for origin
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+class ScopedCORSMiddleware(BaseHTTPMiddleware):
+    """
+    Implements PRD §4.7 CORS rules:
+    - Open to any origin for vote/badge/embed endpoints.
+    - Restricted to platform frontend origins for poll management and analytics.
+    """
+    async def dispatch(self, request: Request, call_next):
+        origin = request.headers.get("origin")
+        path = request.url.path
+        method = request.method
 
+        if method == "OPTIONS":
+            response = Response(status_code=204)
+        else:
+            response = await call_next(request)
+
+        # Public/embed surfaces: votes, badges, health, and public GET endpoints
+        is_public_embed = (
+            "/votes" in path
+            or "/badges" in path
+            or "/health" in path
+            or (method == "GET" and "/polls" in path)
+            or (method == "GET" and "/leaderboard" in path)
+        )
+
+        if is_public_embed:
+            response.headers["Access-Control-Allow-Origin"] = "*"
+            response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
+            response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-Requested-With"
+        elif origin and origin in settings.BACKEND_CORS_ORIGINS:
+            response.headers["Access-Control-Allow-Origin"] = origin
+            response.headers["Access-Control-Allow-Credentials"] = "true"
+            response.headers["Access-Control-Allow-Methods"] = "GET, POST, PATCH, DELETE, OPTIONS"
+            response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-Requested-With"
+
+        return response
+
+app.add_middleware(ScopedCORSMiddleware)
 app.include_router(api_router, prefix=settings.API_V1_STR)
 
 @app.get("/")

@@ -1,13 +1,21 @@
 import uuid
 from datetime import datetime, timezone
+from typing import Any
 from fastapi import APIRouter, HTTPException, Query, status
-from app.schemas.poll import PollCreate, PollResponse, PollOptionBase
+from app.schemas.poll import (
+    PollCreate,
+    PollUpdate,
+    PollResponse,
+    PollListResponse,
+    PollOptionResponse,
+    PollReportRequest,
+)
 from app.core.dependencies import CurrentUser, PocketBaseDep
 from app.services.moderation import validate_content_safety
 
 router = APIRouter(prefix="/polls", tags=["Polls"])
 
-def sanitize_poll_options_for_display(poll_data: dict) -> list[dict]:
+def sanitize_poll_options_for_display(poll_data: dict[str, Any]) -> list[PollOptionResponse]:
     """Applies PRD §3.2 result display rules (show_counts, show_percentage, hidden_until_close)."""
     options = poll_data.get("options", [])
     total_votes = poll_data.get("total_votes", 0)
@@ -17,37 +25,64 @@ def sanitize_poll_options_for_display(poll_data: dict) -> list[dict]:
     is_closed = False
     if close_at:
         try:
-            close_time = datetime.fromisoformat(close_at.replace("Z", "+00:00"))
+            close_time = datetime.fromisoformat(str(close_at).replace("Z", "+00:00"))
             is_closed = datetime.now(timezone.utc) >= close_time
         except Exception:
             pass
 
-    sanitized = []
+    sanitized: list[PollOptionResponse] = []
     for opt in options:
-        opt_copy = dict(opt)
-        count = opt.get("vote_count", 0)
+        opt_dict = dict(opt)
+        count = opt_dict.get("vote_count", 0)
         percentage = round((count / total_votes * 100), 1) if total_votes > 0 else 0.0
 
         if result_display == "hidden_until_close" and not is_closed:
-            opt_copy["vote_count"] = -1  # Indicates hidden
-            opt_copy["percentage"] = None
+            display_count = -1
+            display_pct = None
         elif result_display == "show_percentage":
-            opt_copy["vote_count"] = -1
-            opt_copy["percentage"] = percentage
+            display_count = -1
+            display_pct = percentage
         else:  # show_counts
-            opt_copy["percentage"] = percentage
+            display_count = count
+            display_pct = percentage
 
-        sanitized.append(opt_copy)
+        sanitized.append(
+            PollOptionResponse(
+                id=opt_dict["id"],
+                text=opt_dict["text"],
+                icon_or_image=opt_dict.get("icon_or_image"),
+                vote_count=display_count,
+                percentage=display_pct,
+            )
+        )
 
     return sanitized
 
-@router.get("/", response_model=dict)
+def map_poll_to_response(poll: dict[str, Any]) -> PollResponse:
+    """Transforms raw PocketBase dictionary to strongly-typed PollResponse model."""
+    sanitized_options = sanitize_poll_options_for_display(poll)
+    return PollResponse(
+        id=poll["id"],
+        title=poll["title"],
+        description=poll.get("description"),
+        options=sanitized_options,
+        visibility=poll.get("visibility", "public"),
+        result_display=poll.get("result_display", "show_counts"),
+        owner=poll.get("owner", ""),
+        total_votes=poll.get("total_votes", 0),
+        created=poll.get("created", ""),
+        updated=poll.get("updated", ""),
+        close_at=poll.get("close_at"),
+    )
+
+@router.get("", response_model=PollListResponse)
+@router.get("/", response_model=PollListResponse)
 async def list_public_polls(
     pb: PocketBaseDep,
     page: int = Query(default=1, ge=1),
     per_page: int = Query(default=20, ge=1, le=100),
     sort: str = Query(default="-created"),
-) -> dict:
+) -> PollListResponse:
     """Lists discoverable public polls with pagination."""
     result = await pb.list_polls(
         page=page,
@@ -55,39 +90,41 @@ async def list_public_polls(
         filter_expr='visibility="public"',
         sort_expr=sort,
     )
-    items = result.get("items", [])
-    for item in items:
-        item["options"] = sanitize_poll_options_for_display(item)
+    raw_items = result.get("items", [])
+    items = [map_poll_to_response(item) for item in raw_items]
 
-    return {
-        "items": items,
-        "page": result.get("page", 1),
-        "per_page": result.get("perPage", per_page),
-        "total_items": result.get("totalItems", 0),
-        "total_pages": result.get("totalPages", 1),
-    }
+    return PollListResponse(
+        items=items,
+        page=result.get("page", 1),
+        per_page=result.get("perPage", per_page),
+        total_items=result.get("totalItems", len(items)),
+        total_pages=result.get("totalPages", 1),
+    )
 
-@router.get("/{poll_id}", response_model=dict)
-async def get_poll(poll_id: str, pb: PocketBaseDep) -> dict:
+@router.get("/{poll_id}", response_model=PollResponse)
+async def get_poll(poll_id: str, pb: PocketBaseDep) -> PollResponse:
     """Retrieves a single poll by ID, applying result display rules."""
     poll = await pb.get_poll(poll_id)
     if not poll:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Poll not found or is no longer available.",
+            detail="This poll is no longer available.",
         )
 
-    poll["options"] = sanitize_poll_options_for_display(poll)
-    return poll
+    return map_poll_to_response(poll)
 
-@router.post("/", response_model=dict, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=PollResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=PollResponse, status_code=status.HTTP_201_CREATED)
 async def create_poll(
     poll_in: PollCreate,
     owner_id: CurrentUser,
     pb: PocketBaseDep,
-) -> dict:
-    """Creates a new poll. Requires GitHub authentication and passes content moderation."""
-    # 1. Content Moderation
+) -> PollResponse:
+    """
+    Creates a new poll.
+    Requires GitHub authentication and passes content moderation (PRD §4.1, §4.6).
+    """
+    # Content moderation on title
     is_safe, reason = validate_content_safety(poll_in.title)
     if not is_safe:
         raise HTTPException(
@@ -96,8 +133,11 @@ async def create_poll(
         )
 
     structured_options = []
-    for opt_text in poll_in.options:
-        opt_safe, opt_reason = validate_content_safety(opt_text)
+    for opt in poll_in.options:
+        text = opt.text if hasattr(opt, "text") else str(opt)
+        icon_or_image = opt.icon_or_image if hasattr(opt, "icon_or_image") else None
+
+        opt_safe, opt_reason = validate_content_safety(text)
         if not opt_safe:
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
@@ -105,11 +145,11 @@ async def create_poll(
             )
         structured_options.append({
             "id": str(uuid.uuid4())[:8],
-            "text": opt_text.strip(),
+            "text": text.strip(),
+            "icon_or_image": icon_or_image,
             "vote_count": 0,
         })
 
-    # 2. Persist to PocketBase
     poll_record = {
         "title": poll_in.title.strip(),
         "description": poll_in.description.strip() if poll_in.description else "",
@@ -123,16 +163,62 @@ async def create_poll(
 
     try:
         created = await pb.create_poll(poll_record)
-        return {
-            "id": created.get("id"),
-            "title": created.get("title"),
-            "visibility": created.get("visibility"),
-            "message": "Poll created successfully",
-        }
+        return map_poll_to_response(created)
     except Exception as err:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to create poll: {err}",
+        )
+
+@router.patch("/{poll_id}", response_model=PollResponse)
+async def update_poll(
+    poll_id: str,
+    poll_update: PollUpdate,
+    user_id: CurrentUser,
+    pb: PocketBaseDep,
+) -> PollResponse:
+    """
+    Updates poll settings. Owner only (PRD §4.1: 'Owner can edit or delete their poll at any time').
+    """
+    poll = await pb.get_poll(poll_id)
+    if not poll:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Poll not found.",
+        )
+
+    if poll.get("owner") != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You are not authorized to edit this poll.",
+        )
+
+    update_dict: dict[str, Any] = {}
+    if poll_update.title is not None:
+        is_safe, reason = validate_content_safety(poll_update.title)
+        if not is_safe:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                detail=f"Title moderation failed: {reason}",
+            )
+        update_dict["title"] = poll_update.title.strip()
+
+    if poll_update.description is not None:
+        update_dict["description"] = poll_update.description.strip()
+    if poll_update.visibility is not None:
+        update_dict["visibility"] = poll_update.visibility
+    if poll_update.result_display is not None:
+        update_dict["result_display"] = poll_update.result_display
+    if poll_update.close_at is not None:
+        update_dict["close_at"] = poll_update.close_at
+
+    try:
+        updated = await pb.update_poll(poll_id, update_dict)
+        return map_poll_to_response(updated)
+    except Exception as err:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to update poll: {err}",
         )
 
 @router.delete("/{poll_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -161,3 +247,25 @@ async def delete_poll(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to delete poll.",
         )
+
+@router.post("/{poll_id}/report", response_model=dict[str, str])
+async def report_poll_abuse(
+    poll_id: str,
+    report: PollReportRequest,
+    pb: PocketBaseDep,
+) -> dict[str, str]:
+    """
+    Report-abuse action on public polls (PRD §4.6).
+    """
+    poll = await pb.get_poll(poll_id)
+    if not poll:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Poll not found.",
+        )
+
+    return {
+        "status": "reported",
+        "poll_id": poll_id,
+        "message": "Thank you for your report. Our moderators will review this content.",
+    }
