@@ -11,7 +11,7 @@ This document tracks all tasks, deliverables, and implementation phases accordin
 - **Phase 3: Backend API & Security (FastAPI)** — **100%** (Completed & Reviewed)
 - **Phase 4: Embeddable Widgets (Svelte & SVG)** — **100%** (Completed & Reviewed)
 - **Phase 5: Frontend Web & Dashboard (Astro + React)** — **100%** (Completed & Standards/Spec Hardened)
-- **Phase 6: Testing, Polish & Documentation** — **99%** (E2E integration pending live server)
+- **Phase 6: Testing, Polish & Documentation** — **100%** (Completed)
 - **Phase 7: Custom Poll Themes** — **100%** (Completed)
 
 ---
@@ -129,7 +129,7 @@ This document tracks all tasks, deliverables, and implementation phases accordin
 - [x] Embed widget bundle footprint verification: **4.2 KB gzipped** (well below the `< 15KB` threshold)
 - [x] Zero-tolerance secret hygiene verification: clean `git diff` with zero tracked secrets
 - [x] Agent memory file (`memory.md`) created for fast onboarding and context handoff
-- [ ] End-to-end integration with frontend & PocketBase running concurrently
+- [x] End-to-end integration with frontend & PocketBase running concurrently
 - [x] Verify SEO meta tags and social open-graph previews
 
 ---
