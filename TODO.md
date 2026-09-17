@@ -8,7 +8,7 @@ This document tracks all tasks, deliverables, and implementation phases accordin
 
 - **Phase 1: Setup & Scaffolding** — **100%** (Completed)
 - **Phase 2: Database Layer (PocketBase)** — **0%** (Up Next)
-- **Phase 3: Backend API & Security (FastAPI)** — **20%** (In Progress)
+- **Phase 3: Backend API & Security (FastAPI)** — **25%** (In Progress)
 - **Phase 4: Embeddable Widgets (Svelte & SVG)** — **25%** (In Progress)
 - **Phase 5: Frontend Web & Dashboard (Astro + React)** — **30%** (In Progress)
 - **Phase 6: Testing, Polish & Documentation** — **0%**
@@ -25,14 +25,17 @@ This document tracks all tasks, deliverables, and implementation phases accordin
 - [x] Set up folder-based routing structure in `frontend/src/pages/`
 - [x] Document strict security & secret hygiene rules in `AGENTS.md`
 - [x] Set up `.gitignore` to protect `.venv`, `node_modules`, `pb_data/`, and `.env`
+- [x] Integrate FastAPI & PocketBase best practice standards into rulebook (`AGENTS.md`)
 
 ---
 
 ## 🗄️ Phase 2: Database Schema & Collections (PocketBase)
 - [ ] Create `polls` collection:
   - Fields: `title`, `description`, `options` (json), `visibility` (`public`/`private`), `result_display` (`show_counts`/`show_percentage`/`hidden_until_close`), `close_at`, `owner` (relation to users)
+  - Indexes: `idx_polls_visibility` (`visibility, created`)
 - [ ] Create `votes` collection:
-  - Fields: `poll_id`, `option_id`, `device_token`, `ip_hash`, `embed_referrer`
+  - Fields: `poll_id` (relation to `polls` with `cascadeDelete: true`), `option_id`, `device_token`, `ip_hash`, `embed_referrer`
+  - Indexes: `idx_votes_poll_id`, `idx_votes_device_token`, `idx_votes_ip_hash`
 - [ ] Configure collection API Rules (public read for public polls, owner-only edit/delete, anonymous vote submission)
 - [ ] Export schema to `database/pb_schema.json`
 - [ ] Add PocketBase migration scripts in `database/pb_migrations/`
@@ -40,8 +43,9 @@ This document tracks all tasks, deliverables, and implementation phases accordin
 ---
 
 ## ⚡ Phase 3: Backend API & Abuse Mitigation (FastAPI)
-- [x] Setup FastAPI core with CORS and OpenAPI docs at `/docs`
+- [x] Setup FastAPI core with CORS, OpenAPI docs, and lifespan context manager
 - [x] Implement IP hashing and sliding-window rate limiter (`rate_limit.py`)
+- [x] Align schemas and endpoints with Pydantic v2 (no ellipsis, ConfigDict, return types, status constants)
 - [ ] GitHub OAuth authentication flow (sign-in required for poll creators)
 - [ ] Poll CRUD endpoints (`/api/v1/polls`):
   - [ ] `POST /` — Create poll (owner-authenticated, profanity filtered)
@@ -50,7 +54,7 @@ This document tracks all tasks, deliverables, and implementation phases accordin
   - [ ] `PATCH /{id}` — Edit poll (owner-only)
   - [ ] `DELETE /{id}` — Delete poll (owner-only)
 - [ ] Voting endpoint (`/api/v1/votes/{poll_id}`):
-  - [x] Rate limit check (IP hash)
+  - [x] Rate limit check (IP hash with `HTTP_429_TOO_MANY_REQUESTS`)
   - [ ] Device token validation (one vote per voter per poll)
   - [ ] Record vote in PocketBase
 - [ ] Public leaderboard endpoint (`/api/v1/leaderboard`):
