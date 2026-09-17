@@ -69,11 +69,17 @@ async def cancel_account_deletion(
         message="Account deletion request successfully cancelled. Your account remains active.",
     )
 
+from app.core.dependencies import AdminAuth, CurrentUser, PocketBaseDep
+
 @router.post("/purge-expired-accounts", response_model=PurgeResponse)
-async def purge_expired_accounts(pb: PocketBaseDep) -> PurgeResponse:
+async def purge_expired_accounts(
+    admin: AdminAuth,
+    pb: PocketBaseDep,
+) -> PurgeResponse:
     """
     Permanently deletes accounts whose 7-day grace period has elapsed,
     triggering cascade deletion of all owned polls and votes (PRD §7).
+    Requires administrative authorization header.
     """
     purged = await pb.purge_expired_accounts()
     return PurgeResponse(

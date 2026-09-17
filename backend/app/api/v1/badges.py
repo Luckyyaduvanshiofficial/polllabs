@@ -69,6 +69,43 @@ def render_png_badge(label: str, value: str, is_error: bool = False) -> bytes:
     img.save(buf, format="PNG")
     return buf.getvalue()
 
+from app.services.poll_utils import is_poll_closed
+
+def format_badge_data(poll: dict | None) -> tuple[str, str, bool, str]:
+    """
+    Extracts label, result value, error status, and target URL for badge rendering.
+    Respects hidden_until_close and displays leading option with percentage breakdown (PRD §4.4).
+    """
+    if not poll:
+        return "poll", "no longer available", True, ""
+
+    poll_id = poll.get("id", "")
+    target_url = f"{settings.FRONTEND_URL}/embed/{poll_id}"
+    title = poll.get("title", "poll")
+    label = title if len(title) <= 24 else f"{title[:22]}…"
+
+    result_display = poll.get("result_display", "show_counts")
+    closed = is_poll_closed(poll.get("close_at"))
+    total_votes = poll.get("total_votes", 0)
+
+    # PRD §3.2 & §4.4: Hidden until close check
+    if result_display == "hidden_until_close" and not closed:
+        return label, "results hidden until close", False, target_url
+
+    # Compute leading option breakdown
+    options = poll.get("options", [])
+    if options and total_votes > 0:
+        leading = max(options, key=lambda x: x.get("vote_count", 0))
+        pct = round((leading.get("vote_count", 0) / total_votes) * 100)
+        leading_text = leading.get("text", "leading")
+        if len(leading_text) > 16:
+            leading_text = f"{leading_text[:14]}…"
+        value = f"{leading_text} {pct}% ({total_votes})"
+    else:
+        value = f"{total_votes} votes"
+
+    return label, value, False, target_url
+
 @router.get("/{poll_id}.svg")
 async def get_poll_badge_svg(poll_id: str, pb: PocketBaseDep) -> Response:
     """
@@ -76,15 +113,8 @@ async def get_poll_badge_svg(poll_id: str, pb: PocketBaseDep) -> Response:
     Shows graceful 'no longer available' state when poll is missing.
     """
     poll = await pb.get_poll(poll_id)
-    target_url = f"{settings.FRONTEND_URL}/embed/{poll_id}"
-
-    if not poll:
-        svg_content = render_svg_badge("poll", "no longer available", target_url="", is_error=True)
-    else:
-        title = poll.get("title", "poll")
-        short_title = title if len(title) <= 24 else f"{title[:22]}…"
-        total_votes = poll.get("total_votes", 0)
-        svg_content = render_svg_badge(short_title, f"{total_votes} votes", target_url=target_url)
+    label, value, is_error, target_url = format_badge_data(poll)
+    svg_content = render_svg_badge(label, value, target_url=target_url, is_error=is_error)
 
     return Response(
         content=svg_content,
@@ -98,13 +128,8 @@ async def get_poll_badge_png(poll_id: str, pb: PocketBaseDep) -> Response:
     Renders a live raster PNG badge (PRD §4.4).
     """
     poll = await pb.get_poll(poll_id)
-    if not poll:
-        png_content = render_png_badge("poll", "no longer available", is_error=True)
-    else:
-        title = poll.get("title", "poll")
-        short_title = title if len(title) <= 24 else f"{title[:22]}…"
-        total_votes = poll.get("total_votes", 0)
-        png_content = render_png_badge(short_title, f"{total_votes} votes")
+    label, value, is_error, _ = format_badge_data(poll)
+    png_content = render_png_badge(label, value, is_error=is_error)
 
     return Response(
         content=png_content,

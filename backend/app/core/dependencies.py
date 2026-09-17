@@ -71,3 +71,17 @@ async def get_optional_user_id(
 
 CurrentUser = Annotated[str, Depends(get_current_user_id)]
 OptionalUser = Annotated[str | None, Depends(get_optional_user_id)]
+
+def verify_admin_key(
+    x_admin_key: str | None = Header(default=None),
+) -> str:
+    """Restricts administrative endpoints to internal maintenance runners or admin keys."""
+    expected_key = settings.POCKETBASE_ADMIN_PASSWORD or "polllabs-admin-secret"
+    if not x_admin_key or x_admin_key != expected_key:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Administrative authorization required.",
+        )
+    return x_admin_key
+
+AdminAuth = Annotated[str, Depends(verify_admin_key)]

@@ -84,14 +84,18 @@ This document tracks all tasks, deliverables, and implementation phases accordin
 
 ## 🧩 Phase 4: Embeddable Deliverables
 - [x] Prototype Svelte embed widget (`PollWidget.svelte`)
-- [x] Refactor Svelte 5 embed widget with modern Runes (`$props`, `$state`, `$derived`)
-- [x] Dynamic SVG & PNG badge generator (`/api/v1/badges/{poll_id}.svg`, `/{poll_id}.png`) with live clickable link & fallback
+- [x] Refactor Svelte 5 embed widget with modern Runes (`$props`, `$state.raw`, `$derived`, `{#snippet}`)
+- [x] Dynamic SVG & PNG badge generator (`/api/v1/badges/{poll_id}.svg`, `/{poll_id}.png`) with leading option breakdown, `hidden_until_close` masking, live clickable link & fallback
 - [x] Guarantee `< 15KB` gzipped bundle footprint (achieved **4.9KB** gzipped!)
-- [x] Support text, emoji, and image options in embed
+- [x] Support text, emoji, and image options in embed with snippet deduplication
 - [x] Result display modes (`show_counts`, `show_percentage`, `hidden_until_close`)
+- [x] Scoped CORS middleware reflecting `Origin` with `Access-Control-Allow-Credentials: true` and `X-Device-Token`
 - [x] One-vote-per-voter enforcement via cookie + `localStorage` fallback
 - [x] Inline abuse reporting trigger (`POST /api/v1/polls/{id}/report`)
 - [x] Dynamic iframe embed pages in Astro (`/embed/[id]` and `/embed/?id=<poll_id>`)
+- [x] Admin-protected expired account purge (`POST /api/v1/auth/purge-expired-accounts`)
+- [x] Trending polls query with 7-day velocity window
+- [x] Fly.io deployment guide with SQLite NVMe persistent volume setup (`docs/self-hosting.md`)
 - [x] Verify static SVG badge rendering for GitHub markdown / READMEs
 
 ---

@@ -33,7 +33,8 @@
 
   let apiBase = $derived(apiBaseUrl || 'http://localhost:8000');
 
-  let localPoll = $state<PollData | null>(null);
+  // Use $state.raw to eliminate deep proxy overhead for wholesale-reassigned API payloads (Svelte 5 best practices)
+  let localPoll = $state.raw<PollData | null>(null);
   let poll = $derived(localPoll ?? initialPoll);
 
   let loading = $state<boolean>(false);
@@ -192,7 +193,7 @@
 
   $effect(() => {
     let targetId = pollId;
-    if (!targetId && typeof window !== 'undefined') {
+    if (!targetId) {
       const urlParams = new URLSearchParams(window.location.search);
       targetId = urlParams.get('id') || '';
       if (!targetId) {
@@ -204,27 +205,28 @@
       }
     }
 
-    if (targetId && targetId !== 'demo') {
+    if (targetId) {
       loadPoll(targetId);
-    } else if (!localPoll && !initialPoll) {
-      // Demo poll fallback
-      localPoll = {
-        id: 'demo',
-        title: 'Which tool or framework do you prefer?',
-        description: 'Vote for your favorite technology stack for building modern APIs and embeds.',
-        visibility: 'public',
-        result_display: 'show_counts',
-        owner: 'demo-user',
-        total_votes: 89,
-        options: [
-          { id: '1', text: 'FastAPI (Python)', icon_or_image: '⚡', vote_count: 42, percentage: 47.2 },
-          { id: '2', text: 'Svelte 5 (Frontend)', icon_or_image: '🔥', vote_count: 28, percentage: 31.5 },
-          { id: '3', text: 'PocketBase (Database)', icon_or_image: '📦', vote_count: 19, percentage: 21.3 },
-        ],
-      };
+    } else if (!initialPoll) {
+      isUnavailable = true;
     }
   });
 </script>
+
+{#snippet optionMedia(opt: PollOption, sizeClass: string)}
+  {#if opt.icon_or_image}
+    {#if opt.icon_or_image.startsWith('http') || opt.icon_or_image.startsWith('data:')}
+      <img
+        src={opt.icon_or_image}
+        alt={opt.text}
+        class="{sizeClass} rounded object-cover flex-shrink-0"
+        loading="lazy"
+      />
+    {:else}
+      <span class="text-base leading-none flex-shrink-0" aria-hidden="true">{opt.icon_or_image}</span>
+    {/if}
+  {/if}
+{/snippet}
 
 <div class="poll-widget-container font-sans text-gray-900 dark:text-gray-100 max-w-md w-full mx-auto p-4 rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xs shadow-xs transition">
   {#if loading}
@@ -290,18 +292,7 @@
             onclick={() => submitVote(opt.id)}
             class="w-full group text-left px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-blue-500/80 dark:hover:border-blue-400 hover:bg-blue-50/40 dark:hover:bg-blue-950/30 text-sm font-medium transition duration-150 flex items-center gap-3 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {#if opt.icon_or_image}
-              {#if opt.icon_or_image.startsWith('http') || opt.icon_or_image.startsWith('data:')}
-                <img
-                  src={opt.icon_or_image}
-                  alt={opt.text}
-                  class="w-6 h-6 rounded object-cover flex-shrink-0"
-                  loading="lazy"
-                />
-              {:else}
-                <span class="text-base leading-none flex-shrink-0" aria-hidden="true">{opt.icon_or_image}</span>
-              {/if}
-            {/if}
+            {@render optionMedia(opt, "w-6 h-6")}
             <span class="flex-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
               {opt.text}
             </span>
@@ -323,18 +314,7 @@
 
             <div class="relative z-10 flex justify-between items-center gap-3">
               <div class="flex items-center gap-2.5 min-w-0">
-                {#if opt.icon_or_image}
-                  {#if opt.icon_or_image.startsWith('http') || opt.icon_or_image.startsWith('data:')}
-                    <img
-                      src={opt.icon_or_image}
-                      alt={opt.text}
-                      class="w-5 h-5 rounded object-cover flex-shrink-0"
-                      loading="lazy"
-                    />
-                  {:else}
-                    <span class="text-sm leading-none flex-shrink-0" aria-hidden="true">{opt.icon_or_image}</span>
-                  {/if}
-                {/if}
+                {@render optionMedia(opt, "w-5 h-5")}
                 <span class="truncate font-medium text-gray-900 dark:text-gray-100">
                   {opt.text}
                 </span>

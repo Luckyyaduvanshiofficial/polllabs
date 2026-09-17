@@ -53,14 +53,20 @@ class ScopedCORSMiddleware(BaseHTTPMiddleware):
         )
 
         if is_public_embed:
-            response.headers["Access-Control-Allow-Origin"] = "*"
+            # Under W3C Fetch standard, credentials: 'include' requires reflecting the request origin;
+            # wildcard '*' with credentials is blocked by browsers.
+            if origin:
+                response.headers["Access-Control-Allow-Origin"] = origin
+                response.headers["Access-Control-Allow-Credentials"] = "true"
+            else:
+                response.headers["Access-Control-Allow-Origin"] = "*"
             response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
-            response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-Requested-With"
+            response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-Requested-With, X-Device-Token"
         elif origin and origin in settings.BACKEND_CORS_ORIGINS:
             response.headers["Access-Control-Allow-Origin"] = origin
             response.headers["Access-Control-Allow-Credentials"] = "true"
             response.headers["Access-Control-Allow-Methods"] = "GET, POST, PATCH, DELETE, OPTIONS"
-            response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-Requested-With"
+            response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-Requested-With, X-Device-Token"
 
         return response
 

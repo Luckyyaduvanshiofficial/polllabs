@@ -146,3 +146,95 @@ def test_result_display_masking_hidden_until_close():
     assert owner_total == 50
     assert owner_options[0].vote_count == 25
     assert owner_options[0].percentage == 50.0
+
+def test_cors_origin_reflection_and_credentials():
+    # Public health check with Origin
+    res = client.get("/api/v1/health", headers={"Origin": "https://external-blog.org"})
+    assert res.status_code == 200
+    assert res.headers.get("access-control-allow-origin") == "https://external-blog.org"
+    assert res.headers.get("access-control-allow-credentials") == "true"
+
+    # Preflight OPTIONS on embed vote endpoint
+    preflight = client.options(
+        "/api/v1/votes/test-poll",
+        headers={
+            "Origin": "https://client-site.com",
+            "Access-Control-Request-Method": "POST",
+            "Access-Control-Request-Headers": "Content-Type, X-Device-Token",
+        },
+    )
+    assert preflight.status_code == 204
+    assert preflight.headers.get("access-control-allow-origin") == "https://client-site.com"
+    assert "X-Device-Token" in preflight.headers.get("access-control-allow-headers", "")
+
+def test_format_badge_data_formatting():
+    from app.api.v1.badges import format_badge_data
+
+    # Missing poll fallback
+    label, val, err, url = format_badge_data(None)
+    assert label == "poll"
+    assert val == "no longer available"
+    assert err is True
+
+    # Open poll with breakdown
+    sample_poll = {
+        "id": "poll123",
+        "title": "Favorite Framework?",
+        "total_votes": 200,
+        "result_display": "show_counts",
+        "options": [
+            {"id": "o1", "text": "Svelte", "vote_count": 140},
+            {"id": "o2", "text": "React", "vote_count": 60},
+        ],
+    }
+    label, val, err, url = format_badge_data(sample_poll)
+    assert label == "Favorite Framework?"
+    assert "Svelte 70% (200)" in val
+    assert err is False
+    assert "/embed/poll123" in url
+
+    # Hidden until close poll
+    hidden_poll = {
+        "id": "poll456",
+        "title": "Election 2026",
+        "total_votes": 500,
+        "result_display": "hidden_until_close",
+        "close_at": "2099-01-01T00:00:00Z",
+        "options": [
+            {"id": "o1", "text": "Candidate A", "vote_count": 300},
+        ],
+    }
+    label, val, err, url = format_badge_data(hidden_poll)
+    assert "results hidden until close" in val
+    assert err is False
+
+def test_purge_expired_accounts_admin_protection():
+    from app.core.config import settings
+
+    # Without admin key -> 403
+    resp = client.post("/api/v1/auth/purge-expired-accounts")
+    assert resp.status_code == 403
+
+    # With invalid admin key -> 403
+    resp_invalid = client.post(
+        "/api/v1/auth/purge-expired-accounts",
+        headers={"X-Admin-Key": "wrong-secret"},
+    )
+    assert resp_invalid.status_code == 403
+
+    # With valid admin key -> 200
+    valid_key = settings.POCKETBASE_ADMIN_PASSWORD or "polllabs-admin-secret"
+    resp_valid = client.post(
+        "/api/v1/auth/purge-expired-accounts",
+        headers={"X-Admin-Key": valid_key},
+    )
+    assert resp_valid.status_code == 200
+    assert "purged_count" in resp_valid.json()
+
+def test_trending_leaderboard_endpoint():
+    resp = client.get("/api/v1/leaderboard/trending?limit=5")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert "leaderboard" in data
+    assert "total" in data
+

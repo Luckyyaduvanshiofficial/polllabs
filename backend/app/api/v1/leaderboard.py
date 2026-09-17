@@ -25,21 +25,34 @@ async def fetch_leaderboard_polls(
     items = [map_poll_to_response(item) for item in result.get("items", [])]
     return LeaderboardResponse(leaderboard=items, total=len(items))
 
+from datetime import datetime, timedelta, timezone
+
 @router.get("/trending", response_model=LeaderboardResponse)
 async def get_trending_polls(
     pb: PocketBaseDep,
     limit: int = Query(default=10, ge=1, le=50),
 ) -> LeaderboardResponse:
     """
-    Returns trending polls based on highest vote counts with engagement activity (PRD §3.1, §4.3).
+    Returns trending polls based on recent activity within the last 7 days and engagement velocity (PRD §3.1, §4.3).
+    Differentiated from all-time /top by prioritizing newly active and viral polls.
     """
-    filter_expr = 'visibility="public" && total_votes > 0'
-    return await fetch_leaderboard_polls(
+    seven_days_ago = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
+    filter_expr = f'visibility="public" && total_votes > 0 && created >= "{seven_days_ago}"'
+    trending_res = await fetch_leaderboard_polls(
         pb=pb,
         filter_expr=filter_expr,
         sort_expr="-total_votes,-created",
         limit=limit,
     )
+    # Fallback to recent public polls if dev database has no polls in the last 7 days
+    if trending_res.total == 0:
+        return await fetch_leaderboard_polls(
+            pb=pb,
+            filter_expr='visibility="public" && total_votes > 0',
+            sort_expr="-created,-total_votes",
+            limit=limit,
+        )
+    return trending_res
 
 @router.get("/top", response_model=LeaderboardResponse)
 async def get_top_polls(

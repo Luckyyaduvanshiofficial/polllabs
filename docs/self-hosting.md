@@ -96,3 +96,50 @@ server {
     }
 }
 ```
+
+---
+
+## 🪂 Fly.io Deployment (Alternative Deployment Path)
+
+Fly.io provides an alternative single-app deployment with persistent NVMe volumes for PocketBase SQLite (PRD §6):
+
+### 1. Create Persistent Volume for PocketBase
+```bash
+fly volumes create pb_data --region iad --size 1
+```
+
+### 2. Configure `fly.toml`
+```toml
+app = "polllabs"
+primary_region = "iad"
+
+[mounts]
+  source = "pb_data"
+  destination = "/pb_data"
+
+[env]
+  POCKETBASE_URL = "http://127.0.0.1:8090"
+  API_V1_STR = "/api/v1"
+  ENVIRONMENT = "production"
+
+[http_service]
+  internal_port = 8000
+  force_https = true
+  auto_stop_machines = false
+  auto_start_machines = true
+  min_machines_running = 1
+
+[[services.ports]]
+  handlers = ["http"]
+  port = 80
+
+[[services.ports]]
+  handlers = ["tls", "http"]
+  port = 443
+```
+
+### 3. Deploy
+```bash
+fly secrets set POCKETBASE_ADMIN_PASSWORD="your-strong-password" IP_HASH_SALT="your-random-salt"
+fly deploy
+```
