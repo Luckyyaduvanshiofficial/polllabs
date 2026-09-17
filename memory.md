@@ -216,8 +216,9 @@ corepack pnpm --dir frontend run build
 | Phase 5: Astro Frontend | ✅ 100% |
 | Phase 6: Testing, Polish & SEO | ✅ 100% |
 | Phase 7: Custom Poll Themes + Behaviors | ✅ 100% |
+| Phase 8: Production Deployment (Dokploy & Docker) | ✅ 100% (Live) |
 
-**No remaining TODO items. Project is feature-complete as of HEAD `113be2f`.**
+**All phases and deployment milestones completed.**
 
 ---
 

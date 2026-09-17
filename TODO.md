@@ -13,6 +13,7 @@ This document tracks all tasks, deliverables, and implementation phases accordin
 - **Phase 5: Frontend Web & Dashboard (Astro + React)** — **100%** (Completed & Standards/Spec Hardened)
 - **Phase 6: Testing, Polish & Documentation** — **100%** (Completed)
 - **Phase 7: Custom Poll Themes** — **100%** (Completed)
+- **Phase 8: Production Deployment (Dokploy & Docker)** — **100%** (Live in Production)
 
 ---
 
@@ -141,3 +142,14 @@ This document tracks all tasks, deliverables, and implementation phases accordin
 - [x] Phase 4 — Image uploads (`POST /polls/{id}/images` + PB file storage) + YouTube-style grid layout
 - [x] Phase 5 — Behaviors: multiple answers, quiz mode, visible voters (60 tests pass, 915-line widget, PollCreator toggles, PB migration `1789641000_behaviors.js`, pb_schema.json synced)
 - [x] Phase 6 — Hand-rolled confetti celebration + docs + bundle verification
+
+---
+
+## 🚢 Phase 8: Production Deployment (Dokploy & Docker)
+- [x] Multi-stage Dockerfile for Astro frontend with `node:22-alpine` and static Nginx serving
+- [x] Lightweight Python 3.12 slim Dockerfile for FastAPI backend with unprivileged user & healthchecks
+- [x] Alpine-based PocketBase Dockerfile with auto-applied migrations and persistent volume mount
+- [x] Production Docker Compose orchestration for local & VPS setups
+- [x] Template `.env.production.example` for secure secret management
+- [x] Frontend, Backend, and Database live deployment verified on Dokploy
+
