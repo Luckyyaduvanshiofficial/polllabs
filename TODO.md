@@ -9,9 +9,9 @@ This document tracks all tasks, deliverables, and implementation phases accordin
 - **Phase 1: Setup & Scaffolding** — **100%** (Completed)
 - **Phase 2: Database Layer (PocketBase)** — **100%** (Completed)
 - **Phase 3: Backend API & Security (FastAPI)** — **100%** (Completed & Reviewed)
-- **Phase 4: Embeddable Widgets (Svelte & SVG)** — **60%** (Up Next)
-- **Phase 5: Frontend Web & Dashboard (Astro + React)** — **40%** (In Progress)
-- **Phase 6: Testing, Polish & Documentation** — **60%** (In Progress)
+- **Phase 4: Embeddable Widgets (Svelte & SVG)** — **100%** (Completed)
+- **Phase 5: Frontend Web & Dashboard (Astro + React)** — **50%** (In Progress)
+- **Phase 6: Testing, Polish & Documentation** — **75%** (In Progress)
 
 ---
 
@@ -84,11 +84,15 @@ This document tracks all tasks, deliverables, and implementation phases accordin
 
 ## 🧩 Phase 4: Embeddable Deliverables
 - [x] Prototype Svelte embed widget (`PollWidget.svelte`)
-- [x] Dynamic SVG badge generator (`/api/v1/badges/{poll_id}.svg`) with graceful "no longer available" fallback
-- [ ] Refine embed widget to guarantee `< 15KB` gzipped bundle footprint
-- [ ] Support text, emoji, and image options in embed
-- [ ] Result display modes (`show_counts`, `show_percentage`, `hidden_until_close`)
-- [ ] Verify static SVG badge rendering on GitHub markdown / READMEs
+- [x] Refactor Svelte 5 embed widget with modern Runes (`$props`, `$state`, `$derived`)
+- [x] Dynamic SVG & PNG badge generator (`/api/v1/badges/{poll_id}.svg`, `/{poll_id}.png`) with live clickable link & fallback
+- [x] Guarantee `< 15KB` gzipped bundle footprint (achieved **4.9KB** gzipped!)
+- [x] Support text, emoji, and image options in embed
+- [x] Result display modes (`show_counts`, `show_percentage`, `hidden_until_close`)
+- [x] One-vote-per-voter enforcement via cookie + `localStorage` fallback
+- [x] Inline abuse reporting trigger (`POST /api/v1/polls/{id}/report`)
+- [x] Dynamic iframe embed pages in Astro (`/embed/[id]` and `/embed/?id=<poll_id>`)
+- [x] Verify static SVG badge rendering for GitHub markdown / READMEs
 
 ---
 
@@ -97,10 +101,11 @@ This document tracks all tasks, deliverables, and implementation phases accordin
 - [x] Leaderboard page route (`/leaderboard`)
 - [x] Standalone poll page (`/polls/[id]`)
 - [x] Isolated iframe embed route (`/embed/[id]`)
+- [x] Standalone iframe embed route (`/embed`)
 - [x] Dashboard page (`/dashboard`)
 - [x] Poll creator page (`/dashboard/create`) with React component
+- [x] Connect Svelte `PollWidget` to `/api/v1/votes/{poll_id}`
 - [ ] Connect React `PollCreator` to FastAPI `/api/v1/polls`
-- [ ] Connect Svelte `PollWidget` to `/api/v1/votes/{poll_id}`
 - [ ] Add Owner Analytics page (`/dashboard/[id]/analytics`) with charts & export buttons
 - [ ] Build documentation pages (`/docs`) with copyable embed snippets & API reference
 - [ ] GitHub login integration button in navbar & auth guard for dashboard
