@@ -1,10 +1,22 @@
 import io
+from dataclasses import dataclass
 from fastapi import APIRouter, Response
 from PIL import Image, ImageDraw
 from app.core.config import settings
 from app.core.dependencies import PocketBaseDep
+from app.services.poll_utils import is_poll_closed
 
 router = APIRouter(prefix="/badges", tags=["Badges"])
+
+@dataclass(frozen=True)
+class BadgeData:
+    label: str
+    value: str
+    is_error: bool
+    target_url: str
+
+    def __iter__(self):
+        return iter((self.label, self.value, self.is_error, self.target_url))
 
 def render_svg_badge(label: str, value: str, target_url: str = "", is_error: bool = False) -> str:
     """
@@ -69,18 +81,17 @@ def render_png_badge(label: str, value: str, is_error: bool = False) -> bytes:
     img.save(buf, format="PNG")
     return buf.getvalue()
 
-from app.services.poll_utils import is_poll_closed
-
-def format_badge_data(poll: dict | None) -> tuple[str, str, bool, str]:
+def format_badge_data(poll: dict | None) -> BadgeData:
     """
     Extracts label, result value, error status, and target URL for badge rendering.
     Respects hidden_until_close and displays leading option with percentage breakdown (PRD §4.4).
+    Target URL points to the live poll on the platform (/polls/{id}).
     """
     if not poll:
-        return "poll", "no longer available", True, ""
+        return BadgeData(label="poll", value="no longer available", is_error=True, target_url="")
 
     poll_id = poll.get("id", "")
-    target_url = f"{settings.FRONTEND_URL}/embed/{poll_id}"
+    target_url = f"{settings.FRONTEND_URL}/polls/{poll_id}"
     title = poll.get("title", "poll")
     label = title if len(title) <= 24 else f"{title[:22]}…"
 
@@ -90,7 +101,7 @@ def format_badge_data(poll: dict | None) -> tuple[str, str, bool, str]:
 
     # PRD §3.2 & §4.4: Hidden until close check
     if result_display == "hidden_until_close" and not closed:
-        return label, "results hidden until close", False, target_url
+        return BadgeData(label=label, value="results hidden until close", is_error=False, target_url=target_url)
 
     # Compute leading option breakdown
     options = poll.get("options", [])
@@ -104,7 +115,7 @@ def format_badge_data(poll: dict | None) -> tuple[str, str, bool, str]:
     else:
         value = f"{total_votes} votes"
 
-    return label, value, False, target_url
+    return BadgeData(label=label, value=value, is_error=False, target_url=target_url)
 
 @router.get("/{poll_id}.svg")
 async def get_poll_badge_svg(poll_id: str, pb: PocketBaseDep) -> Response:

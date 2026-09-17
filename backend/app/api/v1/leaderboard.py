@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Query
 from app.core.dependencies import PocketBaseDep
 from app.schemas.leaderboard import (
@@ -24,8 +25,6 @@ async def fetch_leaderboard_polls(
     )
     items = [map_poll_to_response(item) for item in result.get("items", [])]
     return LeaderboardResponse(leaderboard=items, total=len(items))
-
-from datetime import datetime, timedelta, timezone
 
 @router.get("/trending", response_model=LeaderboardResponse)
 async def get_trending_polls(

@@ -132,6 +132,18 @@ const userPolls = [
                 <span>Embed</span>
               </button>
 
+              <button
+                type="button"
+                data-id={poll.id}
+                data-title={poll.title}
+                class="edit-poll-btn px-3 py-1.5 rounded-lg bg-[#1e293b] hover:bg-[#334155] text-white text-xs font-medium border border-[#334155] transition flex items-center gap-1.5"
+              >
+                <svg class="w-3.5 h-3.5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+                <span>Edit</span>
+              </button>
+
               <a
                 href={`/dashboard/${poll.id}/analytics`}
                 class="px-3 py-1.5 rounded-lg bg-[#1e293b] hover:bg-[#334155] text-white text-xs font-medium border border-[#334155] transition flex items-center gap-1.5"
@@ -203,61 +215,224 @@ const userPolls = [
       </button>
     </div>
   </dialog>
+
+  <!-- Edit Poll Modal (PRD §4.1) -->
+  <dialog id="dash-edit-dialog" class="bg-[#0b0f19] text-[#f8fafc] p-6 rounded-2xl border border-[#1e293b] max-w-md w-full shadow-2xl backdrop:bg-black/75">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-base font-bold text-white">Edit Poll Details</h3>
+      <button id="close-edit-dialog" type="button" class="text-[#94a3b8] hover:text-white text-sm">✕</button>
+    </div>
+    <form id="edit-poll-form" class="space-y-4 text-xs">
+      <input type="hidden" id="edit-poll-id" />
+      <div>
+        <label for="edit-poll-title" class="block font-medium text-[#94a3b8] mb-1">Poll Title</label>
+        <input
+          id="edit-poll-title"
+          required
+          class="w-full px-3 py-2 bg-[#111827] border border-[#1e293b] rounded-lg text-white font-sans text-xs focus:border-blue-500 focus:outline-hidden"
+        />
+      </div>
+      <div>
+        <label for="edit-poll-desc" class="block font-medium text-[#94a3b8] mb-1">Description (optional)</label>
+        <textarea
+          id="edit-poll-desc"
+          rows="3"
+          class="w-full px-3 py-2 bg-[#111827] border border-[#1e293b] rounded-lg text-white font-sans text-xs focus:border-blue-500 focus:outline-hidden"
+        ></textarea>
+      </div>
+      <div class="flex justify-end gap-2 pt-2">
+        <button
+          id="cancel-edit-btn"
+          type="button"
+          class="px-3 py-1.5 rounded-lg bg-[#1e293b] hover:bg-[#334155] text-white text-xs font-medium"
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          class="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium"
+        >
+          Save Changes
+        </button>
+      </div>
+    </form>
+  </dialog>
 </RootLayout>
 
 <script>
+  import { getApiUrl } from '../../lib/config';
+  import { getMarkdownBadgeSnippet, getIframeSnippet } from '../../lib/embed';
+
   function setupDashboard() {
-    const dialog = document.getElementById('dash-embed-dialog') as HTMLDialogElement | null;
-    const closeDialog = document.getElementById('close-dash-dialog');
+    const embedDialog = document.getElementById('dash-embed-dialog') as HTMLDialogElement | null;
+    const closeEmbedDialog = document.getElementById('close-dash-dialog');
     const badgeCode = document.getElementById('dash-badge-code');
     const iframeCode = document.getElementById('dash-iframe-code');
     const copyBtn = document.getElementById('dash-copy-btn');
+
+    const editDialog = document.getElementById('dash-edit-dialog') as HTMLDialogElement | null;
+    const closeEditDialog = document.getElementById('close-edit-dialog');
+    const cancelEditBtn = document.getElementById('cancel-edit-btn');
+    const editForm = document.getElementById('edit-poll-form') as HTMLFormElement | null;
+    const editPollId = document.getElementById('edit-poll-id') as HTMLInputElement | null;
+    const editPollTitle = document.getElementById('edit-poll-title') as HTMLInputElement | null;
+    const editPollDesc = document.getElementById('edit-poll-desc') as HTMLTextAreaElement | null;
+
     const deleteAccountBtn = document.getElementById('delete-account-btn');
+    const apiBase = getApiUrl();
+    const token = typeof window !== 'undefined' ? localStorage.getItem('polllabs_auth_token') || 'dev-user-local' : 'dev-user-local';
 
-    document.querySelectorAll('.embed-btn').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const id = btn.getAttribute('data-id') || 'demo';
-        const title = btn.getAttribute('data-title') || 'Poll';
-        if (badgeCode) badgeCode.textContent = `[![${title}](http://localhost:8000/api/v1/badges/${id}.svg)](http://localhost:4321/embed/${id})`;
-        if (iframeCode) iframeCode.textContent = `<iframe src="http://localhost:4321/embed/${id}" width="100%" height="340" style="border:none;border-radius:16px;max-width:440px;" title="${title}"></iframe>`;
-        dialog?.showModal();
+    function attachActionListeners() {
+      // Embed triggers
+      document.querySelectorAll('.embed-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const id = btn.getAttribute('data-id') || 'demo';
+          const title = btn.getAttribute('data-title') || 'Poll';
+          if (badgeCode) badgeCode.textContent = getMarkdownBadgeSnippet(title, id);
+          if (iframeCode) iframeCode.textContent = getIframeSnippet(id, 340);
+          embedDialog?.showModal();
+        });
       });
-    });
 
-    closeDialog?.addEventListener('click', () => dialog?.close());
-    dialog?.addEventListener('click', (e) => {
-      if (e.target === dialog) dialog.close();
-    });
+      // Edit triggers
+      document.querySelectorAll('.edit-poll-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const id = btn.getAttribute('data-id') || '';
+          const title = btn.getAttribute('data-title') || '';
+          if (editPollId) editPollId.value = id;
+          if (editPollTitle) editPollTitle.value = title;
+          if (editPollDesc) editPollDesc.value = '';
+          editDialog?.showModal();
+        });
+      });
+
+      // Delete poll triggers (PRD §8)
+      document.querySelectorAll('.delete-poll-btn').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const id = btn.getAttribute('data-id') || '';
+          const title = btn.getAttribute('data-title') || 'this poll';
+          const confirmed = confirm(`Are you sure you want to delete "${title}"? This will permanently remove the poll and all associated votes.`);
+          if (!confirmed || !id) return;
+
+          try {
+            const res = await fetch(`${apiBase}/api/v1/polls/${id}`, {
+              method: 'DELETE',
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'x-dev-user-id': token,
+              },
+            });
+            if (res.ok || res.status === 204) {
+              alert('Poll deleted successfully.');
+              window.location.reload();
+            } else {
+              const err = await res.json().catch(() => ({}));
+              alert(err.detail || 'Failed to delete poll.');
+            }
+          } catch (err: any) {
+            alert(err.message || 'Network error deleting poll.');
+          }
+        });
+      });
+    }
+
+    attachActionListeners();
+
+    // Dialog close listeners
+    closeEmbedDialog?.addEventListener('click', () => embedDialog?.close());
+    closeEditDialog?.addEventListener('click', () => editDialog?.close());
+    cancelEditBtn?.addEventListener('click', () => editDialog?.close());
 
     copyBtn?.addEventListener('click', () => {
       if (iframeCode?.textContent) {
         navigator.clipboard.writeText(iframeCode.textContent).then(() => {
           copyBtn.textContent = '✓ Copied Iframe Code!';
-          setTimeout(() => {
-            copyBtn.textContent = 'Copy Iframe Code';
-          }, 2000);
+          setTimeout(() => { copyBtn.textContent = 'Copy Iframe Code'; }, 2000);
         });
       }
     });
 
-    // Delete poll confirmation
-    document.querySelectorAll('.delete-poll-btn').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const title = btn.getAttribute('data-title') || 'this poll';
-        const confirmed = confirm(`Are you sure you want to delete "${title}"? This will permanently remove the poll and all of its recorded votes per PRD §8.`);
-        if (confirmed) {
-          alert('Poll deletion initiated. The poll will now show as "no longer available" on active embeds.');
-        }
-      });
-    });
+    // Handle Poll Edit Submit (PATCH /api/v1/polls/{id})
+    editForm?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = editPollId?.value;
+      const newTitle = editPollTitle?.value.trim();
+      const newDesc = editPollDesc?.value.trim();
+      if (!id || !newTitle) return;
 
-    // Account deletion request
-    deleteAccountBtn?.addEventListener('click', () => {
-      const confirmed = confirm('Request 7-day account deletion grace period? You can cancel this anytime within 7 days from this dashboard.');
-      if (confirmed) {
-        alert('Account deletion requested. Your 7-day grace period has begun.');
+      try {
+        const res = await fetch(`${apiBase}/api/v1/polls/${id}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+            'x-dev-user-id': token,
+          },
+          body: JSON.stringify({
+            title: newTitle,
+            description: newDesc || undefined,
+          }),
+        });
+
+        if (res.ok) {
+          editDialog?.close();
+          alert('Poll updated successfully.');
+          window.location.reload();
+        } else {
+          const err = await res.json().catch(() => ({}));
+          alert(err.detail || 'Failed to update poll.');
+        }
+      } catch (err: any) {
+        alert(err.message || 'Network error updating poll.');
       }
     });
+
+    // Handle Account Deletion (PRD §7: POST /api/v1/auth/delete-account)
+    deleteAccountBtn?.addEventListener('click', async () => {
+      const confirmed = confirm('Request 7-day account deletion grace period? All your polls and records will be scheduled for permanent purge.');
+      if (!confirmed) return;
+
+      try {
+        const res = await fetch(`${apiBase}/api/v1/auth/delete-account`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'x-dev-user-id': token,
+          },
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          alert(data.message || 'Account deletion initiated. 7-day grace period active.');
+        } else {
+          const err = await res.json().catch(() => ({}));
+          alert(err.detail || 'Failed to schedule account deletion.');
+        }
+      } catch (err: any) {
+        alert(err.message || 'Network error requesting account deletion.');
+      }
+    });
+
+    // Load Live Polls from backend
+    async function loadLivePolls() {
+      try {
+        const res = await fetch(`${apiBase}/api/v1/polls`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'x-dev-user-id': token,
+          },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          // If the user has live polls, we can refresh the list
+          if (data.items && data.items.length > 0) {
+            // Update counts if present
+          }
+        }
+      } catch {}
+    }
+
+    loadLivePolls();
   }
 
   setupDashboard();

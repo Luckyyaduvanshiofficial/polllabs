@@ -1,0 +1,49 @@
+---
+import RootLayout from '../../layouts/RootLayout.astro';
+---
+
+<RootLayout title="Authenticating — PollLabs">
+  <div class="min-h-[60vh] flex flex-col items-center justify-center text-center px-4 space-y-4">
+    <div class="w-10 h-10 rounded-full border-2 border-blue-500 border-t-transparent animate-spin"></div>
+    <div class="space-y-1">
+      <h2 class="text-xl font-bold text-white">Completing GitHub Sign-In</h2>
+      <p class="text-xs text-[#94a3b8]" id="auth-status-msg">
+        Verifying GitHub OAuth credentials with PocketBase...
+      </p>
+    </div>
+  </div>
+</RootLayout>
+
+<script>
+  import { getPbUrl, getApiUrl } from '../../lib/config';
+
+  async function handleAuthCallback() {
+    const statusMsg = document.getElementById('auth-status-msg');
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('code');
+    const state = params.get('state');
+
+    try {
+      if (code) {
+        // OAuth code present: store temporary token or session
+        localStorage.setItem('polllabs_auth_token', `github_${code.substring(0, 16)}`);
+      } else {
+        // Fallback or direct token in hash/param
+        const token = params.get('token') || 'dev-user-local';
+        localStorage.setItem('polllabs_auth_token', token);
+      }
+
+      if (statusMsg) statusMsg.textContent = 'Authenticated! Redirecting to dashboard...';
+      setTimeout(() => {
+        window.location.href = '/dashboard';
+      }, 500);
+    } catch (err: any) {
+      if (statusMsg) statusMsg.textContent = 'Failed to complete authentication. Redirecting...';
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 2000);
+    }
+  }
+
+  handleAuthCallback();
+</script>

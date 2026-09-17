@@ -187,11 +187,16 @@ def test_format_badge_data_formatting():
             {"id": "o2", "text": "React", "vote_count": 60},
         ],
     }
-    label, val, err, url = format_badge_data(sample_poll)
-    assert label == "Favorite Framework?"
-    assert "Svelte 70% (200)" in val
-    assert err is False
-    assert "/embed/poll123" in url
+    badge_data = format_badge_data(sample_poll)
+    assert badge_data.label == "Favorite Framework?"
+    assert "Svelte 70% (200)" in badge_data.value
+    assert badge_data.is_error is False
+    assert "/polls/poll123" in badge_data.target_url
+
+    # Tuple unpackability compatibility check
+    label, val, err, url = badge_data
+    assert label == badge_data.label
+    assert url == badge_data.target_url
 
     # Hidden until close poll
     hidden_poll = {

@@ -275,6 +275,9 @@ const defaultOptions = [
 </RootLayout>
 
 <script>
+  import { getApiUrl } from '../../lib/config';
+  import { getMarkdownBadgeSnippet, getIframeSnippet } from '../../lib/embed';
+
   function setupLeaderboard() {
     const tabs = document.querySelectorAll('#leaderboard-tabs .tab-btn');
     const search = document.getElementById('poll-search-input') as HTMLInputElement | null;
@@ -316,15 +319,19 @@ const defaultOptions = [
     });
 
     // Embed dialog trigger
-    document.querySelectorAll('.embed-btn').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const id = btn.getAttribute('data-id') || 'demo';
-        const title = btn.getAttribute('data-title') || 'Poll';
-        if (badgeCode) badgeCode.textContent = `[![${title}](http://localhost:8000/api/v1/badges/${id}.svg)](http://localhost:4321/embed/${id})`;
-        if (iframeCode) iframeCode.textContent = `<iframe src="http://localhost:4321/embed/${id}" width="100%" height="340" style="border:none;border-radius:16px;max-width:440px;" title="${title}"></iframe>`;
-        dialog?.showModal();
+    function attachEmbedListeners() {
+      document.querySelectorAll('.embed-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const id = btn.getAttribute('data-id') || 'demo';
+          const title = btn.getAttribute('data-title') || 'Poll';
+          if (badgeCode) badgeCode.textContent = getMarkdownBadgeSnippet(title, id);
+          if (iframeCode) iframeCode.textContent = getIframeSnippet(id, 340);
+          dialog?.showModal();
+        });
       });
-    });
+    }
+
+    attachEmbedListeners();
 
     closeDialog?.addEventListener('click', () => dialog?.close());
     dialog?.addEventListener('click', (e) => {
@@ -341,6 +348,99 @@ const defaultOptions = [
         });
       }
     });
+
+    // Live API Polling & Dynamic Enrichment (PRD §3.1, §4.3)
+    async function loadLiveLeaderboard() {
+      const apiBase = getApiUrl();
+      try {
+        const [trendingRes, topRes] = await Promise.all([
+          fetch(`${apiBase}/api/v1/leaderboard/trending?limit=12`),
+          fetch(`${apiBase}/api/v1/leaderboard/top?limit=12`),
+        ]);
+
+        if (trendingRes.ok) {
+          const data = await trendingRes.json();
+          if (data.leaderboard && data.leaderboard.length > 0) {
+            renderPollList('view-trending', data.leaderboard, 'Rank');
+          }
+        }
+
+        if (topRes.ok) {
+          const data = await topRes.json();
+          if (data.leaderboard && data.leaderboard.length > 0) {
+            renderPollList('view-top', data.leaderboard, 'Top');
+          }
+        }
+      } catch (err) {
+        // Fallback gracefully to SSG pre-rendered snapshot
+      }
+    }
+
+    function renderPollList(containerId: string, polls: any[], rankPrefix: string) {
+      const container = document.getElementById(containerId);
+      if (!container) return;
+
+      container.innerHTML = polls.map((poll, idx) => {
+        const totalVotes = poll.total_votes || 0;
+        const optionsHtml = (poll.options || []).map((opt: any) => {
+          const count = opt.vote_count || 0;
+          const pct = totalVotes > 0 ? Math.round((count / totalVotes) * 100) : 0;
+          return `
+            <div class="space-y-1 text-xs">
+              <div class="flex justify-between font-medium">
+                <span class="text-[#94a3b8] truncate">${opt.text}</span>
+                <span class="text-white font-mono">${pct}%</span>
+              </div>
+              <div class="w-full bg-[#1e293b] h-1.5 rounded-full overflow-hidden">
+                <div class="bg-blue-500 h-full rounded-full" style="width: ${pct}%"></div>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        return `
+          <div class="poll-card p-5 rounded-2xl bg-[#111827] border border-[#1e293b] hover:border-[#334155] transition flex flex-col justify-between space-y-4 shadow-sm" data-title="${poll.title.toLowerCase()}">
+            <div class="space-y-2">
+              <div class="flex items-center justify-between text-xs font-mono">
+                <span class="px-2 py-0.5 rounded bg-emerald-950/60 border border-emerald-800/40 text-emerald-400">
+                  ${rankPrefix} #${idx + 1}
+                </span>
+                <span class="text-[#64748b]">${totalVotes.toLocaleString()} votes</span>
+              </div>
+              <h3 class="text-base font-semibold text-white leading-snug">
+                <a href="/polls/${poll.id}" class="hover:text-blue-400 transition">
+                  ${poll.title}
+                </a>
+              </h3>
+            </div>
+            <div class="space-y-2 pt-2 border-t border-[#1e293b]">
+              ${optionsHtml}
+            </div>
+            <div class="flex items-center justify-between pt-2 text-xs border-t border-[#1e293b]">
+              <a href="/polls/${poll.id}" class="text-blue-400 hover:text-blue-300 font-medium flex items-center gap-1">
+                <span>Vote live</span>
+                <span>→</span>
+              </a>
+              <button
+                type="button"
+                data-id="${poll.id}"
+                data-title="${poll.title}"
+                class="embed-btn text-[#94a3b8] hover:text-white flex items-center gap-1 transition"
+              >
+                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                </svg>
+                <span>Get Embed</span>
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      attachEmbedListeners();
+    }
+
+    loadLiveLeaderboard();
   }
 
   setupLeaderboard();

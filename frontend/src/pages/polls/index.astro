@@ -1,40 +1,24 @@
 ---
-import RootLayout from '../../../layouts/RootLayout.astro';
-import { getMarkdownBadgeSnippet, getIframeSnippet, getPollUrl } from '../../../lib/embed';
-
-export function getStaticPaths() {
-  return [
-    { params: { id: 'demo-frameworks' } },
-    { params: { id: 'poll-state-manager' } },
-    { params: { id: 'poll-backend-lang' } },
-    { params: { id: 'poll-astro-deploy' } },
-    { params: { id: 'sample-1' } },
-    { params: { id: 'demo' } },
-  ];
-}
-
-const { id } = Astro.params;
-const currentId = id || 'demo';
-const badgeSnippet = getMarkdownBadgeSnippet('Poll', currentId);
-const iframeSnippet = getIframeSnippet(currentId);
+import RootLayout from '../../layouts/RootLayout.astro';
 ---
 
-<RootLayout title={`Vote in Poll — PollLabs`}>
+<RootLayout title="View Poll — PollLabs">
   <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-8">
     <!-- Breadcrumbs -->
     <div class="flex items-center justify-between text-xs text-[#94a3b8] pb-4 border-b border-[#1e293b]">
       <a href="/leaderboard" class="hover:text-white transition flex items-center gap-1">
         <span>← Back to Leaderboards</span>
       </a>
-      <span class="font-mono text-[#64748b]">ID: {currentId}</span>
+      <span class="font-mono text-[#64748b]" id="poll-id-display">Loading...</span>
     </div>
 
     <!-- Center: Interactive Voting Widget (Strict Multi-Framework Isolation) -->
     <div class="max-w-md mx-auto">
       <div class="bg-[#111827] border border-[#1e293b] rounded-2xl p-2 shadow-xl overflow-hidden min-h-[360px] flex items-center justify-center">
         <iframe
-          src={`/embed?id=${currentId}`}
-          title={`Poll ${currentId}`}
+          id="poll-iframe"
+          src="/embed?id=demo-frameworks"
+          title="Interactive Poll"
           class="w-full h-[360px] border-0 rounded-xl"
           loading="lazy"
         ></iframe>
@@ -55,7 +39,7 @@ const iframeSnippet = getIframeSnippet(currentId);
             <input
               id="poll-badge-input"
               readOnly
-              value={badgeSnippet}
+              value="Loading..."
               class="flex-1 px-2.5 py-1.5 bg-[#0b0f19] border border-[#1e293b] rounded-lg font-mono text-[11px] text-emerald-300"
             />
             <button
@@ -74,7 +58,7 @@ const iframeSnippet = getIframeSnippet(currentId);
             <input
               id="poll-iframe-input"
               readOnly
-              value={iframeSnippet}
+              value="Loading..."
               class="flex-1 px-2.5 py-1.5 bg-[#0b0f19] border border-[#1e293b] rounded-lg font-mono text-[11px] text-cyan-300"
             />
             <button
@@ -92,11 +76,24 @@ const iframeSnippet = getIframeSnippet(currentId);
 </RootLayout>
 
 <script>
-  function setupPollPage() {
-    const copyBadgeBtn = document.getElementById('copy-badge-btn');
+  import { getMarkdownBadgeSnippet, getIframeSnippet } from '../../lib/embed';
+
+  function initDynamicPoll() {
+    const params = new URLSearchParams(window.location.search);
+    const pollId = params.get('id') || 'demo-frameworks';
+
+    const idDisplay = document.getElementById('poll-id-display');
+    const iframe = document.getElementById('poll-iframe') as HTMLIFrameElement | null;
     const badgeInput = document.getElementById('poll-badge-input') as HTMLInputElement | null;
-    const copyIframeBtn = document.getElementById('copy-iframe-btn');
     const iframeInput = document.getElementById('poll-iframe-input') as HTMLInputElement | null;
+
+    if (idDisplay) idDisplay.textContent = `ID: ${pollId}`;
+    if (iframe) iframe.src = `/embed?id=${encodeURIComponent(pollId)}`;
+    if (badgeInput) badgeInput.value = getMarkdownBadgeSnippet('Poll', pollId);
+    if (iframeInput) iframeInput.value = getIframeSnippet(pollId);
+
+    const copyBadgeBtn = document.getElementById('copy-badge-btn');
+    const copyIframeBtn = document.getElementById('copy-iframe-btn');
 
     copyBadgeBtn?.addEventListener('click', () => {
       if (badgeInput) {
@@ -117,6 +114,6 @@ const iframeSnippet = getIframeSnippet(currentId);
     });
   }
 
-  setupPollPage();
-  document.addEventListener('astro:page-load', setupPollPage);
+  initDynamicPoll();
+  document.addEventListener('astro:page-load', initDynamicPoll);
 </script>

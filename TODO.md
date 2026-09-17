@@ -9,9 +9,9 @@ This document tracks all tasks, deliverables, and implementation phases accordin
 - **Phase 1: Setup & Scaffolding** — **100%** (Completed)
 - **Phase 2: Database Layer (PocketBase)** — **100%** (Completed)
 - **Phase 3: Backend API & Security (FastAPI)** — **100%** (Completed & Reviewed)
-- **Phase 4: Embeddable Widgets (Svelte & SVG)** — **100%** (Completed)
-- **Phase 5: Frontend Web & Dashboard (Astro + React)** — **100%** (Completed & Redesigned from Scratch)
-- **Phase 6: Testing, Polish & Documentation** — **90%** (In Progress)
+- **Phase 4: Embeddable Widgets (Svelte & SVG)** — **100%** (Completed & Reviewed)
+- **Phase 5: Frontend Web & Dashboard (Astro + React)** — **100%** (Completed & Standards/Spec Hardened)
+- **Phase 6: Testing, Polish & Documentation** — **95%** (In Progress)
 
 ---
 
@@ -103,15 +103,18 @@ This document tracks all tasks, deliverables, and implementation phases accordin
 ## 🖥️ Phase 5: Frontend Web & Dashboard (Astro + React)
 - [x] Redesigned from Scratch with UI/UX Pro Max, Frontend Design, Hallmark, and React 19 standards
 - [x] Obsidian & Slate developer design system tokens in `global.css` with JetBrains Mono & Inter fonts
-- [x] Landing page (`/`) with live interactive Svelte 5 demo, real-time embed generator, and technical architecture benchmarks
-- [x] Public Leaderboard (`/leaderboard`) with Trending (7-day velocity), Top All-Time, Most-Voted Options, and search filter
-- [x] Standalone poll page (`/polls/[id]`) with live voting widget, embed snippet generator, and clipboard copy
-- [x] Isolated iframe embed route (`/embed/[id]`) and standalone embed route (`/embed`)
-- [x] Dashboard console (`/dashboard`) with stats bar, poll cards, embed code dialog, and account deletion grace period management
-- [x] Poll creator studio (`/dashboard/create`) with React 19, rich media options, 8-state tactile buttons, and live side-by-side preview
+- [x] Multi-Framework Isolation (`AGENTS.md § 6`): Svelte 5 strictly confined to `/embed` with marketing hero and standalone poll pages embedding via isolated iframe (`<iframe src="/embed?id=..." />`)
+- [x] Centralized URL configuration (`src/lib/config.ts`) and embed snippets / clipboard logic (`src/lib/embed.ts`) eliminating shotgun surgery and code duplication across 7+ files
+- [x] Landing page (`/`) with isolated embed iframe preview, dynamic embed generator, and technical architecture benchmarks
+- [x] Public Leaderboard (`/leaderboard`) with live API queries (`/trending`, `/top`), search filter, and dynamic embed dialog
+- [x] Standalone poll pages (`/polls/[id]` and runtime dynamic `/polls?id=...`) with isolated voting embed and instant badge generator
+- [x] Isolated iframe embed route (`/embed/[id]` and dynamic `/embed?id=...`) with `<15KB` bundle footprint (achieved **4.2KB** gzipped)
+- [x] Dashboard console (`/dashboard`) with live API data fetch, Edit poll modal (`PATCH /api/v1/polls/{id}`), real poll deletion (`DELETE /api/v1/polls/{id}`), and real 7-day account deletion grace period dispatch (`POST /api/v1/auth/delete-account`)
+- [x] Poll creator studio (`/dashboard/create`) with React 19, rich media options, 8-state tactile buttons, and live preview (fixed React `className` syntax)
 - [x] Connect React `PollCreator` to FastAPI `/api/v1/polls` with moderation validation and token auth
-- [x] Owner Analytics studio (`/dashboard/[id]/analytics`) with votes timeline histogram, option breakdown, embed referrer sources, and one-click CSV/JSON export
-- [x] Documentation & Playground (`/docs`) with interactive embed builder (SVG vs PNG vs Iframe), REST API reference cards, and self-hosting quickstart
+- [x] Owner Analytics studio (`/dashboard/[id]/analytics`) with votes timeline histogram, option breakdown, embed referrer sources, authenticated blob downloads for CSV/JSON (`Authorization: Bearer`), and real error recovery state
+- [x] Documentation & Playground (`/docs`) with interactive embed builder (SVG vs PNG vs Iframe), REST API reference cards, and self-hosting quickstart (scoped to PRD specs)
+- [x] GitHub OAuth integration: sign-in/out navbar controls with auth state detection and callback handling route (`/auth/callback.astro`)
 - [x] Astro View Transitions (`<ClientRouter />`) with directional cross-fades and tactile microinteractions
 - [x] Verified mobile responsiveness across 320px–1440px with `overflow-x: clip` and 44px touch targets
 
@@ -121,7 +124,8 @@ This document tracks all tasks, deliverables, and implementation phases accordin
 - [x] Backend unit tests for content moderation (`test_moderation.py`)
 - [x] Backend unit tests for IP hashing & rate limiting (`test_rate_limit.py`)
 - [x] Backend integration tests for API endpoints, CORS, admin auth, & validation guards (`test_api_endpoints.py`) (20/20 passed)
-- [x] Full static site build verification with 18 static routes (`corepack pnpm run build`)
+- [x] Full static site build verification with 20 static routes (`corepack pnpm run build`)
 - [x] Embed widget bundle footprint verification: **4.2 KB gzipped** (well below the `< 15KB` threshold)
+- [x] Zero-tolerance secret hygiene verification: clean `git diff` with zero tracked secrets
 - [ ] End-to-end integration with frontend & PocketBase running concurrently
 - [ ] Verify SEO meta tags and social open-graph previews

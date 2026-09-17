@@ -1,4 +1,6 @@
 import React, { useState, useTransition } from 'react';
+import { getApiUrl } from '../../lib/config';
+import { getMarkdownBadgeSnippet, getIframeSnippet, copyToClipboard } from '../../lib/embed';
 
 interface PollOptionItem {
   id: string;
@@ -64,7 +66,7 @@ export default function PollCreator() {
     startTransition(async () => {
       try {
         const token = typeof window !== 'undefined' ? localStorage.getItem('polllabs_auth_token') || 'dev-user-local' : 'dev-user-local';
-        const res = await fetch('http://localhost:8000/api/v1/polls', {
+        const res = await fetch(`${getApiUrl()}/api/v1/polls`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -94,9 +96,9 @@ export default function PollCreator() {
     });
   };
 
-  const copySnippet = (text: string, type: string) => {
-    if (typeof navigator !== 'undefined' && navigator.clipboard) {
-      navigator.clipboard.writeText(text);
+  const copySnippet = async (text: string, type: string) => {
+    const success = await copyToClipboard(text);
+    if (success) {
       setCopiedType(type);
       setTimeout(() => setCopiedType(null), 2000);
     }
@@ -107,9 +109,9 @@ export default function PollCreator() {
       {/* Left: Creator Form */}
       <div className="lg:col-span-7 bg-[#111827] border border-[#1e293b] rounded-2xl p-6 sm:p-8 shadow-xl space-y-6">
         <div>
-          <span class="text-xs font-mono text-blue-400 uppercase tracking-wider">Studio</span>
-          <h2 class="text-2xl font-bold text-white mt-1">Configure Your Poll</h2>
-          <p class="text-xs text-[#94a3b8] mt-1">
+          <span className="text-xs font-mono text-blue-400 uppercase tracking-wider">Studio</span>
+          <h2 className="text-2xl font-bold text-white mt-1">Configure Your Poll</h2>
+          <p className="text-xs text-[#94a3b8] mt-1">
             Build single-choice polls with live preview and instant embed generation.
           </p>
         </div>
@@ -394,12 +396,12 @@ export default function PollCreator() {
                 <div className="flex gap-2">
                   <input
                     readOnly
-                    value={`[![${createdPoll.title}](http://localhost:8000/api/v1/badges/${createdPoll.id}.svg)](http://localhost:4321/embed/${createdPoll.id})`}
+                    value={getMarkdownBadgeSnippet(createdPoll.title, createdPoll.id)}
                     className="flex-1 px-2.5 py-1.5 bg-[#0b0f19] border border-[#1e293b] rounded-lg font-mono text-[11px] text-emerald-300"
                   />
                   <button
                     type="button"
-                    onClick={() => copySnippet(`[![${createdPoll.title}](http://localhost:8000/api/v1/badges/${createdPoll.id}.svg)](http://localhost:4321/embed/${createdPoll.id})`, 'badge')}
+                    onClick={() => copySnippet(getMarkdownBadgeSnippet(createdPoll.title, createdPoll.id), 'badge')}
                     className="px-3 py-1.5 rounded-lg bg-[#1e293b] hover:bg-[#334155] text-white text-xs font-medium transition"
                   >
                     {copiedType === 'badge' ? '✓ Copied' : 'Copy'}
@@ -412,12 +414,12 @@ export default function PollCreator() {
                 <div className="flex gap-2">
                   <input
                     readOnly
-                    value={`<iframe src="http://localhost:4321/embed/${createdPoll.id}" width="100%" height="340" style="border:none;border-radius:16px;max-width:440px;" title="${createdPoll.title}"></iframe>`}
+                    value={getIframeSnippet(createdPoll.id, 340)}
                     className="flex-1 px-2.5 py-1.5 bg-[#0b0f19] border border-[#1e293b] rounded-lg font-mono text-[11px] text-cyan-300"
                   />
                   <button
                     type="button"
-                    onClick={() => copySnippet(`<iframe src="http://localhost:4321/embed/${createdPoll.id}" width="100%" height="340" style="border:none;border-radius:16px;max-width:440px;" title="${createdPoll.title}"></iframe>`, 'iframe')}
+                    onClick={() => copySnippet(getIframeSnippet(createdPoll.id, 340), 'iframe')}
                     className="px-3 py-1.5 rounded-lg bg-[#1e293b] hover:bg-[#334155] text-white text-xs font-medium transition"
                   >
                     {copiedType === 'iframe' ? '✓ Copied' : 'Copy'}

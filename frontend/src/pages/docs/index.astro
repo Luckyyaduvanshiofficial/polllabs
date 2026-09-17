@@ -1,5 +1,9 @@
 ---
 import RootLayout from '../../layouts/RootLayout.astro';
+import { getBadgeUrl, getMarkdownBadgeSnippet } from '../../lib/embed';
+
+const defaultBadgeUrl = getBadgeUrl('demo-frameworks', 'svg');
+const defaultSnippet = getMarkdownBadgeSnippet('Poll', 'demo-frameworks', 'svg');
 ---
 
 <RootLayout title="Documentation & API Reference — PollLabs">
@@ -52,7 +56,6 @@ import RootLayout from '../../layouts/RootLayout.astro';
               <option value="badge-svg">GitHub README (SVG Badge)</option>
               <option value="badge-png">Email / Forum (PNG Badge)</option>
               <option value="iframe-html">HTML / Blog (Interactive Iframe)</option>
-              <option value="iframe-react">React / Next.js (JSX Component)</option>
             </select>
           </div>
         </div>
@@ -63,7 +66,7 @@ import RootLayout from '../../layouts/RootLayout.astro';
           <div id="docs-preview-container" class="flex items-center justify-center p-4 min-h-[60px]">
             <img
               id="docs-badge-img"
-              src="http://localhost:8000/api/v1/badges/demo-frameworks.svg"
+              src={defaultBadgeUrl}
               alt="Live Badge Preview"
               class="h-5"
             />
@@ -82,7 +85,7 @@ import RootLayout from '../../layouts/RootLayout.astro';
               Copy Code
             </button>
           </div>
-          <pre class="bg-[#080c14] border border-[#1e293b] rounded-xl p-3.5 text-xs font-mono text-emerald-300 overflow-x-auto select-all"><code id="docs-code-output">[![Poll](http://localhost:8000/api/v1/badges/demo-frameworks.svg)](http://localhost:4321/embed/demo-frameworks)</code></pre>
+          <pre class="bg-[#080c14] border border-[#1e293b] rounded-xl p-3.5 text-xs font-mono text-emerald-300 overflow-x-auto select-all"><code id="docs-code-output">{defaultSnippet}</code></pre>
         </div>
       </div>
     </section>
@@ -184,6 +187,8 @@ import RootLayout from '../../layouts/RootLayout.astro';
 </RootLayout>
 
 <script>
+  import { getMarkdownBadgeSnippet, getIframeSnippet, getBadgeUrl } from '../../lib/embed';
+
   function setupDocsPlayground() {
     const pollIdInput = document.getElementById('docs-poll-id') as HTMLInputElement | null;
     const formatSelect = document.getElementById('docs-embed-format') as HTMLSelectElement | null;
@@ -197,24 +202,21 @@ import RootLayout from '../../layouts/RootLayout.astro';
       let snippet = '';
 
       if (format === 'badge-svg') {
-        snippet = `[![Poll](http://localhost:8000/api/v1/badges/${pollId}.svg)](http://localhost:4321/embed/${pollId})`;
+        snippet = getMarkdownBadgeSnippet('Poll', pollId, 'svg');
+        const badgeUrl = getBadgeUrl(pollId, 'svg');
         if (previewContainer) {
-          previewContainer.innerHTML = `<a href="http://localhost:8000/api/v1/badges/${pollId}.svg" target="_blank"><img src="http://localhost:8000/api/v1/badges/${pollId}.svg" alt="Badge" class="h-5" /></a>`;
+          previewContainer.innerHTML = `<a href="${badgeUrl}" target="_blank"><img src="${badgeUrl}" alt="Badge" class="h-5" /></a>`;
         }
       } else if (format === 'badge-png') {
-        snippet = `[![Poll](http://localhost:8000/api/v1/badges/${pollId}.png)](http://localhost:4321/embed/${pollId})`;
+        snippet = getMarkdownBadgeSnippet('Poll', pollId, 'png');
+        const badgeUrl = getBadgeUrl(pollId, 'png');
         if (previewContainer) {
-          previewContainer.innerHTML = `<a href="http://localhost:8000/api/v1/badges/${pollId}.png" target="_blank"><img src="http://localhost:8000/api/v1/badges/${pollId}.png" alt="Badge" class="h-5" /></a>`;
+          previewContainer.innerHTML = `<a href="${badgeUrl}" target="_blank"><img src="${badgeUrl}" alt="Badge" class="h-5" /></a>`;
         }
       } else if (format === 'iframe-html') {
-        snippet = `<iframe src="http://localhost:4321/embed/${pollId}" width="100%" height="340" style="border:none;border-radius:16px;max-width:440px;" title="PollLabs"></iframe>`;
+        snippet = getIframeSnippet(pollId, 340);
         if (previewContainer) {
           previewContainer.innerHTML = `<span class="text-xs text-[#94a3b8] font-mono">Interactive Iframe Preview (width: 100%, height: 340px)</span>`;
-        }
-      } else if (format === 'iframe-react') {
-        snippet = `<iframe\n  src="http://localhost:4321/embed/${pollId}"\n  width="100%"\n  height={340}\n  style={{ border: 'none', borderRadius: 16, maxWidth: 440 }}\n  title="PollLabs"\n/>`;
-        if (previewContainer) {
-          previewContainer.innerHTML = `<span class="text-xs text-[#94a3b8] font-mono">React JSX Component Preview</span>`;
         }
       }
 

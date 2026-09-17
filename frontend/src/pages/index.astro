@@ -1,6 +1,7 @@
 ---
 import RootLayout from '../layouts/RootLayout.astro';
-import PollWidget from '../components/embed/PollWidget.svelte';
+import { getApiUrl } from '../lib/config';
+import { getMarkdownBadgeSnippet, getIframeSnippet, getBadgeUrl } from '../lib/embed';
 
 const demoPoll = {
   id: 'demo-frameworks',
@@ -16,6 +17,10 @@ const demoPoll = {
     { id: '3', text: 'Astro (Islands Architecture)', icon_or_image: '🚀', vote_count: 283, percentage: 19.9 },
   ],
 };
+
+const badgeSvgUrl = getBadgeUrl(demoPoll.id, 'svg');
+const markdownBadgeSnippet = getMarkdownBadgeSnippet(demoPoll.title, demoPoll.id, 'svg');
+const iframeSnippet = getIframeSnippet(demoPoll.id, 340);
 
 const topPollsSnapshot = [
   {
@@ -88,22 +93,23 @@ const topPollsSnapshot = [
 
       <!-- Two-Column Interactive Sandbox -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start max-w-5xl mx-auto">
-        <!-- Left: Live Interactive Poll Widget -->
+        <!-- Left: Live Interactive Poll Widget (Strict Multi-Framework Isolation) -->
         <div class="space-y-3">
           <div class="flex items-center justify-between px-1">
             <span class="text-xs font-mono font-medium text-[#94a3b8] flex items-center gap-1.5">
               <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
-              Live Svelte 5 Widget (4.9KB)
+              Isolated Embed Widget (<span class="text-emerald-400">&lt;15KB footprint</span>)
             </span>
-            <span class="text-[11px] text-[#64748b]">Try clicking an option</span>
+            <span class="text-[11px] text-[#64748b]">Real iframe embed preview</span>
           </div>
 
-          <div class="bg-[#111827] border border-[#1e293b] rounded-2xl p-4 shadow-xl">
-            <PollWidget
-              client:load
-              pollId="demo-frameworks"
-              initialPoll={demoPoll}
-            />
+          <div class="bg-[#111827] border border-[#1e293b] rounded-2xl p-2 shadow-xl overflow-hidden min-h-[360px] flex items-center justify-center">
+            <iframe
+              src={`/embed?id=${demoPoll.id}`}
+              title="Demo Poll: Which web framework is your team prioritizing in 2026?"
+              class="w-full h-[360px] border-0 rounded-xl"
+              loading="lazy"
+            ></iframe>
           </div>
         </div>
 
@@ -144,9 +150,9 @@ const topPollsSnapshot = [
               <div id="tab-content-badge" class="tab-pane space-y-3">
                 <div class="p-3 rounded-lg bg-[#0b0f19] border border-[#1e293b] flex items-center justify-between">
                   <span class="text-xs text-[#94a3b8]">Live Badge Output:</span>
-                  <a href="http://localhost:8000/api/v1/badges/demo-frameworks.svg" target="_blank" class="hover:opacity-90 transition">
+                  <a href={badgeSvgUrl} target="_blank" class="hover:opacity-90 transition">
                     <img
-                      src="http://localhost:8000/api/v1/badges/demo-frameworks.svg"
+                      src={badgeSvgUrl}
                       alt="PollLabs Badge"
                       class="h-5"
                       onerror="this.parentElement.innerHTML='<span class=\'text-xs font-mono bg-slate-800 text-emerald-400 px-2 py-0.5 rounded\'>poll: Svelte 5 46% (1420)</span>'"
@@ -155,7 +161,7 @@ const topPollsSnapshot = [
                 </div>
 
                 <div class="relative">
-                  <pre class="bg-[#080c14] border border-[#1e293b] rounded-lg p-3 text-xs font-mono text-emerald-300 overflow-x-auto select-all"><code id="code-badge">[![Which framework do you prefer?](http://localhost:8000/api/v1/badges/demo-frameworks.svg)](http://localhost:4321/embed/demo-frameworks)</code></pre>
+                  <pre class="bg-[#080c14] border border-[#1e293b] rounded-lg p-3 text-xs font-mono text-emerald-300 overflow-x-auto select-all"><code id="code-badge">{markdownBadgeSnippet}</code></pre>
                 </div>
               </div>
 
@@ -165,7 +171,7 @@ const topPollsSnapshot = [
                   Embed into WordPress, Astro, Next.js, Hugo, or raw HTML:
                 </p>
                 <div class="relative">
-                  <pre class="bg-[#080c14] border border-[#1e293b] rounded-lg p-3 text-xs font-mono text-cyan-300 overflow-x-auto select-all"><code id="code-iframe">&lt;iframe src="http://localhost:4321/embed/demo-frameworks" width="100%" height="340" style="border:none;border-radius:16px;max-width:440px;" title="PollLabs"&gt;&lt;/iframe&gt;</code></pre>
+                  <pre class="bg-[#080c14] border border-[#1e293b] rounded-lg p-3 text-xs font-mono text-cyan-300 overflow-x-auto select-all"><code id="code-iframe">{iframeSnippet}</code></pre>
                 </div>
               </div>
             </div>
