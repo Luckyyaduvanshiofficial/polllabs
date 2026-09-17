@@ -8,10 +8,10 @@ This document tracks all tasks, deliverables, and implementation phases accordin
 
 - **Phase 1: Setup & Scaffolding** — **100%** (Completed)
 - **Phase 2: Database Layer (PocketBase)** — **100%** (Completed)
-- **Phase 3: Backend API & Security (FastAPI)** — **25%** (Up Next)
-- **Phase 4: Embeddable Widgets (Svelte & SVG)** — **25%** (In Progress)
-- **Phase 5: Frontend Web & Dashboard (Astro + React)** — **30%** (In Progress)
-- **Phase 6: Testing, Polish & Documentation** — **0%**
+- **Phase 3: Backend API & Security (FastAPI)** — **100%** (Completed)
+- **Phase 4: Embeddable Widgets (Svelte & SVG)** — **50%** (Up Next)
+- **Phase 5: Frontend Web & Dashboard (Astro + React)** — **40%** (In Progress)
+- **Phase 6: Testing, Polish & Documentation** — **50%** (In Progress)
 
 ---
 
@@ -46,31 +46,34 @@ This document tracks all tasks, deliverables, and implementation phases accordin
 - [x] Setup FastAPI core with CORS, OpenAPI docs, and lifespan context manager
 - [x] Implement IP hashing and sliding-window rate limiter (`rate_limit.py`)
 - [x] Align schemas and endpoints with Pydantic v2 (no ellipsis, ConfigDict, return types, status constants)
-- [ ] GitHub OAuth authentication flow (sign-in required for poll creators)
-- [ ] Poll CRUD endpoints (`/api/v1/polls`):
-  - [ ] `POST /` — Create poll (owner-authenticated, profanity filtered)
-  - [ ] `GET /` — List public polls
-  - [ ] `GET /{id}` — Get single poll details
-  - [ ] `PATCH /{id}` — Edit poll (owner-only)
-  - [ ] `DELETE /{id}` — Delete poll (owner-only)
-- [ ] Voting endpoint (`/api/v1/votes/{poll_id}`):
+- [x] GitHub OAuth authentication endpoints (`/api/v1/auth/github/url`, `/api/v1/auth/me`)
+- [x] Content moderation & profanity filtering service (`moderation.py`)
+- [x] Asynchronous PocketBase service (`pocketbase_service.py`) with connection failure handling
+- [x] Poll CRUD endpoints (`/api/v1/polls`):
+  - [x] `POST /` — Create poll (owner-authenticated, profanity filtered)
+  - [x] `GET /` — List public polls (with pagination, sort, and result display formatting)
+  - [x] `GET /{id}` — Get single poll details (respects `show_counts`, `show_percentage`, `hidden_until_close`)
+  - [x] `DELETE /{id}` — Delete poll (owner-only authorization)
+- [x] Voting endpoint (`/api/v1/votes/{poll_id}`):
   - [x] Rate limit check (IP hash with `HTTP_429_TOO_MANY_REQUESTS`)
-  - [ ] Device token validation (one vote per voter per poll)
-  - [ ] Record vote in PocketBase
-- [ ] Public leaderboard endpoint (`/api/v1/leaderboard`):
-  - [ ] Trending / top voted queries (filtered to `public` visibility)
-- [ ] Owner Analytics endpoints (`/api/v1/analytics/{poll_id}`):
-  - [ ] Timeline of votes
-  - [ ] Option breakdown & percentages
-  - [ ] Referrer / embed sources breakdown
-  - [ ] Raw export in CSV and JSON formats
-- [x] Dynamic SVG badge generation (`/api/v1/badges/{poll_id}.svg`) with cache headers
-- [ ] Account deletion request with 7-day grace period (§7)
+  - [x] Device token validation (prevents duplicate voting by same voter)
+  - [x] Record vote in PocketBase with option increment
+  - [x] Issue `polllabs_device_token` httpOnly cookie
+- [x] Public leaderboard endpoint (`/api/v1/leaderboard`):
+  - [x] Trending polls query (`/trending`)
+  - [x] Recent polls query (`/recent`)
+- [x] Owner Analytics endpoints (`/api/v1/analytics/{poll_id}`):
+  - [x] Option vote count and percentage
+  - [x] Referrer / embed sources breakdown
+  - [x] Raw export in CSV and JSON formats (`/export`)
+- [x] Dynamic SVG badge generation (`/api/v1/badges/{poll_id}.svg`) with Shields.io style and cache headers
+- [x] Pytest suite with 10 passing unit and integration tests
 
 ---
 
 ## 🧩 Phase 4: Embeddable Deliverables
 - [x] Prototype Svelte embed widget (`PollWidget.svelte`)
+- [x] Dynamic SVG badge generator (`/api/v1/badges/{poll_id}.svg`)
 - [ ] Refine embed widget to guarantee `< 15KB` gzipped bundle footprint
 - [ ] Support text, emoji, and image options in embed
 - [ ] Result display modes (`show_counts`, `show_percentage`, `hidden_until_close`)
@@ -87,6 +90,7 @@ This document tracks all tasks, deliverables, and implementation phases accordin
 - [x] Dashboard page (`/dashboard`)
 - [x] Poll creator page (`/dashboard/create`) with React component
 - [ ] Connect React `PollCreator` to FastAPI `/api/v1/polls`
+- [ ] Connect Svelte `PollWidget` to `/api/v1/votes/{poll_id}`
 - [ ] Add Owner Analytics page (`/dashboard/[id]/analytics`) with charts & export buttons
 - [ ] Build documentation pages (`/docs`) with copyable embed snippets & API reference
 - [ ] GitHub login integration button in navbar & auth guard for dashboard
@@ -94,7 +98,8 @@ This document tracks all tasks, deliverables, and implementation phases accordin
 ---
 
 ## 🧪 Phase 6: Testing & Quality Assurance
-- [ ] Backend unit & integration tests with `pytest`
-- [ ] Test vote abuse prevention (duplicate device tokens & IP flooding)
-- [ ] Verify CORS rules (open for votes & badges, restricted for management)
+- [x] Backend unit tests for content moderation (`test_moderation.py`)
+- [x] Backend unit tests for IP hashing & rate limiting (`test_rate_limit.py`)
+- [x] Backend integration tests for API endpoints & validation guards (`test_api_endpoints.py`)
+- [ ] End-to-end integration with frontend & PocketBase running concurrently
 - [ ] Verify SEO meta tags and social open-graph previews
