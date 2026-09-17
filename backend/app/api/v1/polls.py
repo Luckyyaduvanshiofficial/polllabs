@@ -1,8 +1,10 @@
 import uuid
+from datetime import datetime, timedelta, timezone
 from typing import Any
-from fastapi import APIRouter, HTTPException, Query, Request, status
+from fastapi import APIRouter, File, Form, HTTPException, Query, Request, UploadFile, status
 from app.schemas.poll import (
     PollCreate,
+    PollImageResponse,
     PollUpdate,
     PollResponse,
     PollListResponse,
@@ -12,6 +14,14 @@ from app.schemas.poll import (
 )
 from app.core.dependencies import CurrentUser, OptionalUser, PocketBaseDep
 from app.core.rate_limit import hash_ip
+from app.services.image_upload import (
+    ALLOWED_MIME_TYPES,
+    MAX_IMAGE_BYTES,
+    STAGED_ORPHAN_MAX_AGE_HOURS,
+    build_file_url,
+    detect_image_mime,
+    sanitize_filename,
+)
 from app.services.moderation import validate_content_safety
 from app.services.poll_utils import coerce_appearance, is_poll_closed
 
@@ -20,9 +30,15 @@ router = APIRouter(prefix="/polls", tags=["Polls"])
 def sanitize_poll_options_for_display(
     poll_data: dict[str, Any],
     is_owner: bool = False,
+    is_quiz: bool = False,
+    correct_options: list[str] | None = None,
+    show_voters: bool = False,
+    device_token: str | None = None,
+    pb=None,
 ) -> tuple[list[PollOptionResponse], int | None]:
     """
     Applies PRD §3.2 result display rules (show_counts, show_percentage, hidden_until_close).
+    Enhanced with quiz mode (correct answer indicators) and visible voters (anonymized tokens).
     Returns sanitized option list and masked/unmasked total_votes counter.
     Owners always see full results in the dashboard.
     """
@@ -40,22 +56,29 @@ def sanitize_poll_options_for_display(
         percentage = round((count / raw_total * 100), 1) if raw_total > 0 else 0.0
 
         if is_owner:
-            # PRD §3.2: Owner always sees full results in dashboard
             display_count = count
             display_pct = percentage
         elif result_display == "hidden_until_close" and not closed:
-            # PRD §3.2: No results shown to voters until close time
             display_count = None
             display_pct = None
             display_total_votes = None
         elif result_display == "show_percentage":
-            # PRD §3.2: Only percentages shown, no raw counts (total_votes is also masked)
             display_count = None
             display_pct = percentage
             display_total_votes = None
-        else:  # show_counts or closed hidden poll
+        else:
             display_count = count
             display_pct = percentage
+
+        # Quiz mode: mark correct/incorrect after voter has voted
+        is_correct = None
+        if is_quiz and correct_options and device_token:
+            is_correct = opt_dict["id"] in correct_options
+
+        # Visible voters: anonymized device token list
+        voters = None
+        if show_voters and not is_hidden_results(result_display, closed, is_owner):
+            voters = []
 
         sanitized.append(
             PollOptionResponse(
@@ -64,6 +87,8 @@ def sanitize_poll_options_for_display(
                 icon_or_image=opt_dict.get("icon_or_image"),
                 vote_count=display_count,
                 percentage=display_pct,
+                is_correct=is_correct,
+                voters=voters,
             )
         )
 
@@ -73,6 +98,15 @@ def sanitize_poll_options_for_display(
             display_total_votes = None
 
     return sanitized, display_total_votes
+
+
+def is_hidden_results(result_display: str, closed: bool, is_owner: bool) -> bool:
+    """Helper: returns True if results should be hidden from the viewer."""
+    if is_owner:
+        return False
+    if result_display == "hidden_until_close" and not closed:
+        return True
+    return False
 
 def map_poll_to_response(poll: dict[str, Any], is_owner: bool = False) -> PollResponse:
     """Transforms raw PocketBase dictionary to strongly-typed PollResponse model."""
@@ -90,6 +124,9 @@ def map_poll_to_response(poll: dict[str, Any], is_owner: bool = False) -> PollRe
         updated=poll.get("updated", ""),
         close_at=poll.get("close_at"),
         appearance=coerce_appearance(poll.get("appearance")),
+        max_selections=poll.get("max_selections", 1) or 1,
+        is_quiz=poll.get("is_quiz", False) or False,
+        show_voters=poll.get("show_voters", False) or False,
     )
 
 @router.get("", response_model=PollListResponse)
@@ -189,6 +226,10 @@ async def create_poll(
         "owner": owner_id,
         "total_votes": 0,
         "appearance": poll_in.appearance.model_dump(exclude_none=True) if poll_in.appearance else {},
+        "max_selections": poll_in.max_selections,
+        "is_quiz": poll_in.is_quiz,
+        "correct_options": poll_in.correct_options,
+        "show_voters": poll_in.show_voters,
     }
 
     try:
@@ -244,6 +285,14 @@ async def update_poll(
         update_dict["close_at"] = close_val
     if poll_update.appearance is not None:
         update_dict["appearance"] = poll_update.appearance.model_dump(exclude_none=True)
+    if poll_update.max_selections is not None:
+        update_dict["max_selections"] = poll_update.max_selections
+    if poll_update.is_quiz is not None:
+        update_dict["is_quiz"] = poll_update.is_quiz
+    if poll_update.correct_options is not None:
+        update_dict["correct_options"] = poll_update.correct_options
+    if poll_update.show_voters is not None:
+        update_dict["show_voters"] = poll_update.show_voters
 
     try:
         updated = await pb.update_poll(poll_id, update_dict)
@@ -253,6 +302,78 @@ async def update_poll(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to update poll: {err}",
         )
+
+@router.post("/images", response_model=PollImageResponse, status_code=status.HTTP_201_CREATED)
+async def upload_poll_image(
+    pb: PocketBaseDep,
+    user_id: CurrentUser,
+    file: UploadFile = File(...),
+    poll_id: str | None = Form(default=None),
+) -> PollImageResponse:
+    """
+    Uploads a poll option image for YouTube-style thumbnail showdowns (Phase 4).
+    `poll_id` is optional: omit it to stage the image before the poll is
+    published. Staged orphans older than 24h are cleaned opportunistically.
+    Files land in the `poll_images` collection (local disk or S3 alike).
+    """
+    content = await file.read(MAX_IMAGE_BYTES + 1)
+    if not content:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Empty file.",
+        )
+    if len(content) > MAX_IMAGE_BYTES:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Image exceeds the 2MB size limit.",
+        )
+    mime = detect_image_mime(content[:12])
+    if mime is None or mime not in ALLOWED_MIME_TYPES:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Only JPEG, PNG, GIF, or WebP images are allowed.",
+        )
+
+    attached_poll_id = ""
+    if poll_id:
+        poll = await pb.get_poll(poll_id)
+        if not poll:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Poll not found.",
+            )
+        if poll.get("owner") != user_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You are not authorized to add images to this poll.",
+            )
+        attached_poll_id = poll["id"]
+
+    filename = sanitize_filename(file.filename)
+    payload: dict[str, Any] = {"owner": user_id}
+    if attached_poll_id:
+        payload["poll_id"] = attached_poll_id
+    record = await pb.upload_image_record(payload, filename, content, mime)
+    if not record:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to store image.",
+        )
+
+    # Opportunistic orphan cleanup — best-effort, never fails the upload.
+    try:
+        cutoff = (datetime.now(timezone.utc) - timedelta(hours=STAGED_ORPHAN_MAX_AGE_HOURS)).isoformat()
+        for old in await pb.list_image_records_older_than(cutoff):
+            if not old.get("poll_id"):
+                await pb.delete_image_record(old["id"])
+    except Exception:
+        pass
+
+    stored_name = record.get("image", filename)
+    return PollImageResponse(
+        id=record["id"],
+        url=build_file_url("poll_images", record["id"], stored_name),
+    )
 
 @router.delete("/{poll_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_poll(

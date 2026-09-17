@@ -5,6 +5,8 @@
     icon_or_image?: string | null;
     vote_count?: number | null;
     percentage?: number | null;
+    is_correct?: boolean | null;
+    voters?: string[] | null;
   }
 
   interface PollAppearance {
@@ -28,6 +30,9 @@
     owner: string;
     total_votes?: number | null;
     close_at?: string | null;
+    max_selections?: number | null;
+    is_quiz?: boolean | null;
+    show_voters?: boolean | null;
     appearance?: PollAppearance | null;
   }
 
@@ -55,6 +60,8 @@
 
   let hasVoted = $state<boolean>(false);
   let selectedOptionId = $state<string | null>(null);
+  let selectedOptionIds = $state<string[]>([]);
+  let submittedOptionIds = $state<string[] | null>(null);
   let isSubmitting = $state<boolean>(false);
 
   let showReportModal = $state<boolean>(false);
@@ -77,6 +84,9 @@
   let isHiddenResults = $derived(
     poll?.result_display === 'hidden_until_close' && !isClosed
   );
+  let isMultiSelect = $derived((poll?.max_selections ?? 1) > 1);
+  let isQuiz = $derived(poll?.is_quiz === true);
+  let showVoters = $derived(poll?.show_voters === true);
 
   // --- Phase 7 themes: appearance registry (preset + user overrides) ---
   const KNOWN_THEMES = ['minimal', 'whatsapp', 'telegram', 'story', 'youtube-grid'];
@@ -150,7 +160,12 @@
         const storedVote = localStorage.getItem(`polllabs_voted_${id}`);
         if (storedVote) {
           hasVoted = true;
-          selectedOptionId = storedVote;
+          if (storedVote.includes(',')) {
+            submittedOptionIds = storedVote.split(',');
+          } else {
+            selectedOptionId = storedVote;
+            submittedOptionIds = [storedVote];
+          }
         }
       } catch {}
     } catch (err: any) {
@@ -161,12 +176,36 @@
     }
   }
 
-  async function submitVote(optionId: string) {
+  function toggleOption(optionId: string) {
+    if (hasVoted || isSubmitting || isClosed) return;
+    if (!isMultiSelect) {
+      selectedOptionId = optionId;
+      submitVote(optionId);
+      return;
+    }
+    const idx = selectedOptionIds.indexOf(optionId);
+    if (idx >= 0) {
+      selectedOptionIds = selectedOptionIds.filter(id => id !== optionId);
+    } else {
+      const max = poll?.max_selections ?? 3;
+      if (selectedOptionIds.length < max) {
+        selectedOptionIds = [...selectedOptionIds, optionId];
+      }
+    }
+  }
+
+  async function submitVote(optionId: string | string[]) {
     if (hasVoted || isSubmitting || !effectivePollId || isClosed) return;
 
     isSubmitting = true;
     errorMsg = null;
-    selectedOptionId = optionId;
+
+    const payload = Array.isArray(optionId) ? optionId : optionId;
+    if (Array.isArray(payload)) {
+      submittedOptionIds = payload;
+    } else {
+      selectedOptionId = payload;
+    }
 
     let deviceToken: string | null = null;
     try {
@@ -181,7 +220,7 @@
           ...(deviceToken ? { 'x-device-token': deviceToken } : {}),
         },
         body: JSON.stringify({
-          option_id: optionId,
+          option_id: payload,
           device_token: deviceToken,
           embed_referrer: typeof document !== 'undefined' ? document.referrer : '',
         }),
@@ -196,11 +235,16 @@
       const data = await res.json();
       hasVoted = true;
 
-      // Save returned device token in localStorage fallback
+      // Update local voted state for multi-select
+      if (data.selected_options) {
+        submittedOptionIds = data.selected_options;
+      }
+
       if (data.device_token) {
         try {
           localStorage.setItem('polllabs_device_token', data.device_token);
-          localStorage.setItem(`polllabs_voted_${effectivePollId}`, optionId);
+          const voteKey = Array.isArray(payload) ? payload.join(',') : payload;
+          localStorage.setItem(`polllabs_voted_${effectivePollId}`, voteKey);
         } catch {}
       }
 
@@ -214,6 +258,8 @@
     } catch (err: any) {
       errorMsg = err.message || 'Error recording vote. Please try again.';
       selectedOptionId = null;
+      selectedOptionIds = [];
+      submittedOptionIds = null;
     } finally {
       isSubmitting = false;
     }
@@ -353,11 +399,15 @@
       {#each poll.options as opt (opt.id)}
         {#if !hasVoted && !isClosed}
           <!-- Voting Button -->
+          {@const isSelected = isMultiSelect
+            ? selectedOptionIds.includes(opt.id)
+            : selectedOptionId === opt.id}
           <button
             type="button"
             disabled={isSubmitting}
-            onclick={() => submitVote(opt.id)}
+            onclick={() => toggleOption(opt.id)}
             class="pw-vote-btn w-full group text-left px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-blue-500/80 dark:hover:border-blue-400 hover:bg-blue-50/40 dark:hover:bg-blue-950/30 text-sm font-medium transition duration-150 flex items-center gap-3 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            class:selected={isSelected}
           >
             {#if isGrid}
               {@render optionMedia(opt, "w-full h-20")}
@@ -365,23 +415,40 @@
                 <span class="pw-label flex-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                   {opt.text}
                 </span>
-                <span class="pw-radio w-4 h-4 rounded-full border border-gray-300 dark:border-gray-600 group-hover:border-blue-500 flex items-center justify-center flex-shrink-0 transition-colors">
-                  <span class="w-2 h-2 rounded-full bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"></span>
-                </span>
+                {#if isMultiSelect}
+                  <span class="pw-checkbox w-4 h-4 rounded border border-gray-300 dark:border-gray-600 group-hover:border-blue-500 flex items-center justify-center flex-shrink-0 transition-colors"
+                        class:checked={isSelected}>
+                    {#if isSelected}<span class="text-[10px] text-white font-bold leading-none">✓</span>{/if}
+                  </span>
+                {:else}
+                  <span class="pw-radio w-4 h-4 rounded-full border border-gray-300 dark:border-gray-600 group-hover:border-blue-500 flex items-center justify-center flex-shrink-0 transition-colors">
+                    <span class="w-2 h-2 rounded-full bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"></span>
+                  </span>
+                {/if}
               </span>
             {:else}
               {@render optionMedia(opt, "w-6 h-6")}
               <span class="pw-label flex-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                 {opt.text}
               </span>
-              <span class="pw-radio w-4 h-4 rounded-full border border-gray-300 dark:border-gray-600 group-hover:border-blue-500 flex items-center justify-center flex-shrink-0 transition-colors">
-                <span class="w-2 h-2 rounded-full bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"></span>
-              </span>
+              {#if isMultiSelect}
+                <span class="pw-checkbox w-4 h-4 rounded border border-gray-300 dark:border-gray-600 group-hover:border-blue-500 flex items-center justify-center flex-shrink-0 transition-colors"
+                      class:checked={isSelected}>
+                  {#if isSelected}<span class="text-[10px] text-white font-bold leading-none">✓</span>{/if}
+                </span>
+              {:else}
+                <span class="pw-radio w-4 h-4 rounded-full border border-gray-300 dark:border-gray-600 group-hover:border-blue-500 flex items-center justify-center flex-shrink-0 transition-colors">
+                  <span class="w-2 h-2 rounded-full bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"></span>
+                </span>
+              {/if}
             {/if}
           </button>
         {:else}
           <!-- Results View -->
           {@const pct = opt.percentage ?? 0}
+          {@const isMyVote = isMultiSelect
+            ? (submittedOptionIds ?? []).includes(opt.id)
+            : selectedOptionId === opt.id}
           <div class="pw-result relative overflow-hidden px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50/60 dark:bg-gray-800/40 text-sm">
             {#if isGrid}
               {@render optionMedia(opt, "w-full h-20 mb-2")}
@@ -402,7 +469,15 @@
                 <span class="pw-label truncate font-medium text-gray-900 dark:text-gray-100">
                   {opt.text}
                 </span>
-                {#if selectedOptionId === opt.id}
+                <!-- Quiz mode: correct / incorrect indicator -->
+                {#if isQuiz && hasVoted && !isHiddenResults && opt.is_correct !== undefined && opt.is_correct !== null}
+                  {#if opt.is_correct}
+                    <span class="pw-quiz-badge pw-quiz-correct inline-flex items-center text-xs font-bold ml-1" title="Correct answer">✓</span>
+                  {:else if isMyVote}
+                    <span class="pw-quiz-badge pw-quiz-wrong inline-flex items-center text-xs font-bold ml-1" title="Your answer was incorrect">✕</span>
+                  {/if}
+                {/if}
+                {#if isMyVote}
                   <span class="pw-check inline-flex items-center text-xs font-bold text-blue-600 dark:text-blue-400 ml-1" title="Your vote">
                     ✓
                   </span>
@@ -426,10 +501,37 @@
                 {/if}
               </span>
             </div>
+
+            <!-- Voter badges -->
+            {#if showVoters && !isHiddenResults && opt.voters && opt.voters.length > 0}
+              <div class="pw-voters relative z-10 mt-1.5 flex flex-wrap gap-1">
+                {#each opt.voters as voter}
+                  <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-medium bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">
+                    {voter}
+                  </span>
+                {/each}
+              </div>
+            {/if}
           </div>
         {/if}
       {/each}
     </div>
+
+    <!-- Multi-select submit button -->
+    {#if !hasVoted && !isClosed && isMultiSelect}
+      <button
+        type="button"
+        disabled={selectedOptionIds.length === 0 || isSubmitting}
+        onclick={() => submitVote(selectedOptionIds)}
+        class="pw-submit-btn mt-3 w-full py-2.5 rounded-xl text-sm font-semibold transition duration-150 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-500 dark:hover:bg-blue-600"
+      >
+        {#if isSubmitting}
+          Submitting...
+        {:else}
+          Submit ({selectedOptionIds.length}/{poll?.max_selections ?? 3})
+        {/if}
+      </button>
+    {/if}
 
     <!-- Footer Meta -->
     <div class="pw-footer mt-4 pt-3 border-t border-gray-100 dark:border-gray-800/80 flex items-center justify-between text-[11px] text-gray-500 dark:text-gray-400">
@@ -571,11 +673,6 @@
   .poll-widget-container[data-theme='whatsapp'],
   .poll-widget-container[data-theme='telegram'],
   .poll-widget-container[data-theme='story'],
-  .poll-widget-container[data-theme='youtube-grid'] {
-    background: var(--pw-bg);
-    border-color: var(--pw-line);
-    color: var(--pw-ink);
-  }
   .poll-widget-container[data-theme='whatsapp'] .pw-title,
   .poll-widget-container[data-theme='telegram'] .pw-title,
   .poll-widget-container[data-theme='story'] .pw-title,
@@ -766,5 +863,53 @@
     .poll-widget-container .pw-bar {
       transition: none;
     }
+  }
+
+  /* Phase 5: multi-select checkbox */
+  .pw-checkbox {
+    transition: background-color 0.15s, border-color 0.15s;
+  }
+  .pw-checkbox.checked {
+    background-color: var(--pw-accent, #3b82f6);
+    border-color: var(--pw-accent, #3b82f6);
+  }
+
+  /* Phase 5: selected vote button highlight */
+  .pw-vote-btn.selected {
+    border-color: var(--pw-accent, #3b82f6);
+    background-color: var(--pw-accent-soft, #dbeafe);
+  }
+  .pw-vote-btn.selected .pw-checkbox {
+    background-color: var(--pw-accent, #3b82f6);
+    border-color: var(--pw-accent, #3b82f6);
+  }
+  .pw-vote-btn.selected .pw-radio {
+    border-color: var(--pw-accent, #3b82f6);
+  }
+  .pw-vote-btn.selected .pw-radio > span {
+    opacity: 1;
+    background-color: var(--pw-accent, #3b82f6);
+  }
+
+  /* Phase 5: submit button */
+  .pw-submit-btn {
+    background-color: var(--pw-accent, #3b82f6);
+  }
+  .pw-submit-btn:hover:not(:disabled) {
+    filter: brightness(0.9);
+  }
+
+  /* Phase 5: quiz badges */
+  .pw-quiz-correct {
+    color: #16a34a;
+  }
+  .pw-quiz-wrong {
+    color: #dc2626;
+  }
+
+  /* Phase 5: voter badges row */
+  .pw-voters {
+    border-top: 1px solid var(--pw-line, #e5e7eb);
+    padding-top: 0.375rem;
   }
 </style>

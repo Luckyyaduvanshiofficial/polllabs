@@ -179,6 +179,22 @@ class AsyncPocketBaseService:
             return data.get("totalItems", 0) > 0
         return False
 
+    async def get_existing_vote(self, poll_id: str, device_token: str) -> dict[str, Any] | None:
+        """Returns the existing vote record for a device on a poll, or None."""
+        clean_poll_id = sanitize_identifier(poll_id)
+        clean_token = sanitize_identifier(device_token)
+        filter_expr = f'poll_id="{clean_poll_id}" && device_token="{clean_token}"'
+
+        resp = await self._request(
+            "GET",
+            "/api/collections/votes/records",
+            params={"filter": filter_expr, "perPage": 1},
+        )
+        if resp and resp.status_code == 200:
+            items = resp.json().get("items", [])
+            return items[0] if items else None
+        return None
+
     async def cast_vote(self, vote_data: dict[str, Any]) -> dict[str, Any]:
         resp = await self._request(
             "POST",
@@ -197,22 +213,26 @@ class AsyncPocketBaseService:
     ) -> tuple[dict[str, Any], dict[str, Any]]:
         """
         Atomically records a vote and increments poll counters in PocketBase.
-        Eliminates race conditions by utilizing PocketBase 'total_votes+' atomic increment.
+        Handles both single-choice (str) and multi-select (list) option_id values.
         """
         poll = await self.get_poll(poll_id)
         if not poll:
             raise ValueError("Poll not found")
 
-        # 1. Cast individual vote record
+        # Normalize option_id to a list for uniform handling
+        raw_option_id = vote_data["option_id"]
+        option_ids = raw_option_id if isinstance(raw_option_id, list) else [raw_option_id]
+
+        # 1. Cast individual vote record (option_id stored as-is in JSON)
         vote_resp = await self.cast_vote(vote_data)
 
-        # 2. Update option-specific count and atomically increment total_votes
+        # 2. Update option-specific counts and atomically increment total_votes
         options = poll.get("options", [])
-        option_id = vote_data["option_id"]
-        for opt in options:
-            if opt.get("id") == option_id:
-                opt["vote_count"] = opt.get("vote_count", 0) + 1
-                break
+        for oid in option_ids:
+            for opt in options:
+                if opt.get("id") == oid:
+                    opt["vote_count"] = opt.get("vote_count", 0) + 1
+                    break
 
         update_payload = {
             "options": options,
@@ -223,6 +243,44 @@ class AsyncPocketBaseService:
         if "total_votes" not in updated_poll or updated_poll["total_votes"] == poll.get("total_votes", 0):
             updated_poll["total_votes"] = poll.get("total_votes", 0) + 1
         return vote_resp, updated_poll
+
+    async def list_voters_for_poll(self, poll_id: str, option_id: str) -> list[str]:
+        """Returns anonymized device_token list for a specific option on a poll (visible voters feature)."""
+        clean_poll_id = sanitize_identifier(poll_id)
+        clean_option = sanitize_identifier(option_id)
+        filter_expr = f'poll_id="{clean_poll_id}"'
+
+        all_tokens: list[str] = []
+        page = 1
+        per_page = 200
+
+        while True:
+            resp = await self._request(
+                "GET",
+                "/api/collections/votes/records",
+                params={"filter": filter_expr, "page": page, "perPage": per_page},
+            )
+            if not resp or resp.status_code != 200:
+                break
+
+            data = resp.json()
+            for vote in data.get("items", []):
+                # option_id may be a string or a JSON array
+                vote_opt = vote.get("option_id")
+                if isinstance(vote_opt, list):
+                    if clean_option in vote_opt:
+                        token = vote.get("device_token", "")
+                        all_tokens.append(token[:8] + "..." if len(token) > 8 else token)
+                elif isinstance(vote_opt, str) and vote_opt == clean_option:
+                    token = vote.get("device_token", "")
+                    all_tokens.append(token[:8] + "..." if len(token) > 8 else token)
+
+            total_pages = data.get("totalPages", 1)
+            if page >= total_pages or len(data.get("items", [])) == 0:
+                break
+            page += 1
+
+        return all_tokens
 
     async def list_votes_for_poll(self, poll_id: str) -> list[dict[str, Any]]:
         """Fetches all votes for a poll with automatic pagination (PRD §5)."""
@@ -275,6 +333,50 @@ class AsyncPocketBaseService:
         if resp and resp.status_code in (200, 201):
             return resp.json()
         return report_data
+
+    # --- Poll Images (Phase 4 file storage) ---
+
+    async def upload_image_record(
+        self,
+        data: dict[str, Any],
+        filename: str,
+        content: bytes,
+        content_type: str,
+    ) -> dict[str, Any] | None:
+        """Creates a poll_images record with a file upload (multipart, admin token)."""
+        token = await self.get_admin_token()
+        headers = {"Authorization": token} if token else {}
+        try:
+            client = await self._get_client()
+            resp = await client.post(
+                "/api/collections/poll_images/records",
+                headers=headers,
+                data=data,
+                files={"image": (filename, content, content_type)},
+            )
+            if resp.status_code in (200, 201):
+                return resp.json()
+            logger.warning("Image record create failed [%s]: %s", resp.status_code, resp.text[:200])
+        except Exception as err:
+            logger.warning("Image upload request error: %s", err)
+        return None
+
+    async def list_image_records_older_than(self, cutoff_iso: str, per_page: int = 100) -> list[dict[str, Any]]:
+        """Lists poll_images records created before cutoff (for orphan cleanup)."""
+        resp = await self._request(
+            "GET",
+            "/api/collections/poll_images/records",
+            params={"filter": f'created < "{cutoff_iso}"', "perPage": per_page, "sort": "created"},
+        )
+        if resp and resp.status_code == 200:
+            return resp.json().get("items", [])
+        return []
+
+    async def delete_image_record(self, record_id: str) -> bool:
+        """Deletes a poll_images record and its stored file."""
+        clean_id = sanitize_identifier(record_id)
+        resp = await self._request("DELETE", f"/api/collections/poll_images/records/{clean_id}")
+        return bool(resp and resp.status_code == 204)
 
     # --- User Lifecycle & Deletion ---
 

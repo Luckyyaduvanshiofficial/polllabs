@@ -61,6 +61,12 @@ export default function PollCreator() {
   const [effect, setEffect] = useState<'none' | 'confetti'>('none');
   const [layout, setLayout] = useState<'list' | 'grid'>('list');
 
+  // Phase 5: behaviors
+  const [maxSelections, setMaxSelections] = useState(1);
+  const [isQuiz, setIsQuiz] = useState(false);
+  const [correctOptions, setCorrectOptions] = useState<string[]>([]);
+  const [showVoters, setShowVoters] = useState(false);
+
   const preset = THEME_PRESETS.find((p) => p.id === theme) ?? THEME_PRESETS[0];
 
   const handleThemeSelect = (id: ThemeId) => {
@@ -83,10 +89,17 @@ export default function PollCreator() {
     return appearance;
   };
 
+  const toggleCorrectOption = (optId: string) => {
+    setCorrectOptions((prev) =>
+      prev.includes(optId) ? prev.filter((id) => id !== optId) : [...prev, optId],
+    );
+  };
+
   const [isPending, startTransition] = useTransition();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [createdPoll, setCreatedPoll] = useState<{ id: string; title: string } | null>(null);
   const [copiedType, setCopiedType] = useState<string | null>(null);
+  const [uploadingIdx, setUploadingIdx] = useState<number | null>(null);
 
   // Options Manipulation
   const handleAddOption = () => {
@@ -110,6 +123,35 @@ export default function PollCreator() {
       copy[index] = { ...copy[index], [field]: val };
       return copy;
     });
+  };
+
+  // Phase 4: thumbnail upload (staged without poll_id until publish)
+  const handleImageUpload = async (index: number, file: File) => {
+    setUploadingIdx(index);
+    setErrorMessage(null);
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('polllabs_auth_token') || 'dev-user-local' : 'dev-user-local';
+      const form = new FormData();
+      form.append('file', file);
+      const res = await fetch(`${getApiUrl()}/api/v1/polls/images`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'x-dev-user-id': token,
+        },
+        body: form,
+      });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.detail || `Upload failed (${res.status})`);
+      }
+      const data = await res.json();
+      handleOptionChange(index, 'icon_or_image', data.url);
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Image upload failed. Use JPEG, PNG, GIF, or WebP under 2MB.');
+    } finally {
+      setUploadingIdx(null);
+    }
   };
 
   // Form Submission
@@ -149,6 +191,10 @@ export default function PollCreator() {
             visibility,
             result_display: resultDisplay,
             close_at: closeAt ? new Date(closeAt).toISOString() : undefined,
+            max_selections: maxSelections,
+            is_quiz: isQuiz || undefined,
+            correct_options: isQuiz && correctOptions.length > 0 ? correctOptions : undefined,
+            show_voters: showVoters || undefined,
             appearance: buildAppearance(),
           }),
         });
@@ -255,15 +301,31 @@ export default function PollCreator() {
                   <span className="w-6 h-6 rounded-md bg-[#0b0f19] border border-[#1e293b] text-[#94a3b8] font-mono text-xs flex items-center justify-center flex-shrink-0">
                     {idx + 1}
                   </span>
-                  {/* Emoji or Image Icon */}
+                  {/* Emoji, Image URL, or Upload */}
                   <input
                     type="text"
                     placeholder="Emoji or Icon URL"
                     value={opt.icon_or_image}
                     onChange={(e) => handleOptionChange(idx, 'icon_or_image', e.target.value)}
                     className="w-28 px-2.5 py-2 bg-[#0b0f19] border border-[#1e293b] rounded-lg text-xs text-white placeholder-[#64748b] focus:border-blue-500 focus:outline-hidden transition flex-shrink-0"
-                    title="Enter single emoji (e.g. ⚡) or image URL (https://...)"
+                    title="Enter single emoji (e.g. ⚡), image URL (https://...), or upload a thumbnail"
                   />
+                  <label
+                    className="p-2 text-[#64748b] hover:text-blue-400 hover:bg-blue-950/20 rounded-lg transition cursor-pointer flex-shrink-0"
+                    title="Upload thumbnail image (JPEG/PNG/GIF/WebP, max 2MB)"
+                  >
+                    {uploadingIdx === idx ? '…' : '🖼'}
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/gif,image/webp"
+                      className="hidden"
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        if (f) handleImageUpload(idx, f);
+                        e.target.value = '';
+                      }}
+                    />
+                  </label>
                   {/* Option Text */}
                   <input
                     type="text"
@@ -343,6 +405,115 @@ export default function PollCreator() {
                   : 'Results remain secret until poll close date.'}
               </p>
             </div>
+          </div>
+
+          {/* Phase 5: Behavior toggles */}
+          <div className="pt-4 border-t border-[#1e293b] space-y-4">
+            <div>
+              <span className="text-xs font-medium text-white">Poll Behaviors</span>
+              <p className="text-[10px] text-[#64748b] mt-0.5">
+                Control how voters interact with this poll.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {/* Multi-select */}
+              <div>
+                <label className="block text-[11px] font-medium text-white mb-1.5">
+                  Max selections
+                </label>
+                <select
+                  value={maxSelections}
+                  onChange={(e) => {
+                    const val = Number(e.target.value);
+                    setMaxSelections(val);
+                    if (val === 1) setCorrectOptions([]);
+                  }}
+                  className="w-full px-2.5 py-2 bg-[#0b0f19] border border-[#1e293b] rounded-lg text-xs text-white focus:border-blue-500 focus:outline-hidden"
+                >
+                  <option value={1}>Single choice</option>
+                  <option value={2}>Up to 2</option>
+                  <option value={3}>Up to 3</option>
+                  <option value={4}>Up to 4</option>
+                  <option value={5}>Up to 5</option>
+                </select>
+                <p className="text-[10px] text-[#64748b] mt-1">
+                  {maxSelections === 1
+                    ? 'Each voter picks exactly one option.'
+                    : `Each voter can pick up to ${maxSelections} options.`}
+                </p>
+              </div>
+
+              {/* Quiz mode */}
+              <div>
+                <span className="block text-[11px] font-medium text-white mb-1.5">Quiz mode</span>
+                <button
+                  type="button"
+                  onClick={() => { setIsQuiz(!isQuiz); if (isQuiz) setCorrectOptions([]); }}
+                  aria-pressed={isQuiz}
+                  className={`w-full px-2.5 py-2 rounded-lg text-xs font-medium border transition ${
+                    isQuiz
+                      ? 'bg-blue-600 border-blue-600 text-white'
+                      : 'bg-[#0b0f19] border-[#1e293b] text-[#94a3b8] hover:text-white'
+                  }`}
+                >
+                  {isQuiz ? 'Quiz on' : 'Quiz off'}
+                </button>
+                <p className="text-[10px] text-[#64748b] mt-1">
+                  Reveal correct answers immediately after voting.
+                </p>
+              </div>
+
+              {/* Show voters */}
+              <div>
+                <span className="block text-[11px] font-medium text-white mb-1.5">Visible voters</span>
+                <button
+                  type="button"
+                  onClick={() => setShowVoters(!showVoters)}
+                  aria-pressed={showVoters}
+                  className={`w-full px-2.5 py-2 rounded-lg text-xs font-medium border transition ${
+                    showVoters
+                      ? 'bg-blue-600 border-blue-600 text-white'
+                      : 'bg-[#0b0f19] border-[#1e293b] text-[#94a3b8] hover:text-white'
+                  }`}
+                >
+                  {showVoters ? 'Voters visible' : 'Voters hidden'}
+                </button>
+                <p className="text-[10px] text-[#64748b] mt-1">
+                  Show anonymized voter IDs next to each option.
+                </p>
+              </div>
+            </div>
+
+            {/* Quiz: mark correct answers */}
+            {isQuiz && (
+              <div className="p-3 rounded-lg bg-blue-950/30 border border-blue-800/40 space-y-2">
+                <span className="text-[11px] font-medium text-blue-300">
+                  Mark the correct answer{maxSelections > 1 ? 's' : ''}
+                </span>
+                <div className="space-y-1.5">
+                  {options.map((opt, idx) => (
+                    <label
+                      key={opt.id}
+                      className="flex items-center gap-2 px-2.5 py-1.5 rounded-md bg-[#0b0f19] border border-[#1e293b] hover:border-blue-500/50 cursor-pointer transition text-xs"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={correctOptions.includes(opt.id)}
+                        onChange={() => toggleCorrectOption(opt.id)}
+                        className="w-3.5 h-3.5 rounded border-[#334155] bg-[#0b0f19] text-blue-500 focus:ring-blue-500 focus:ring-offset-0 cursor-pointer"
+                      />
+                      <span className="text-white flex-1 truncate">
+                        {opt.text || `Option ${idx + 1}`}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+                <p className="text-[10px] text-blue-400/70">
+                  Voters will see ✓/✕ immediately after voting.
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Appearance: theme presets + customizer */}
@@ -558,16 +729,27 @@ export default function PollCreator() {
                 className="w-full text-left px-3.5 py-2.5 border border-[#1e293b] bg-[#0b0f19] text-xs font-medium text-[#f8fafc] flex items-center gap-2.5"
                 style={{ borderRadius: RADIUS_PX[radius] }}
               >
-                <span
-                  className="w-2 h-2 rounded-full flex-shrink-0"
-                  style={{ background: accent.trim() || preset.swatches[1] }}
-                />
+                {maxSelections > 1 ? (
+                  <span className="w-4 h-4 rounded border border-[#334155] flex-shrink-0 flex items-center justify-center">
+                  </span>
+                ) : (
+                  <span className="w-4 h-4 rounded-full border border-[#334155] flex-shrink-0 flex items-center justify-center">
+                    <span className="w-2 h-2 rounded-full" style={{ background: 'transparent' }} />
+                  </span>
+                )}
                 {opt.icon_or_image && (
-                  <span className="text-sm">{opt.icon_or_image}</span>
+                  opt.icon_or_image.startsWith('http') ? (
+                    <img src={opt.icon_or_image} alt="" className="w-6 h-6 rounded object-cover flex-shrink-0" />
+                  ) : (
+                    <span className="text-sm">{opt.icon_or_image}</span>
+                  )
                 )}
                 <span className="flex-1 truncate">
                   {opt.text || `Option ${i + 1}`}
                 </span>
+                {isQuiz && correctOptions.includes(opt.id) && (
+                  <span className="text-green-400 text-[11px] font-bold">✓</span>
+                )}
                 <span className="text-[11px] font-mono text-[#64748b]">0%</span>
               </div>
             ))}
@@ -575,7 +757,11 @@ export default function PollCreator() {
 
           <div className="pt-3 border-t border-[#1e293b] flex justify-between items-center text-[11px] text-[#64748b] font-mono">
             <span>Mode: {resultDisplay}</span>
-            <span>Theme: {preset.name}{effect === 'confetti' ? ' + confetti' : ''}</span>
+            <span>
+              {maxSelections > 1 ? `${maxSelections}-select` : 'single'}
+              {isQuiz ? ' · quiz' : ''}
+              {showVoters ? ' · voters' : ''}
+            </span>
             <span>Powered by PollLabs</span>
           </div>
         </div>

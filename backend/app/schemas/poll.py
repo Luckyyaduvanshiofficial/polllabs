@@ -48,6 +48,8 @@ class PollOptionResponse(BaseModel):
     icon_or_image: str | None = None
     vote_count: int | None = None
     percentage: float | None = None
+    is_correct: bool | None = None
+    voters: list[str] | None = None
 
 class PollCreate(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -58,6 +60,10 @@ class PollCreate(BaseModel):
     result_display: ResultDisplayType = "show_counts"
     close_at: datetime | str | None = None
     appearance: PollAppearance | None = None
+    max_selections: int = Field(default=1, ge=1, le=10)
+    is_quiz: bool = False
+    correct_options: list[str] | None = None
+    show_voters: bool = False
 
 class PollUpdate(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -67,6 +73,10 @@ class PollUpdate(BaseModel):
     result_display: ResultDisplayType | None = None
     close_at: datetime | str | None = None
     appearance: PollAppearance | None = None
+    max_selections: int | None = Field(default=None, ge=1, le=10)
+    is_quiz: bool | None = None
+    correct_options: list[str] | None = None
+    show_voters: bool | None = None
 
 class PollResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -82,6 +92,9 @@ class PollResponse(BaseModel):
     updated: str
     close_at: datetime | str | None = None
     appearance: PollAppearance | None = None
+    max_selections: int = 1
+    is_quiz: bool = False
+    show_voters: bool = False
 
 class PollListResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -100,3 +113,10 @@ class PollReportResponse(BaseModel):
     status: str
     poll_id: str
     message: str
+
+class PollImageResponse(BaseModel):
+    """Phase 4: reference to an uploaded poll option image."""
+
+    model_config = ConfigDict(from_attributes=True)
+    id: str
+    url: str

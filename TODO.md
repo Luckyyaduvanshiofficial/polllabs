@@ -12,7 +12,7 @@ This document tracks all tasks, deliverables, and implementation phases accordin
 - **Phase 4: Embeddable Widgets (Svelte & SVG)** — **100%** (Completed & Reviewed)
 - **Phase 5: Frontend Web & Dashboard (Astro + React)** — **100%** (Completed & Standards/Spec Hardened)
 - **Phase 6: Testing, Polish & Documentation** — **95%** (In Progress)
-- **Phase 7: Custom Poll Themes** — **15%** (In Progress, Phase 1 done)
+- **Phase 7: Custom Poll Themes** — **85%** (In Progress, Phases 1–3 + 5 done)
 
 ---
 
@@ -139,5 +139,5 @@ This document tracks all tasks, deliverables, and implementation phases accordin
 - [x] Phase 2 — Preset theme pack in widget (minimal/whatsapp/telegram/story/youtube-grid via data-theme + CSS vars, radius/font hooks, grid layout, data-effect hook for Phase 6, gzip 4.9KB < 15KB, live PB→API appearance round-trip verified) + fixed pre-existing 0-byte JSON write block (options 20000 / appearance 5000)
 - [x] Phase 3 — Creator studio theme picker (5 preset cards) + customizer (bg/accent/ink pickers with hex validation, corners, font, layout, confetti toggle), theme-aware simulated preview, appearance POST, live widget iframe in success modal
 - [ ] Phase 4 — Image uploads (`POST /polls/{id}/images` + PB file storage) + YouTube-style grid layout
-- [ ] Phase 5 — Behaviors: multiple answers, quiz mode, visible voters
+- [x] Phase 5 — Behaviors: multiple answers, quiz mode, visible voters (60 tests pass, 915-line widget, PollCreator toggles, PB migration `1789641000_behaviors.js`, pb_schema.json synced)
 - [ ] Phase 6 — Hand-rolled confetti celebration + docs + bundle verification
