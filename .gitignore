@@ -35,3 +35,11 @@ database/pb_data/
 Thumbs.db
 .vscode/
 .idea/
+
+# AI Agent Caches
+.agents/
+.claude/
+.commandcode/
+.zcode/
+skills-lock.json
+SKILL.md
