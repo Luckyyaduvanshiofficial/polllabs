@@ -2,21 +2,7 @@
 import RootLayout from '../layouts/RootLayout.astro';
 import { getApiUrl } from '../lib/config';
 import { getMarkdownBadgeSnippet, getIframeSnippet, getBadgeUrl } from '../lib/embed';
-
-const demoPoll = {
-  id: 'demo-frameworks',
-  title: 'Which web framework is your team prioritizing in 2026?',
-  description: 'Vote live below to test instant voting, result percentages, and embed generation.',
-  visibility: 'public' as const,
-  result_display: 'show_counts' as const,
-  owner: 'polls-lab-team',
-  total_votes: 1420,
-  options: [
-    { id: '1', text: 'Svelte 5 (Runes & Snippets)', icon_or_image: '🔥', vote_count: 654, percentage: 46.1 },
-    { id: '2', text: 'React 19 (Server Actions)', icon_or_image: '⚛️', vote_count: 483, percentage: 34.0 },
-    { id: '3', text: 'Astro (Islands Architecture)', icon_or_image: '🚀', vote_count: 283, percentage: 19.9 },
-  ],
-};
+import { DEMO_FRAMEWORKS_POLL as demoPoll } from '../lib/demo-poll';
 
 const badgeSvgUrl = getBadgeUrl(demoPoll.id, 'svg');
 const markdownBadgeSnippet = getMarkdownBadgeSnippet(demoPoll.title, demoPoll.id, 'svg');

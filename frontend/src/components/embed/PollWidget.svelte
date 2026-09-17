@@ -36,6 +36,9 @@
     appearance?: PollAppearance | null;
   }
 
+  import { getApiUrl } from '../../lib/config';
+  import { DEMO_FRAMEWORKS_POLL } from '../../lib/demo-poll';
+
   interface Props {
     pollId?: string;
     apiBaseUrl?: string;
@@ -48,7 +51,7 @@
     initialPoll = null,
   }: Props = $props();
 
-  let apiBase = $derived(apiBaseUrl || 'http://localhost:8000');
+  let apiBase = $derived(apiBaseUrl || getApiUrl());
 
   // Use $state.raw to eliminate deep proxy overhead for wholesale-reassigned API payloads (Svelte 5 best practices)
   let localPoll = $state.raw<PollData | null>(null);
@@ -229,6 +232,10 @@
         credentials: 'include',
       });
       if (res.status === 404) {
+        if (id === 'demo-frameworks' || id === 'demo') {
+          localPoll = DEMO_FRAMEWORKS_POLL;
+          return;
+        }
         isUnavailable = true;
         localPoll = null;
         return;
@@ -253,8 +260,12 @@
         }
       } catch {}
     } catch (err: any) {
-      errorMsg = err.message || 'Unable to connect to poll service.';
-      isUnavailable = true;
+      if (id === 'demo-frameworks' || id === 'demo') {
+        localPoll = DEMO_FRAMEWORKS_POLL;
+      } else {
+        errorMsg = err.message || 'Unable to connect to poll service.';
+        isUnavailable = true;
+      }
     } finally {
       loading = false;
     }

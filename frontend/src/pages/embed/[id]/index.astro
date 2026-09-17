@@ -4,6 +4,11 @@ import '../../../styles/global.css';
 
 export function getStaticPaths() {
   return [
+    { params: { id: 'demo-frameworks' } },
+    { params: { id: 'poll-state-manager' } },
+    { params: { id: 'poll-backend-lang' } },
+    { params: { id: 'poll-astro-deploy' } },
+    { params: { id: 'sample-1' } },
     { params: { id: 'demo' } },
   ];
 }
