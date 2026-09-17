@@ -1,7 +1,6 @@
 import uuid
-from datetime import datetime, timezone
 from typing import Any
-from fastapi import APIRouter, HTTPException, Query, status
+from fastapi import APIRouter, HTTPException, Query, Request, status
 from app.schemas.poll import (
     PollCreate,
     PollUpdate,
@@ -9,40 +8,52 @@ from app.schemas.poll import (
     PollListResponse,
     PollOptionResponse,
     PollReportRequest,
+    PollReportResponse,
 )
-from app.core.dependencies import CurrentUser, PocketBaseDep
+from app.core.dependencies import CurrentUser, OptionalUser, PocketBaseDep
+from app.core.rate_limit import hash_ip
 from app.services.moderation import validate_content_safety
+from app.services.poll_utils import is_poll_closed
 
 router = APIRouter(prefix="/polls", tags=["Polls"])
 
-def sanitize_poll_options_for_display(poll_data: dict[str, Any]) -> list[PollOptionResponse]:
-    """Applies PRD §3.2 result display rules (show_counts, show_percentage, hidden_until_close)."""
+def sanitize_poll_options_for_display(
+    poll_data: dict[str, Any],
+    is_owner: bool = False,
+) -> tuple[list[PollOptionResponse], int | None]:
+    """
+    Applies PRD §3.2 result display rules (show_counts, show_percentage, hidden_until_close).
+    Returns sanitized option list and masked/unmasked total_votes counter.
+    Owners always see full results in the dashboard.
+    """
     options = poll_data.get("options", [])
-    total_votes = poll_data.get("total_votes", 0)
+    raw_total = poll_data.get("total_votes", 0)
     result_display = poll_data.get("result_display", "show_counts")
-    close_at = poll_data.get("close_at")
-
-    is_closed = False
-    if close_at:
-        try:
-            close_time = datetime.fromisoformat(str(close_at).replace("Z", "+00:00"))
-            is_closed = datetime.now(timezone.utc) >= close_time
-        except Exception:
-            pass
+    closed = is_poll_closed(poll_data.get("close_at"))
 
     sanitized: list[PollOptionResponse] = []
+    display_total_votes: int | None = raw_total
+
     for opt in options:
         opt_dict = dict(opt)
         count = opt_dict.get("vote_count", 0)
-        percentage = round((count / total_votes * 100), 1) if total_votes > 0 else 0.0
+        percentage = round((count / raw_total * 100), 1) if raw_total > 0 else 0.0
 
-        if result_display == "hidden_until_close" and not is_closed:
-            display_count = -1
-            display_pct = None
-        elif result_display == "show_percentage":
-            display_count = -1
+        if is_owner:
+            # PRD §3.2: Owner always sees full results in dashboard
+            display_count = count
             display_pct = percentage
-        else:  # show_counts
+        elif result_display == "hidden_until_close" and not closed:
+            # PRD §3.2: No results shown to voters until close time
+            display_count = None
+            display_pct = None
+            display_total_votes = None
+        elif result_display == "show_percentage":
+            # PRD §3.2: Only percentages shown, no raw counts (total_votes is also masked)
+            display_count = None
+            display_pct = percentage
+            display_total_votes = None
+        else:  # show_counts or closed hidden poll
             display_count = count
             display_pct = percentage
 
@@ -56,11 +67,16 @@ def sanitize_poll_options_for_display(poll_data: dict[str, Any]) -> list[PollOpt
             )
         )
 
-    return sanitized
+    # Double check total_votes masking when not owner
+    if not is_owner:
+        if result_display == "show_percentage" or (result_display == "hidden_until_close" and not closed):
+            display_total_votes = None
 
-def map_poll_to_response(poll: dict[str, Any]) -> PollResponse:
+    return sanitized, display_total_votes
+
+def map_poll_to_response(poll: dict[str, Any], is_owner: bool = False) -> PollResponse:
     """Transforms raw PocketBase dictionary to strongly-typed PollResponse model."""
-    sanitized_options = sanitize_poll_options_for_display(poll)
+    sanitized_options, total_votes = sanitize_poll_options_for_display(poll, is_owner=is_owner)
     return PollResponse(
         id=poll["id"],
         title=poll["title"],
@@ -69,7 +85,7 @@ def map_poll_to_response(poll: dict[str, Any]) -> PollResponse:
         visibility=poll.get("visibility", "public"),
         result_display=poll.get("result_display", "show_counts"),
         owner=poll.get("owner", ""),
-        total_votes=poll.get("total_votes", 0),
+        total_votes=total_votes,
         created=poll.get("created", ""),
         updated=poll.get("updated", ""),
         close_at=poll.get("close_at"),
@@ -91,7 +107,7 @@ async def list_public_polls(
         sort_expr=sort,
     )
     raw_items = result.get("items", [])
-    items = [map_poll_to_response(item) for item in raw_items]
+    items = [map_poll_to_response(item, is_owner=False) for item in raw_items]
 
     return PollListResponse(
         items=items,
@@ -102,8 +118,15 @@ async def list_public_polls(
     )
 
 @router.get("/{poll_id}", response_model=PollResponse)
-async def get_poll(poll_id: str, pb: PocketBaseDep) -> PollResponse:
-    """Retrieves a single poll by ID, applying result display rules."""
+async def get_poll(
+    poll_id: str,
+    pb: PocketBaseDep,
+    current_user_id: OptionalUser = None,
+) -> PollResponse:
+    """
+    Retrieves a single poll by ID.
+    Unmasks full results if the requester is the authenticated owner (PRD §3.2).
+    """
     poll = await pb.get_poll(poll_id)
     if not poll:
         raise HTTPException(
@@ -111,7 +134,8 @@ async def get_poll(poll_id: str, pb: PocketBaseDep) -> PollResponse:
             detail="This poll is no longer available.",
         )
 
-    return map_poll_to_response(poll)
+    is_owner = bool(current_user_id and current_user_id == poll.get("owner"))
+    return map_poll_to_response(poll, is_owner=is_owner)
 
 @router.post("", response_model=PollResponse, status_code=status.HTTP_201_CREATED)
 @router.post("/", response_model=PollResponse, status_code=status.HTTP_201_CREATED)
@@ -150,20 +174,24 @@ async def create_poll(
             "vote_count": 0,
         })
 
+    close_at_val = None
+    if poll_in.close_at:
+        close_at_val = poll_in.close_at.isoformat() if hasattr(poll_in.close_at, "isoformat") else str(poll_in.close_at)
+
     poll_record = {
         "title": poll_in.title.strip(),
         "description": poll_in.description.strip() if poll_in.description else "",
         "options": structured_options,
         "visibility": poll_in.visibility,
         "result_display": poll_in.result_display,
-        "close_at": poll_in.close_at,
+        "close_at": close_at_val,
         "owner": owner_id,
         "total_votes": 0,
     }
 
     try:
         created = await pb.create_poll(poll_record)
-        return map_poll_to_response(created)
+        return map_poll_to_response(created, is_owner=True)
     except Exception as err:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -210,11 +238,12 @@ async def update_poll(
     if poll_update.result_display is not None:
         update_dict["result_display"] = poll_update.result_display
     if poll_update.close_at is not None:
-        update_dict["close_at"] = poll_update.close_at
+        close_val = poll_update.close_at.isoformat() if hasattr(poll_update.close_at, "isoformat") else str(poll_update.close_at)
+        update_dict["close_at"] = close_val
 
     try:
         updated = await pb.update_poll(poll_id, update_dict)
-        return map_poll_to_response(updated)
+        return map_poll_to_response(updated, is_owner=True)
     except Exception as err:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -248,14 +277,15 @@ async def delete_poll(
             detail="Failed to delete poll.",
         )
 
-@router.post("/{poll_id}/report", response_model=dict[str, str])
+@router.post("/{poll_id}/report", response_model=PollReportResponse)
 async def report_poll_abuse(
     poll_id: str,
     report: PollReportRequest,
+    request: Request,
     pb: PocketBaseDep,
-) -> dict[str, str]:
+) -> PollReportResponse:
     """
-    Report-abuse action on public polls (PRD §4.6).
+    Report-abuse action on public polls (PRD §4.6). Persists reports to PocketBase.
     """
     poll = await pb.get_poll(poll_id)
     if not poll:
@@ -264,8 +294,17 @@ async def report_poll_abuse(
             detail="Poll not found.",
         )
 
-    return {
-        "status": "reported",
-        "poll_id": poll_id,
-        "message": "Thank you for your report. Our moderators will review this content.",
-    }
+    client_ip = request.client.host if request.client else "127.0.0.1"
+    reporter_ip_hash = hash_ip(client_ip)
+
+    await pb.record_abuse_report(
+        poll_id=poll_id,
+        reason=report.reason,
+        ip_hash=reporter_ip_hash,
+    )
+
+    return PollReportResponse(
+        status="reported",
+        poll_id=poll_id,
+        message="Thank you for your report. Our moderators will review this content.",
+    )

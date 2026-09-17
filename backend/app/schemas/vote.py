@@ -13,5 +13,5 @@ class VoteResponse(BaseModel):
     message: str
     poll_id: str
     device_token: str
-    total_votes: int
+    total_votes: int | None = None
     options: list[PollOptionResponse]

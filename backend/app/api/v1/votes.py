@@ -1,10 +1,10 @@
 import uuid
-from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException, Request, Response, status
 from app.schemas.vote import VoteRequest, VoteResponse
 from app.core.rate_limit import check_ip_rate_limit, hash_ip
 from app.core.dependencies import PocketBaseDep
 from app.api.v1.polls import sanitize_poll_options_for_display
+from app.services.poll_utils import is_poll_closed
 
 router = APIRouter(prefix="/votes", tags=["Votes"])
 
@@ -18,7 +18,7 @@ async def submit_vote(
 ) -> VoteResponse:
     """
     Submits an anonymous vote on a poll.
-    Enforces device-token check and IP-hash rate limiting per PRD §4.6.
+    Enforces device-token check, localStorage fallback, and IP-hash rate limiting per PRD §4.6.
     """
     client_ip = request.client.host if request.client else "127.0.0.1"
 
@@ -37,22 +37,17 @@ async def submit_vote(
             detail="This poll is no longer available.",
         )
 
-    # Check expiration date
-    close_at = poll.get("close_at")
-    if close_at:
-        try:
-            close_time = datetime.fromisoformat(str(close_at).replace("Z", "+00:00"))
-            if datetime.now(timezone.utc) >= close_time:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="This poll is closed and no longer accepting votes.",
-                )
-        except Exception:
-            pass
+    # Check expiration date using deduplicated helper
+    if is_poll_closed(poll.get("close_at")):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This poll is closed and no longer accepting votes.",
+        )
 
-    # 3. Primary Signal: Device Token (Cookie or Header or Body)
+    # 3. Primary Signal: Device Token (Cookie, Header, or LocalStorage payload)
     cookie_token = request.cookies.get("polllabs_device_token")
-    device_token = vote.device_token or cookie_token or str(uuid.uuid4())
+    header_token = request.headers.get("x-device-token")
+    device_token = vote.device_token or cookie_token or header_token or str(uuid.uuid4())
 
     # Check for duplicate vote by this device token
     has_voted = await pb.has_device_voted(poll_id, device_token)
@@ -71,34 +66,25 @@ async def submit_vote(
             detail="Invalid option selected.",
         )
 
-    # 5. Record Vote in PocketBase
-    ip_h = hash_ip(client_ip)
+    # 5. Record Vote and atomically increment counts in PocketBase
+    client_ip_hash = hash_ip(client_ip)
     vote_record = {
         "poll_id": poll_id,
         "option_id": vote.option_id,
         "device_token": device_token,
-        "ip_hash": ip_h,
+        "ip_hash": client_ip_hash,
         "embed_referrer": vote.embed_referrer or request.headers.get("referer", ""),
     }
 
     try:
-        await pb.cast_vote(vote_record)
+        _, updated_poll = await pb.record_vote_and_increment(poll_id, vote_record)
     except Exception as err:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to record vote: {err}",
         )
 
-    # 6. Increment Counts
-    matched_option["vote_count"] = matched_option.get("vote_count", 0) + 1
-    total_votes = poll.get("total_votes", 0) + 1
-
-    await pb.update_poll(
-        poll_id,
-        {"options": options, "total_votes": total_votes},
-    )
-
-    # 7. Set httpOnly cookie for voter tracking across embeds
+    # 6. Set httpOnly cookie for voter tracking across embeds
     response.set_cookie(
         key="polllabs_device_token",
         value=device_token,
@@ -108,9 +94,8 @@ async def submit_vote(
         secure=True,
     )
 
-    poll["total_votes"] = total_votes
-    poll["options"] = options
-    sanitized_options = sanitize_poll_options_for_display(poll)
+    # 7. Apply result display masking so voter responses do not leak counts (PRD §3.2)
+    sanitized_options, total_votes = sanitize_poll_options_for_display(updated_poll, is_owner=False)
 
     return VoteResponse(
         success=True,

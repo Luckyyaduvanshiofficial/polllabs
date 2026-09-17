@@ -176,6 +176,35 @@
           "maxSize": 5242880,
           "protected": false
         }
+      },
+      {
+        "system": false,
+        "id": "users_deletion_status",
+        "name": "deletion_status",
+        "type": "select",
+        "required": false,
+        "presentable": false,
+        "unique": false,
+        "options": {
+          "maxSelect": 1,
+          "values": [
+            "active",
+            "pending_deletion"
+          ]
+        }
+      },
+      {
+        "system": false,
+        "id": "users_deletion_sched",
+        "name": "deletion_scheduled_for",
+        "type": "date",
+        "required": false,
+        "presentable": false,
+        "unique": false,
+        "options": {
+          "min": "",
+          "max": ""
+        }
       }
     ],
     "indexes": [],
@@ -290,5 +319,68 @@
     "options": {},
     "created": "2026-09-17 04:25:19.980Z",
     "updated": "2026-09-17 04:25:19.980Z"
+  },
+  {
+    "id": "71mbs71bjj9fvab",
+    "system": 0,
+    "type": "base",
+    "name": "abuse_reports",
+    "schema": [
+      {
+        "system": false,
+        "id": "7nbxsxla",
+        "name": "poll_id",
+        "type": "relation",
+        "required": true,
+        "presentable": false,
+        "unique": false,
+        "options": {
+          "collectionId": "25gr2lxfynb2l7k",
+          "cascadeDelete": true,
+          "minSelect": null,
+          "maxSelect": 1,
+          "displayFields": null
+        }
+      },
+      {
+        "system": false,
+        "id": "7uv7axyw",
+        "name": "reason",
+        "type": "text",
+        "required": true,
+        "presentable": false,
+        "unique": false,
+        "options": {
+          "min": 3,
+          "max": 1000,
+          "pattern": ""
+        }
+      },
+      {
+        "system": false,
+        "id": "7xuxaq9s",
+        "name": "ip_hash",
+        "type": "text",
+        "required": true,
+        "presentable": false,
+        "unique": false,
+        "options": {
+          "min": null,
+          "max": null,
+          "pattern": ""
+        }
+      }
+    ],
+    "indexes": [
+      "CREATE INDEX idx_abuse_poll ON abuse_reports (poll_id)"
+    ],
+    "listRule": null,
+    "viewRule": null,
+    "createRule": null,
+    "updateRule": null,
+    "deleteRule": null,
+    "options": {},
+    "created": "2026-09-17 04:55:00.000Z",
+    "updated": "2026-09-17 04:55:00.000Z"
   }
 ]

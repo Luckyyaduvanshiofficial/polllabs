@@ -1,6 +1,7 @@
 import json
 from fastapi.testclient import TestClient
 from app.main import app
+from app.api.v1.polls import sanitize_poll_options_for_display
 
 client = TestClient(app)
 
@@ -14,15 +15,36 @@ def test_health_check():
 def test_root():
     response = client.get("/")
     assert response.status_code == 200
-    assert "PollLabs API" in response.json()["message"]
+    data = response.json()
+    assert "PollLabs API" in data["message"]
+    assert data["docs"] == "/docs"
 
 def test_svg_badge_fallback():
     response = client.get("/api/v1/badges/non_existent_poll.svg")
     assert response.status_code == 200
     assert response.headers["content-type"] == "image/svg+xml"
     assert "<svg" in response.text
-    # PRD §4.6: "no longer available"
     assert "no longer available" in response.text
+
+def test_png_badge_fallback():
+    response = client.get("/api/v1/badges/non_existent_poll.png")
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "image/png"
+    assert len(response.content) > 50
+
+def test_auth_urls():
+    response = client.get("/api/v1/auth/github/url")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["provider"] == "github"
+    assert "auth-with-oauth2" in data["auth_url"]
+
+    me_resp = client.get(
+        "/api/v1/auth/me",
+        headers={"Authorization": "Bearer test-user-999"},
+    )
+    assert me_resp.status_code == 200
+    assert me_resp.json()["user_id"] == "test-user-999"
 
 def test_unauthorized_poll_creation():
     response = client.post(
@@ -33,7 +55,6 @@ def test_unauthorized_poll_creation():
             "visibility": "public",
         },
     )
-    # Without Auth header -> 401
     assert response.status_code == 401
 
 def test_moderation_rejection_on_creation():
@@ -54,7 +75,6 @@ def test_poll_report_abuse():
         "/api/v1/polls/fake_id_123/report",
         json={"reason": "Inappropriate or offensive question text"},
     )
-    # When poll not found in db
     assert response.status_code == 404
 
 def test_account_deletion_lifecycle():
@@ -73,3 +93,56 @@ def test_account_deletion_lifecycle():
     )
     assert cancel_resp.status_code == 200
     assert cancel_resp.json()["status"] == "active"
+
+def test_result_display_masking_percentage():
+    mock_poll = {
+        "id": "poll1",
+        "title": "Secret Poll",
+        "owner": "owner_user",
+        "total_votes": 100,
+        "result_display": "show_percentage",
+        "options": [
+            {"id": "opt1", "text": "Option A", "vote_count": 60},
+            {"id": "opt2", "text": "Option B", "vote_count": 40},
+        ],
+    }
+
+    # Voter / Non-owner: raw counts and total_votes MUST BE masked (None)
+    voter_options, voter_total = sanitize_poll_options_for_display(mock_poll, is_owner=False)
+    assert voter_total is None
+    assert voter_options[0].vote_count is None
+    assert voter_options[0].percentage == 60.0
+    assert voter_options[1].vote_count is None
+    assert voter_options[1].percentage == 40.0
+
+    # Owner: all raw counts and total_votes are visible
+    owner_options, owner_total = sanitize_poll_options_for_display(mock_poll, is_owner=True)
+    assert owner_total == 100
+    assert owner_options[0].vote_count == 60
+    assert owner_options[0].percentage == 60.0
+
+def test_result_display_masking_hidden_until_close():
+    mock_poll = {
+        "id": "poll2",
+        "title": "Future Result Poll",
+        "owner": "owner_user",
+        "total_votes": 50,
+        "result_display": "hidden_until_close",
+        "close_at": "2099-01-01T00:00:00Z",
+        "options": [
+            {"id": "opt1", "text": "Option A", "vote_count": 25},
+            {"id": "opt2", "text": "Option B", "vote_count": 25},
+        ],
+    }
+
+    # Voter: nothing shown until close
+    voter_options, voter_total = sanitize_poll_options_for_display(mock_poll, is_owner=False)
+    assert voter_total is None
+    assert voter_options[0].vote_count is None
+    assert voter_options[0].percentage is None
+
+    # Owner: sees full counts
+    owner_options, owner_total = sanitize_poll_options_for_display(mock_poll, is_owner=True)
+    assert owner_total == 50
+    assert owner_options[0].vote_count == 25
+    assert owner_options[0].percentage == 50.0

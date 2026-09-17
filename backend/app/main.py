@@ -1,12 +1,24 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, Response
+from pydantic import BaseModel, ConfigDict
 from starlette.middleware.base import BaseHTTPMiddleware
 from app.core.config import settings
 from app.api.v1.router import api_router
+from app.services.pocketbase_service import AsyncPocketBaseService
+
+class RootResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    message: str
+    docs: str
+    version: str
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    pb_service = AsyncPocketBaseService()
+    await pb_service.start()
+    app.state.pb_service = pb_service
     yield
+    await pb_service.close()
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -55,10 +67,10 @@ class ScopedCORSMiddleware(BaseHTTPMiddleware):
 app.add_middleware(ScopedCORSMiddleware)
 app.include_router(api_router, prefix=settings.API_V1_STR)
 
-@app.get("/")
-def root() -> dict[str, str]:
-    return {
-        "message": "Welcome to PollLabs API",
-        "docs": "/docs",
-        "version": settings.VERSION,
-    }
+@app.get("/", response_model=RootResponse)
+def root() -> RootResponse:
+    return RootResponse(
+        message="Welcome to PollLabs API",
+        docs="/docs",
+        version=settings.VERSION,
+    )

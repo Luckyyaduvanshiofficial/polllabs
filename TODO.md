@@ -36,35 +36,39 @@ This document tracks all tasks, deliverables, and implementation phases accordin
 - [x] Create `votes` collection:
   - Fields: `poll_id` (relation to `polls` with `cascadeDelete: true`), `option_id`, `device_token`, `ip_hash`, `embed_referrer`
   - Indexes: `idx_votes_poll` (`poll_id`), `idx_votes_device_poll` (`poll_id, device_token`), `idx_votes_ip_poll` (`poll_id, ip_hash`)
+- [x] Create `abuse_reports` collection:
+  - Fields: `poll_id` (relation to `polls` with `cascadeDelete: true`), `reason`, `ip_hash`
+  - Index: `idx_abuse_poll` (`poll_id`)
 - [x] Configure collection API Rules (locked `votes.createRule` to enforce FastAPI backend checks)
-- [x] Configure `users` collection to GitHub OAuth only (PRD §2)
+- [x] Configure `users` collection to GitHub OAuth only (PRD §2) with account deletion lifecycle fields (`deletion_status`, `deletion_scheduled_for`)
 - [x] Export schema to `database/pb_schema.json`
 - [x] Add PocketBase migration scripts in `database/pb_migrations/1789619075_init_schema.js`
 
 ---
 
 ## ⚡ Phase 3: Backend API & Abuse Mitigation (FastAPI)
-- [x] Setup FastAPI core with scoped CORS (PRD §4.7) and OpenAPI docs
+- [x] Setup FastAPI core with scoped CORS (PRD §4.7) and OpenAPI docs (`/docs`)
 - [x] Implement IP hashing and sliding-window rate limiter (`rate_limit.py`)
 - [x] Align schemas and endpoints with Pydantic v2 (no ellipsis, ConfigDict, return types, status constants)
 - [x] GitHub OAuth authentication endpoints (`/api/v1/auth/github/url`, `/api/v1/auth/me`)
-- [x] Account deletion request with 7-day grace period lifecycle (`/auth/delete-account`, `/auth/cancel-delete-account`)
+- [x] Account deletion request with 7-day grace period lifecycle (`/auth/delete-account`, `/auth/cancel-delete-account`, `/auth/purge-expired-accounts`)
 - [x] Content moderation & profanity filtering service (`moderation.py`)
-- [x] Asynchronous PocketBase service (`pocketbase_service.py`) with automatic vote pagination
+- [x] Asynchronous PocketBase service (`pocketbase_service.py`) with connection pooling, automatic vote pagination, and atomic increments
 - [x] Poll CRUD endpoints (`/api/v1/polls`):
   - [x] `POST /` — Create poll (owner-authenticated, profanity filtered, supports text, emoji, images)
   - [x] `GET /` — List public polls (with pagination, sort, and result display formatting)
-  - [x] `GET /{id}` — Get single poll details (respects `show_counts`, `show_percentage`, `hidden_until_close`)
+  - [x] `GET /{id}` — Get single poll details (respects `show_counts`, `show_percentage`, `hidden_until_close`; unmasked for owner)
   - [x] `PATCH /{id}` — Edit poll (owner-only authorization)
   - [x] `DELETE /{id}` — Delete poll (owner-only authorization)
-  - [x] `POST /{id}/report` — Report abuse on public polls
+  - [x] `POST /{id}/report` — Report abuse on public polls with persistent storage
 - [x] Voting endpoint (`/api/v1/votes/{poll_id}`):
   - [x] Rate limit check (IP hash with `HTTP_429_TOO_MANY_REQUESTS`)
-  - [x] Device token validation (prevents duplicate voting by same voter)
-  - [x] Record vote in PocketBase with option increment
-  - [x] Issue `polllabs_device_token` httpOnly cookie
+  - [x] Device token validation (prevents duplicate voting; supports cookie, header, and localStorage fallback)
+  - [x] Concurrency-safe atomic vote increment in PocketBase (`total_votes+`)
+  - [x] Issue `polllabs_device_token` httpOnly cookie and return token in response
+  - [x] Respect result display masking so voter responses do not leak counts
 - [x] Public leaderboard endpoint (`/api/v1/leaderboard`):
-  - [x] Trending polls query (`/trending` with engagement threshold)
+  - [x] Trending polls query (`/trending`)
   - [x] Top polls query (`/top`)
   - [x] Most-voted options query (`/most-voted-options`)
 - [x] Owner Analytics endpoints (`/api/v1/analytics/{poll_id}`):
@@ -72,8 +76,9 @@ This document tracks all tasks, deliverables, and implementation phases accordin
   - [x] Option breakdown & percentages
   - [x] Referrer / embed sources breakdown
   - [x] Raw export in valid CSV and JSON formats (`/export`)
-- [x] Dynamic SVG badge generation (`/api/v1/badges/{poll_id}.svg`) with "no longer available" graceful fallback
-- [x] Comprehensive Pytest suite with 12 passing unit and integration tests
+- [x] Dynamic SVG & PNG badge generation (`/api/v1/badges/{poll_id}.svg`, `/{poll_id}.png`) with live interactive link & graceful fallback
+- [x] Comprehensive Pytest suite with 16 passing unit and integration tests
+- [x] Self-hosting deployment guide (`docs/self-hosting.md`) and contributing guide (`CONTRIBUTING.md`)
 
 ---
 

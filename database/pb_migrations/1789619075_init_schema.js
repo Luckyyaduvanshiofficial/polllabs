@@ -11,6 +11,21 @@ migrate((db) => {
     minPasswordLength: 8,
     requireEmail: false,
   };
+  // Add deletion lifecycle fields to users collection per PRD §7
+  users.schema.addField(new SchemaField({
+    name: "deletion_status",
+    type: "select",
+    required: false,
+    options: {
+      maxSelect: 1,
+      values: ["active", "pending_deletion"]
+    }
+  }));
+  users.schema.addField(new SchemaField({
+    name: "deletion_scheduled_for",
+    type: "date",
+    required: false
+  }));
   dao.saveCollection(users);
 
   // 1. Create 'polls' collection
@@ -143,8 +158,53 @@ migrate((db) => {
   });
 
   dao.saveCollection(votesCollection);
+
+  // 3. Create 'abuse_reports' collection with cascadeDelete: true
+  const abuseReportsCollection = new Collection({
+    name: "abuse_reports",
+    type: "base",
+    system: false,
+    schema: [
+      {
+        name: "poll_id",
+        type: "relation",
+        required: true,
+        options: {
+          collectionId: pollsCollection.id,
+          cascadeDelete: true,
+          maxSelect: 1
+        }
+      },
+      {
+        name: "reason",
+        type: "text",
+        required: true,
+        options: { min: 3, max: 1000 }
+      },
+      {
+        name: "ip_hash",
+        type: "text",
+        required: true
+      }
+    ],
+    indexes: [
+      "CREATE INDEX idx_abuse_poll ON abuse_reports (poll_id)"
+    ],
+    listRule: null,
+    viewRule: null,
+    createRule: null,
+    updateRule: null,
+    deleteRule: null
+  });
+
+  dao.saveCollection(abuseReportsCollection);
 }, (db) => {
   const dao = new Dao(db);
+  try {
+    const abuse = dao.findCollectionByNameOrId("abuse_reports");
+    if (abuse) dao.deleteCollection(abuse);
+  } catch (e) {}
+
   try {
     const votes = dao.findCollectionByNameOrId("votes");
     if (votes) dao.deleteCollection(votes);

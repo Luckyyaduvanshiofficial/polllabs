@@ -29,12 +29,11 @@ async def fetch_leaderboard_polls(
 async def get_trending_polls(
     pb: PocketBaseDep,
     limit: int = Query(default=10, ge=1, le=50),
-    min_votes: int = Query(default=3, ge=0),
 ) -> LeaderboardResponse:
     """
-    Returns trending polls based on highest vote counts with engagement thresholds (PRD §3.1, §4.3).
+    Returns trending polls based on highest vote counts with engagement activity (PRD §3.1, §4.3).
     """
-    filter_expr = f'visibility="public" && total_votes >= {min_votes}'
+    filter_expr = 'visibility="public" && total_votes > 0'
     return await fetch_leaderboard_polls(
         pb=pb,
         filter_expr=filter_expr,

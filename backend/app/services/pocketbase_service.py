@@ -1,6 +1,8 @@
 import logging
 import re
+from datetime import datetime, timezone
 from typing import Any
+from fastapi import Request
 import httpx
 from app.core.config import settings
 
@@ -14,6 +16,35 @@ class AsyncPocketBaseService:
     def __init__(self, base_url: str = settings.POCKETBASE_URL):
         self.base_url = base_url.rstrip("/")
         self.admin_token: str | None = None
+        self._client: httpx.AsyncClient | None = None
+
+    async def start(self) -> None:
+        """Initializes long-lived HTTP client for connection pooling."""
+        if self._client is None or self._client.is_closed:
+            self._client = httpx.AsyncClient(base_url=self.base_url, timeout=10.0)
+
+    async def close(self) -> None:
+        """Gracefully closes long-lived HTTP client."""
+        if self._client and not self._client.is_closed:
+            await self._client.aclose()
+            self._client = None
+
+    async def _get_client(self) -> httpx.AsyncClient:
+        """Returns active client instance, lazily initializing if not started or if event loop changed."""
+        import asyncio
+        try:
+            current_loop = asyncio.get_running_loop()
+        except RuntimeError:
+            current_loop = None
+
+        if (
+            self._client is None
+            or self._client.is_closed
+            or getattr(self, "_loop", None) != current_loop
+        ):
+            self._loop = current_loop
+            self._client = httpx.AsyncClient(base_url=self.base_url, timeout=2.0)
+        return self._client
 
     async def get_admin_token(self) -> str:
         """Retrieves or refreshes superuser auth token for server-side queries."""
@@ -21,19 +52,19 @@ class AsyncPocketBaseService:
             return self.admin_token
 
         try:
-            async with httpx.AsyncClient(base_url=self.base_url, timeout=2.0) as client:
-                resp = await client.post(
-                    "/api/admins/auth-with-password",
-                    json={
-                        "identity": settings.POCKETBASE_ADMIN_EMAIL,
-                        "password": settings.POCKETBASE_ADMIN_PASSWORD,
-                    },
-                )
-                if resp.status_code == 200:
-                    data = resp.json()
-                    self.admin_token = data.get("token", "")
-                    return self.admin_token
-        except httpx.RequestError as err:
+            client = await self._get_client()
+            resp = await client.post(
+                "/api/admins/auth-with-password",
+                json={
+                    "identity": settings.POCKETBASE_ADMIN_EMAIL,
+                    "password": settings.POCKETBASE_ADMIN_PASSWORD,
+                },
+            )
+            if resp.status_code == 200:
+                data = resp.json()
+                self.admin_token = data.get("token", "")
+                return self.admin_token
+        except Exception as err:
             logger.warning("PocketBase admin auth failed: %s", err)
 
         return ""
@@ -46,22 +77,22 @@ class AsyncPocketBaseService:
         json_data: dict[str, Any] | None = None,
         params: dict[str, Any] | None = None,
     ) -> httpx.Response | None:
-        """Executes an authenticated async HTTP request to PocketBase with connection failure handling."""
+        """Executes an authenticated async HTTP request to PocketBase with connection pooling."""
         token = user_token or await self.get_admin_token()
         headers = {}
         if token:
             headers["Authorization"] = token
 
         try:
-            async with httpx.AsyncClient(base_url=self.base_url, timeout=5.0) as client:
-                return await client.request(
-                    method,
-                    path,
-                    headers=headers,
-                    json=json_data,
-                    params=params,
-                )
-        except httpx.RequestError as err:
+            client = await self._get_client()
+            return await client.request(
+                method,
+                path,
+                headers=headers,
+                json=json_data,
+                params=params,
+            )
+        except Exception as err:
             logger.warning("PocketBase request error [%s %s]: %s", method, path, err)
             return None
 
@@ -159,6 +190,40 @@ class AsyncPocketBaseService:
             raise ValueError(detail)
         return resp.json()
 
+    async def record_vote_and_increment(
+        self,
+        poll_id: str,
+        vote_data: dict[str, Any],
+    ) -> tuple[dict[str, Any], dict[str, Any]]:
+        """
+        Atomically records a vote and increments poll counters in PocketBase.
+        Eliminates race conditions by utilizing PocketBase 'total_votes+' atomic increment.
+        """
+        poll = await self.get_poll(poll_id)
+        if not poll:
+            raise ValueError("Poll not found")
+
+        # 1. Cast individual vote record
+        vote_resp = await self.cast_vote(vote_data)
+
+        # 2. Update option-specific count and atomically increment total_votes
+        options = poll.get("options", [])
+        option_id = vote_data["option_id"]
+        for opt in options:
+            if opt.get("id") == option_id:
+                opt["vote_count"] = opt.get("vote_count", 0) + 1
+                break
+
+        update_payload = {
+            "options": options,
+            "total_votes+": 1,
+        }
+        updated_poll = await self.update_poll(poll_id, update_payload)
+        # Ensure returned poll reflects latest total_votes for display mapping
+        if "total_votes" not in updated_poll or updated_poll["total_votes"] == poll.get("total_votes", 0):
+            updated_poll["total_votes"] = poll.get("total_votes", 0) + 1
+        return vote_resp, updated_poll
+
     async def list_votes_for_poll(self, poll_id: str) -> list[dict[str, Any]]:
         """Fetches all votes for a poll with automatic pagination (PRD §5)."""
         clean_poll_id = sanitize_identifier(poll_id)
@@ -187,8 +252,77 @@ class AsyncPocketBaseService:
 
         return all_votes
 
-pb_service = AsyncPocketBaseService()
+    # --- Abuse Reports CRUD ---
 
-def get_pb_service() -> AsyncPocketBaseService:
-    """FastAPI dependency yielding async PocketBase service."""
-    return pb_service
+    async def record_abuse_report(
+        self,
+        poll_id: str,
+        reason: str,
+        ip_hash: str,
+    ) -> dict[str, Any]:
+        """Persists an abuse report for a poll in PocketBase (PRD §4.6)."""
+        clean_poll_id = sanitize_identifier(poll_id)
+        report_data = {
+            "poll_id": clean_poll_id,
+            "reason": reason,
+            "ip_hash": ip_hash,
+        }
+        resp = await self._request(
+            "POST",
+            "/api/collections/abuse_reports/records",
+            json_data=report_data,
+        )
+        if resp and resp.status_code in (200, 201):
+            return resp.json()
+        return report_data
+
+    # --- User Lifecycle & Deletion ---
+
+    async def set_user_deletion_status(
+        self,
+        user_id: str,
+        status: str,
+        scheduled_for: str | None = None,
+    ) -> dict[str, Any]:
+        """Sets deletion lifecycle status on a user record (PRD §7)."""
+        clean_user_id = sanitize_identifier(user_id)
+        payload: dict[str, Any] = {"deletion_status": status}
+        if scheduled_for is not None:
+            payload["deletion_scheduled_for"] = scheduled_for
+
+        resp = await self._request(
+            "PATCH",
+            f"/api/collections/users/records/{clean_user_id}",
+            json_data=payload,
+        )
+        if resp and resp.status_code == 200:
+            return resp.json()
+        return {"id": user_id, "deletion_status": status}
+
+    async def purge_expired_accounts(self) -> int:
+        """Purges accounts that reached the end of their 7-day deletion grace window (PRD §7)."""
+        now_iso = datetime.now(timezone.utc).isoformat()
+        filter_expr = f'deletion_status="pending_deletion" && deletion_scheduled_for<="{now_iso}"'
+        resp = await self._request(
+            "GET",
+            "/api/collections/users/records",
+            params={"filter": filter_expr, "perPage": 100},
+        )
+        if not resp or resp.status_code != 200:
+            return 0
+
+        users = resp.json().get("items", [])
+        purged = 0
+        for u in users:
+            del_resp = await self._request("DELETE", f"/api/collections/users/records/{u['id']}")
+            if del_resp and del_resp.status_code == 204:
+                purged += 1
+        return purged
+
+def get_pb_service(request: Request) -> AsyncPocketBaseService:
+    """FastAPI dependency yielding async PocketBase service managed on application state."""
+    pb = getattr(request.app.state, "pb_service", None)
+    if pb is None:
+        pb = AsyncPocketBaseService()
+        request.app.state.pb_service = pb
+    return pb

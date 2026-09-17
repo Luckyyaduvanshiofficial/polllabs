@@ -17,6 +17,8 @@ class Settings(BaseSettings):
     POCKETBASE_ADMIN_PASSWORD: str = ""
 
     # Platform frontend origins for protected management operations
+    FRONTEND_URL: str = "http://localhost:4321"
+    ENVIRONMENT: str = "development"
     BACKEND_CORS_ORIGINS: list[str] = [
         "http://localhost:4321",
         "http://127.0.0.1:4321",
