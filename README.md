@@ -1,8 +1,10 @@
 # PollLabs
 
-[![Which web framework is your team prioritizing in 2026?](http://localhost:8000/api/v1/badges/demo-frameworks.svg)](http://localhost:4321/polls/demo-frameworks)
+> Embeddable polls, live SVG badges, and public leaderboards for developer communities.
 
-An open-source, lightweight platform for embeddable polls and leaderboards.
+[![Which web framework is your team prioritizing in 2026?](https://YOUR_API_URL/api/v1/badges/demo-frameworks.svg)](https://YOUR_FRONTEND_URL/polls/demo-frameworks)
+
+> **Note:** Replace `YOUR_API_URL` and `YOUR_FRONTEND_URL` with your deployed URLs. See [Self-Hosting Guide](docs/self-hosting.md) for deployment options.
 
 ## Features
 - **Embeddable Polls:** Renderable as static SVG badges (for GitHub READMEs) or interactive iframe widgets.
@@ -38,6 +40,32 @@ cd frontend
 npm run dev
 ```
 Frontend will be available at `http://localhost:4321`.
+
+## Embed a Poll
+
+### GitHub README (SVG Badge)
+GitHub renders SVG badges that link to your poll page:
+
+```markdown
+[![Poll Title](https://YOUR_API_URL/api/v1/badges/POLL_ID.svg)](https://YOUR_FRONTEND_URL/polls/POLL_ID)
+```
+
+### Website / Blog (Interactive Iframe)
+Embed a fully interactive voting widget:
+
+```html
+<iframe
+  src="https://YOUR_FRONTEND_URL/embed?id=POLL_ID"
+  width="400"
+  height="340"
+  frameborder="0"
+></iframe>
+```
+
+### Markdown Blogs (Hugo, Astro, etc.)
+```markdown
+![Poll](https://YOUR_API_URL/api/v1/badges/POLL_ID.svg)
+```
 
 ## License
 Apache 2.0 - See [LICENSE](LICENSE) for details.
