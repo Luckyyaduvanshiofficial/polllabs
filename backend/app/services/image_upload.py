@@ -12,7 +12,7 @@ from urllib.parse import quote
 
 from app.core.config import settings
 
-logger = logging.getLogger("polllabs.images")
+logger = logging.getLogger("polls-lab.images")
 
 MAX_IMAGE_BYTES = 2 * 1024 * 1024
 ALLOWED_MIME_TYPES = ("image/jpeg", "image/png", "image/gif", "image/webp")

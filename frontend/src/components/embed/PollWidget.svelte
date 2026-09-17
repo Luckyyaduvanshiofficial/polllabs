@@ -241,7 +241,7 @@
 
       // Check if user has previously voted on this poll in localStorage
       try {
-        const storedVote = localStorage.getItem(`polllabs_voted_${id}`);
+        const storedVote = localStorage.getItem(`polls-lab_voted_${id}`);
         if (storedVote) {
           hasVoted = true;
           if (storedVote.includes(',')) {
@@ -293,7 +293,7 @@
 
     let deviceToken: string | null = null;
     try {
-      deviceToken = localStorage.getItem('polllabs_device_token');
+      deviceToken = localStorage.getItem('polls-lab_device_token');
     } catch {}
 
     try {
@@ -326,9 +326,9 @@
 
       if (data.device_token) {
         try {
-          localStorage.setItem('polllabs_device_token', data.device_token);
+          localStorage.setItem('polls-lab_device_token', data.device_token);
           const voteKey = Array.isArray(payload) ? payload.join(',') : payload;
-          localStorage.setItem(`polllabs_voted_${effectivePollId}`, voteKey);
+          localStorage.setItem(`polls-lab_voted_${effectivePollId}`, voteKey);
         } catch {}
       }
 
@@ -453,7 +453,7 @@
         rel="noopener noreferrer"
         class="inline-block mt-3 text-xs text-blue-600 dark:text-blue-400 hover:underline font-medium"
       >
-        Create your own poll with PollLabs →
+        Create your own poll with Polls Lab →
       </a>
     </div>
   {:else if poll}
@@ -645,7 +645,7 @@
         rel="noopener noreferrer"
         class="hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium flex items-center gap-1"
       >
-        <span>PollLabs</span>
+        <span>Polls Lab</span>
       </a>
     </div>
 

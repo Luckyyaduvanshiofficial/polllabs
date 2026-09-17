@@ -76,7 +76,7 @@ app.include_router(api_router, prefix=settings.API_V1_STR)
 @app.get("/", response_model=RootResponse)
 def root() -> RootResponse:
     return RootResponse(
-        message="Welcome to PollLabs API",
+        message="Welcome to Polls Lab API",
         docs="/docs",
         version=settings.VERSION,
     )

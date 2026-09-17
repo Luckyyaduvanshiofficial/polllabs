@@ -1,4 +1,4 @@
-# PollLabs — Project Roadmap & Progress Tracker
+# Polls Lab — Project Roadmap & Progress Tracker
 
 This document tracks all tasks, deliverables, and implementation phases according to the [PRD](poll-leaderboard-prd.md). It is continuously updated as tasks are completed.
 
@@ -66,7 +66,7 @@ This document tracks all tasks, deliverables, and implementation phases accordin
   - [x] Rate limit check (IP hash with `HTTP_429_TOO_MANY_REQUESTS`)
   - [x] Device token validation (prevents duplicate voting; supports cookie, header, and localStorage fallback)
   - [x] Concurrency-safe atomic vote increment in PocketBase (`total_votes+`)
-  - [x] Issue `polllabs_device_token` httpOnly cookie and return token in response
+  - [x] Issue `polls-lab_device_token` httpOnly cookie and return token in response
   - [x] Respect result display masking so voter responses do not leak counts
 - [x] Public leaderboard endpoint (`/api/v1/leaderboard`):
   - [x] Trending polls query (`/trending`)

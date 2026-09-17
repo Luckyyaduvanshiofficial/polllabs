@@ -1,12 +1,12 @@
-# PollLabs — Self-Hosting Guide
+# Polls Lab — Self-Hosting Guide
 
-This guide walks through deploying a self-hosted instance of PollLabs using Docker, commodity VPS, or bare-metal Linux.
+This guide walks through deploying a self-hosted instance of Polls Lab using Docker, commodity VPS, or bare-metal Linux.
 
 ---
 
 ## 🏗️ Architecture Overview
 
-PollLabs consists of three core components:
+Polls Lab consists of three core components:
 1. **PocketBase** (`:8090`): Embedded SQLite database, OAuth2 provider, and file store.
 2. **FastAPI Backend** (`:8000`): Rate-limiting proxy, abuse mitigation engine, and REST API.
 3. **Astro Frontend** (`:4321`): Server/static frontend, Svelte embed widgets (< 15KB), and React management dashboard.
@@ -25,7 +25,7 @@ POCKETBASE_ADMIN_PASSWORD=change_this_strong_password
 
 # FastAPI Backend
 API_V1_STR=/api/v1
-PROJECT_NAME=PollLabs API
+PROJECT_NAME=Polls Lab API
 VERSION=0.1.0
 ENVIRONMENT=production
 FRONTEND_URL=https://polls.yourdomain.com
@@ -110,7 +110,7 @@ fly volumes create pb_data --region iad --size 1
 
 ### 2. Configure `fly.toml`
 ```toml
-app = "polllabs"
+app = "polls-lab"
 primary_region = "iad"
 
 [mounts]

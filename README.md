@@ -1,4 +1,4 @@
-# PollLabs
+# Polls Lab
 
 > Embeddable polls, live SVG badges, and public leaderboards for developer communities.
 

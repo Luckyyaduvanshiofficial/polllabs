@@ -10,13 +10,13 @@ def test_health_check():
     assert response.status_code == 200
     data = response.json()
     assert data["status"] == "ok"
-    assert data["service"] == "polllabs-api"
+    assert data["service"] == "polls-lab-api"
 
 def test_root():
     response = client.get("/")
     assert response.status_code == 200
     data = response.json()
-    assert "PollLabs API" in data["message"]
+    assert "Polls Lab API" in data["message"]
     assert data["docs"] == "/docs"
 
 def test_svg_badge_fallback():
@@ -228,7 +228,7 @@ def test_purge_expired_accounts_admin_protection():
     assert resp_invalid.status_code == 403
 
     # With valid admin key -> 200
-    valid_key = settings.POCKETBASE_ADMIN_PASSWORD or "polllabs-admin-secret"
+    valid_key = settings.POCKETBASE_ADMIN_PASSWORD or "polls-lab-admin-secret"
     resp_valid = client.post(
         "/api/v1/auth/purge-expired-accounts",
         headers={"X-Admin-Key": valid_key},

@@ -46,7 +46,7 @@ async def submit_vote(
         )
 
     # 3. Primary Signal: Device Token (Cookie, Header, or LocalStorage payload)
-    cookie_token = request.cookies.get("polllabs_device_token")
+    cookie_token = request.cookies.get("polls-lab_device_token")
     header_token = request.headers.get("x-device-token")
     device_token = vote.device_token or cookie_token or header_token or str(uuid.uuid4())
 
@@ -116,7 +116,7 @@ async def submit_vote(
 
     # 10. Set httpOnly cookie for voter tracking across embeds
     response.set_cookie(
-        key="polllabs_device_token",
+        key="polls-lab_device_token",
         value=device_token,
         max_age=31536000,  # 1 year
         httponly=True,

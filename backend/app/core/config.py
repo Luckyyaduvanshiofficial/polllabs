@@ -7,7 +7,7 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    PROJECT_NAME: str = "PollLabs API"
+    PROJECT_NAME: str = "Polls Lab API"
     VERSION: str = "0.1.0"
     API_V1_STR: str = "/api/v1"
 

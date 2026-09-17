@@ -26,7 +26,7 @@ export default function PollAnalytics({ pollId, apiBaseUrl }: Props) {
     try {
       setLoading(true);
       setError(null);
-      const token = typeof window !== 'undefined' ? localStorage.getItem('polllabs_auth_token') || 'dev-user-local' : 'dev-user-local';
+      const token = typeof window !== 'undefined' ? localStorage.getItem('polls-lab_auth_token') || 'dev-user-local' : 'dev-user-local';
       const res = await fetch(`${apiBase}/api/v1/analytics/${pollId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -55,7 +55,7 @@ export default function PollAnalytics({ pollId, apiBaseUrl }: Props) {
   const handleExport = async (format: 'csv' | 'json') => {
     try {
       setExportingFormat(format);
-      const token = typeof window !== 'undefined' ? localStorage.getItem('polllabs_auth_token') || 'dev-user-local' : 'dev-user-local';
+      const token = typeof window !== 'undefined' ? localStorage.getItem('polls-lab_auth_token') || 'dev-user-local' : 'dev-user-local';
       const res = await fetch(`${apiBase}/api/v1/analytics/${pollId}/export?format=${format}`, {
         headers: {
           'Authorization': `Bearer ${token}`,

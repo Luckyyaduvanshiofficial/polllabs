@@ -130,7 +130,7 @@ export default function PollCreator() {
     setUploadingIdx(index);
     setErrorMessage(null);
     try {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('polllabs_auth_token') || 'dev-user-local' : 'dev-user-local';
+      const token = typeof window !== 'undefined' ? localStorage.getItem('polls-lab_auth_token') || 'dev-user-local' : 'dev-user-local';
       const form = new FormData();
       form.append('file', file);
       const res = await fetch(`${getApiUrl()}/api/v1/polls/images`, {
@@ -176,7 +176,7 @@ export default function PollCreator() {
 
     startTransition(async () => {
       try {
-        const token = typeof window !== 'undefined' ? localStorage.getItem('polllabs_auth_token') || 'dev-user-local' : 'dev-user-local';
+        const token = typeof window !== 'undefined' ? localStorage.getItem('polls-lab_auth_token') || 'dev-user-local' : 'dev-user-local';
         const res = await fetch(`${getApiUrl()}/api/v1/polls`, {
           method: 'POST',
           headers: {
@@ -680,7 +680,7 @@ export default function PollCreator() {
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
                 </svg>
-                <span>Publishing to PollLabs...</span>
+                <span>Publishing to Polls Lab...</span>
               </>
             ) : (
               <span>Publish Poll & Generate Embeds</span>
@@ -762,7 +762,7 @@ export default function PollCreator() {
               {isQuiz ? ' · quiz' : ''}
               {showVoters ? ' · voters' : ''}
             </span>
-            <span>Powered by PollLabs</span>
+            <span>Powered by Polls Lab</span>
           </div>
         </div>
 

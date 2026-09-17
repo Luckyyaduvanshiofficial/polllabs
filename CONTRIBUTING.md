@@ -1,13 +1,13 @@
-# Contributing to PollLabs
+# Contributing to Polls Lab
 
-Thank you for your interest in contributing to PollLabs! We welcome community contributions, bug reports, and enhancements.
+Thank you for your interest in contributing to Polls Lab! We welcome community contributions, bug reports, and enhancements.
 
 ## Code of Conduct & Core Values
 - Be respectful, constructive, and inclusive.
 - Prioritize user privacy, anonymous frictionless voting, and secret hygiene.
 
 ## Repository Architecture
-PollLabs is structured into three clean pillars:
+Polls Lab is structured into three clean pillars:
 - **`frontend/`**: Astro 5/7 + React (dashboard) + Svelte 5 (embed widget < 15KB) + Tailwind CSS v4. Package manager: `pnpm` exclusively (`corepack pnpm`).
 - **`backend/`**: FastAPI (async I/O, sync CPU tasks) + Pydantic v2. Virtualenv in `backend/.venv` (Python 3.12).
 - **`database/`**: PocketBase v0.22 standalone binary with SQLite. Schema migrations in `pb_migrations/`.

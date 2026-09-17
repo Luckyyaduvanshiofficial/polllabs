@@ -6,7 +6,7 @@ from fastapi import Depends, HTTPException, Header, status
 from app.core.config import settings
 from app.services.pocketbase_service import AsyncPocketBaseService, get_pb_service
 
-logger = logging.getLogger("polllabs.auth")
+logger = logging.getLogger("polls-lab.auth")
 
 # Type aliases using Annotated per FastAPI best practices
 PocketBaseDep = Annotated[AsyncPocketBaseService, Depends(get_pb_service)]
@@ -76,7 +76,7 @@ def verify_admin_key(
     x_admin_key: str | None = Header(default=None),
 ) -> str:
     """Restricts administrative endpoints to internal maintenance runners or admin keys."""
-    expected_key = settings.POCKETBASE_ADMIN_PASSWORD or "polllabs-admin-secret"
+    expected_key = settings.POCKETBASE_ADMIN_PASSWORD or "polls-lab-admin-secret"
     if not x_admin_key or x_admin_key != expected_key:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,

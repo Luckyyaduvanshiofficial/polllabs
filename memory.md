@@ -1,4 +1,4 @@
-# PollLabs — Agent Memory & Codebase Context
+# Polls Lab — Agent Memory & Codebase Context
 
 > **Last updated**: 2026-09-17 · **HEAD commit**: `113be2f` on `main`
 > Read this file first before touching any code. It gives you the full context in ~5 minutes.
@@ -7,7 +7,7 @@
 
 ## 1. What Is This Project?
 
-**PollLabs** is an embeddable polling platform. Users create polls, share them, embed them anywhere (GitHub READMEs, blogs, dashboards), and view live leaderboards & analytics.
+**Polls Lab** is an embeddable polling platform. Users create polls, share them, embed them anywhere (GitHub READMEs, blogs, dashboards), and view live leaderboards & analytics.
 
 Key deliverables per the [PRD](./poll-leaderboard-prd.md):
 - Embeddable `<iframe>` widget (< 15KB gzipped, Svelte 5) with **5 visual themes**
@@ -25,7 +25,7 @@ Key deliverables per the [PRD](./poll-leaderboard-prd.md):
 ## 2. Repository Layout
 
 ```
-polllabs/
+polls-lab/
 ├── AGENTS.md              ← MANDATORY RULES — read before any code change
 ├── TODO.md                ← Progress tracker — MUST be updated after every task
 ├── poll-leaderboard-prd.md← Full product requirements document
@@ -140,7 +140,7 @@ polllabs/
 ## 4. Key Design Decisions & Patterns
 
 ### Auth
-- Dev mode: token stored in `localStorage` key `polllabs_auth_token`
+- Dev mode: token stored in `localStorage` key `polls-lab_auth_token`
 - Request headers: `Authorization: Bearer <token>` + `x-dev-user-id: <token>`
 - Navbar auth flash fixed: script runs before first paint to avoid flicker
 
@@ -300,7 +300,7 @@ d830125  feat(frontend): complete Phase 5 redesign from scratch with UI/UX Pro M
 5. **CORS**: reflects `Origin` + `Allow-Credentials: true` + exposes `X-Device-Token`. Changing breaks embed voting.
 6. **PocketBase binary** is gitignored. Download separately and place in `database/`.
 7. **View Transitions**: `<ClientRouter />` is in `RootLayout.astro`. All navigations cross-fade.
-8. **Dev auth**: `localStorage.polllabs_auth_token` — Navbar reads this to show/hide Sign In/Out.
+8. **Dev auth**: `localStorage.polls-lab_auth_token` — Navbar reads this to show/hide Sign In/Out.
 9. **JSON size limits**: `options` field max 20,000 bytes, `appearance` max 5,000 bytes (enforced in migration `1789639490`).
 10. **Multi-select voting**: `VoteRequest.option_ids` (list) takes priority over legacy `option_id` (str).
 11. **graphify knowledge graph**: `graphify-out/graph.html` (349 nodes, 596 edges) — open in browser for visual codebase navigation.

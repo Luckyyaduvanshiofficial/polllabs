@@ -6,4 +6,4 @@ router = APIRouter(prefix="/health", tags=["Health"])
 @router.get("", response_model=HealthResponse)
 @router.get("/", response_model=HealthResponse)
 def health_check() -> HealthResponse:
-    return HealthResponse(status="ok", service="polllabs-api")
+    return HealthResponse(status="ok", service="polls-lab-api")

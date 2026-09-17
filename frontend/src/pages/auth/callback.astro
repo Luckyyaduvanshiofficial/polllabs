@@ -2,7 +2,7 @@
 import RootLayout from '../../layouts/RootLayout.astro';
 ---
 
-<RootLayout title="Authenticating — PollLabs">
+<RootLayout title="Authenticating — Polls Lab">
   <div class="min-h-[60vh] flex flex-col items-center justify-center text-center px-4 space-y-4">
     <div class="w-10 h-10 rounded-full border-2 border-blue-500 border-t-transparent animate-spin"></div>
     <div class="space-y-1">
@@ -26,11 +26,11 @@ import RootLayout from '../../layouts/RootLayout.astro';
     try {
       if (code) {
         // OAuth code present: store temporary token or session
-        localStorage.setItem('polllabs_auth_token', `github_${code.substring(0, 16)}`);
+        localStorage.setItem('polls-lab_auth_token', `github_${code.substring(0, 16)}`);
       } else {
         // Fallback or direct token in hash/param
         const token = params.get('token') || 'dev-user-local';
-        localStorage.setItem('polllabs_auth_token', token);
+        localStorage.setItem('polls-lab_auth_token', token);
       }
 
       if (statusMsg) statusMsg.textContent = 'Authenticated! Redirecting to dashboard...';

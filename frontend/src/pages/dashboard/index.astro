@@ -36,7 +36,7 @@ const userPolls = [
 ];
 ---
 
-<RootLayout title="Dashboard — PollLabs">
+<RootLayout title="Dashboard — Polls Lab">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
     <!-- Header & Quick Action -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-[#1e293b]">
@@ -280,7 +280,7 @@ const userPolls = [
 
     const deleteAccountBtn = document.getElementById('delete-account-btn');
     const apiBase = getApiUrl();
-    const token = typeof window !== 'undefined' ? localStorage.getItem('polllabs_auth_token') || 'dev-user-local' : 'dev-user-local';
+    const token = typeof window !== 'undefined' ? localStorage.getItem('polls-lab_auth_token') || 'dev-user-local' : 'dev-user-local';
 
     function attachActionListeners() {
       // Embed triggers

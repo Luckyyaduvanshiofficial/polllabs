@@ -6,7 +6,7 @@ from fastapi import Request
 import httpx
 from app.core.config import settings
 
-logger = logging.getLogger("polllabs.pocketbase")
+logger = logging.getLogger("polls-lab.pocketbase")
 
 def sanitize_identifier(value: str) -> str:
     """Sanitizes alphanumeric IDs to prevent filter expression tampering."""

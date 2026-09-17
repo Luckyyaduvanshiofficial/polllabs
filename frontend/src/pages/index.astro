@@ -9,7 +9,7 @@ const demoPoll = {
   description: 'Vote live below to test instant voting, result percentages, and embed generation.',
   visibility: 'public' as const,
   result_display: 'show_counts' as const,
-  owner: 'polllabs-team',
+  owner: 'polls-lab-team',
   total_votes: 1420,
   options: [
     { id: '1', text: 'Svelte 5 (Runes & Snippets)', icon_or_image: '🔥', vote_count: 654, percentage: 46.1 },
@@ -52,7 +52,7 @@ const topPollsSnapshot = [
 const techStack = ['Svelte 5', 'React 19', 'Astro', 'FastAPI', 'PocketBase', 'TypeScript', 'Tailwind', 'Cloudflare'];
 ---
 
-<RootLayout title="PollLabs — Embeddable Polls & Public Leaderboards for Developers">
+<RootLayout title="Polls Lab — Embeddable Polls & Public Leaderboards for Developers">
   <main class="overflow-x-hidden w-full max-w-full grain-overlay">
 
     <!-- ============================================ -->
@@ -136,7 +136,7 @@ const techStack = ['Svelte 5', 'React 19', 'Astro', 'FastAPI', 'PocketBase', 'Ty
             Built for surfaces<br />where every kilobyte matters
           </h2>
           <p class="bento-subtitle mt-4 text-[#94a3b8] text-lg max-w-xl">
-            Other survey widgets pull in 200KB+ of tracking bloat. PollLabs is surgical.
+            Other survey widgets pull in 200KB+ of tracking bloat. Polls Lab is surgical.
           </p>
         </div>
 
@@ -170,7 +170,7 @@ const techStack = ['Svelte 5', 'React 19', 'Astro', 'FastAPI', 'PocketBase', 'Ty
           <!-- Card 2: Tall image (row-span-2) -->
           <div class="bento-card group relative row-span-1 md:row-span-2 rounded-2xl border border-white/[0.06] overflow-hidden hover:border-white/[0.12] transition-colors duration-500">
             <img
-              src="https://picsum.photos/seed/polllabs-engineering/800/900"
+              src="https://picsum.photos/seed/polls-lab-engineering/800/900"
               alt="Engineering architecture"
               class="absolute inset-0 w-full h-full object-cover grayscale opacity-60 mix-blend-luminosity group-hover:grayscale-0 group-hover:opacity-80 group-hover:scale-105 transition-all duration-700"
               loading="lazy"
@@ -227,7 +227,7 @@ const techStack = ['Svelte 5', 'React 19', 'Astro', 'FastAPI', 'PocketBase', 'Ty
               Every feature<br />deserves a<br />standard
             </h2>
             <p class="scrub-body mt-6 text-[#94a3b8] text-base leading-relaxed max-w-md">
-              PollLabs was built to replace the patchwork of embedded surveys,
+              Polls Lab was built to replace the patchwork of embedded surveys,
               community polls, and badge generators that fragment developer workflows.
             </p>
           </div>
@@ -244,7 +244,7 @@ const techStack = ['Svelte 5', 'React 19', 'Astro', 'FastAPI', 'PocketBase', 'Ty
                 <h3 class="text-lg font-semibold text-white">Zero-JS Markdown Badges</h3>
               </div>
               <p class="text-sm text-[#94a3b8] leading-relaxed">
-                GitHub strips iframes and script tags for security. PollLabs generates
+                GitHub strips iframes and script tags for security. Polls Lab generates
                 dynamic Shields.io-compatible SVG badges with live vote shares directly
                 in markdown. Clickable linkbacks drive traffic back to your poll.
               </p>
@@ -343,7 +343,7 @@ const techStack = ['Svelte 5', 'React 19', 'Astro', 'FastAPI', 'PocketBase', 'Ty
                   <a href={badgeSvgUrl} target="_blank" class="hover:opacity-90 transition">
                     <img
                       src={badgeSvgUrl}
-                      alt="PollLabs Badge"
+                      alt="Polls Lab Badge"
                       class="h-5"
                       onerror="this.parentElement.innerHTML='<span class=\'text-xs font-mono bg-white/5 text-emerald-400 px-3 py-1 rounded-full\'>poll: Svelte 5 46% (1420)</span>'"
                     />
