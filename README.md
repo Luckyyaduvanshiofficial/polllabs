@@ -1,5 +1,7 @@
 # PollLabs
 
+[![Which web framework is your team prioritizing in 2026?](http://localhost:8000/api/v1/badges/demo-frameworks.svg)](http://localhost:4321/polls/demo-frameworks)
+
 An open-source, lightweight platform for embeddable polls and leaderboards.
 
 ## Features
