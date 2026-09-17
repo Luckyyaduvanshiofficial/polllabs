@@ -1,15 +1,15 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, status
 from app.schemas.poll import PollCreate, PollResponse
 
-router = APIRouter()
+router = APIRouter(prefix="/polls", tags=["Polls"])
 
-@router.get("/")
-def list_public_polls():
+@router.get("/", response_model=dict)
+async def list_public_polls() -> dict:
     """Lists discoverable public polls."""
     return {"polls": []}
 
 @router.get("/{poll_id}")
-def get_poll(poll_id: str):
+async def get_poll(poll_id: str) -> dict:
     """Retrieves a single poll by ID."""
     return {
         "id": poll_id,
@@ -22,7 +22,7 @@ def get_poll(poll_id: str):
         "result_display": "show_counts"
     }
 
-@router.post("/", response_model=dict)
-def create_poll(poll: PollCreate):
+@router.post("/", response_model=dict, status_code=status.HTTP_201_CREATED)
+async def create_poll(poll: PollCreate) -> dict:
     """Creates a new poll (requires GitHub OAuth sign-in)."""
     return {"id": "poll_placeholder", "message": "Poll created successfully"}

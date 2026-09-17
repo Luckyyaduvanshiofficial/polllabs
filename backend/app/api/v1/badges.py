@@ -1,11 +1,12 @@
 from fastapi import APIRouter, Response
 
-router = APIRouter()
+router = APIRouter(prefix="/badges", tags=["Badges"])
 
 @router.get("/{poll_id}.svg")
-def get_poll_badge(poll_id: str, title: str = "Poll", votes: int = 0):
+def get_poll_badge(poll_id: str, title: str = "Poll", votes: int = 0) -> Response:
     """
     Renders a cached SVG badge for GitHub READMEs (PRD §4.4).
+    Sync def is used here as SVG templating is CPU-bound.
     """
     svg_content = f"""<svg xmlns="http://www.w3.org/2000/svg" width="130" height="20" role="img" aria-label="{title}: {votes} votes">
   <linearGradient id="b" x2="0" y2="100%">

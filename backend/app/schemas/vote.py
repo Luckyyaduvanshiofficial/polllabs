@@ -1,12 +1,13 @@
-from typing import Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 class VoteRequest(BaseModel):
     option_id: str
-    device_token: Optional[str] = None
-    embed_referrer: Optional[str] = None
+    device_token: str | None = None
+    embed_referrer: str | None = None
 
 class VoteResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     success: bool
     message: str
     poll_id: str

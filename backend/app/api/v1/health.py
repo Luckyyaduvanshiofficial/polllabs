@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 
-router = APIRouter()
+router = APIRouter(tags=["Health"])
 
 @router.get("/health")
-def health_check():
+async def health_check() -> dict[str, str]:
     return {"status": "ok", "service": "polllabs-api"}
