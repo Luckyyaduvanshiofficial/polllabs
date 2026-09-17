@@ -1,11 +1,43 @@
 import React, { useState, useTransition } from 'react';
-import { getApiUrl } from '../../lib/config';
+import { getApiUrl, getSiteUrl } from '../../lib/config';
 import { getMarkdownBadgeSnippet, getIframeSnippet, copyToClipboard } from '../../lib/embed';
 
 interface PollOptionItem {
   id: string;
   text: string;
   icon_or_image: string;
+}
+
+type ThemeId = 'minimal' | 'whatsapp' | 'telegram' | 'story' | 'youtube-grid';
+type RadiusId = 'pill' | 'rounded' | 'sharp';
+type AppearanceFont = 'system' | 'serif' | 'mono' | 'condensed';
+
+interface ThemePreset {
+  id: ThemeId;
+  name: string;
+  blurb: string;
+  swatches: [string, string, string];
+  layout: 'list' | 'grid';
+}
+
+const THEME_PRESETS: ThemePreset[] = [
+  { id: 'minimal', name: 'Minimal', blurb: 'Clean default', swatches: ['#ffffff', '#3b82f6', '#111827'], layout: 'list' },
+  { id: 'whatsapp', name: 'WhatsApp', blurb: 'Chat bubble', swatches: ['#dcf8c6', '#00a884', '#111b21'], layout: 'list' },
+  { id: 'telegram', name: 'Telegram', blurb: 'Classic blue', swatches: ['#ffffff', '#3390ec', '#000000'], layout: 'list' },
+  { id: 'story', name: 'Story', blurb: 'Sticker card', swatches: ['#ffffff', '#3b82f6', '#1e293b'], layout: 'list' },
+  { id: 'youtube-grid', name: 'Thumbnail grid', blurb: 'Image tiles', swatches: ['#ffffff', '#ff0033', '#0f0f0f'], layout: 'grid' },
+];
+
+const RADIUS_PX: Record<RadiusId, string> = { pill: '999px', rounded: '12px', sharp: '4px' };
+const FONT_STACK: Record<AppearanceFont, string> = {
+  system: 'inherit',
+  serif: 'Georgia, serif',
+  mono: 'ui-monospace, monospace',
+  condensed: "'Arial Narrow', sans-serif",
+};
+
+function isHexColor(value: string): boolean {
+  return value === '' || /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(value);
 }
 
 export default function PollCreator() {
@@ -18,6 +50,38 @@ export default function PollCreator() {
   const [visibility, setVisibility] = useState<'public' | 'private'>('public');
   const [resultDisplay, setResultDisplay] = useState<'show_counts' | 'show_percentage' | 'hidden_until_close'>('show_counts');
   const [closeAt, setCloseAt] = useState('');
+
+  // Phase 7 appearance
+  const [theme, setTheme] = useState<ThemeId>('minimal');
+  const [bg, setBg] = useState('');
+  const [accent, setAccent] = useState('');
+  const [ink, setInk] = useState('');
+  const [radius, setRadius] = useState<RadiusId>('rounded');
+  const [appearanceFont, setAppearanceFont] = useState<AppearanceFont>('system');
+  const [effect, setEffect] = useState<'none' | 'confetti'>('none');
+  const [layout, setLayout] = useState<'list' | 'grid'>('list');
+
+  const preset = THEME_PRESETS.find((p) => p.id === theme) ?? THEME_PRESETS[0];
+
+  const handleThemeSelect = (id: ThemeId) => {
+    setTheme(id);
+    const next = THEME_PRESETS.find((p) => p.id === id);
+    if (next) setLayout(next.layout);
+  };
+
+  const buildAppearance = () => {
+    const appearance: Record<string, string> = {
+      theme,
+      radius,
+      font: appearanceFont,
+      effect,
+      layout,
+    };
+    if (bg.trim()) appearance.bg = bg.trim().toLowerCase();
+    if (accent.trim()) appearance.accent = accent.trim().toLowerCase();
+    if (ink.trim()) appearance.ink = ink.trim().toLowerCase();
+    return appearance;
+  };
 
   const [isPending, startTransition] = useTransition();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -63,6 +127,11 @@ export default function PollCreator() {
       return;
     }
 
+    if (!isHexColor(bg.trim()) || !isHexColor(accent.trim()) || !isHexColor(ink.trim())) {
+      setErrorMessage('Custom colors must be hex like #fff or #00a884 (or left empty).');
+      return;
+    }
+
     startTransition(async () => {
       try {
         const token = typeof window !== 'undefined' ? localStorage.getItem('polllabs_auth_token') || 'dev-user-local' : 'dev-user-local';
@@ -80,6 +149,7 @@ export default function PollCreator() {
             visibility,
             result_display: resultDisplay,
             close_at: closeAt ? new Date(closeAt).toISOString() : undefined,
+            appearance: buildAppearance(),
           }),
         });
 
@@ -275,6 +345,144 @@ export default function PollCreator() {
             </div>
           </div>
 
+          {/* Appearance: theme presets + customizer */}
+          <div className="pt-4 border-t border-[#1e293b] space-y-4">
+            <div>
+              <span className="text-xs font-medium text-white">Poll Theme</span>
+              <p className="text-[10px] text-[#64748b] mt-0.5">
+                Presets restyle the embed widget. Custom colors below override the preset.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+              {THEME_PRESETS.map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => handleThemeSelect(p.id)}
+                  aria-pressed={theme === p.id}
+                  className={`rounded-xl border p-2.5 text-left transition ${
+                    theme === p.id
+                      ? 'border-blue-500 bg-blue-950/30'
+                      : 'border-[#1e293b] bg-[#0b0f19] hover:border-[#334155]'
+                  }`}
+                >
+                  <span className="flex gap-1 mb-1.5">
+                    {p.swatches.map((c) => (
+                      <span
+                        key={c}
+                        className="w-4 h-4 rounded-full border border-black/30"
+                        style={{ background: c }}
+                      />
+                    ))}
+                  </span>
+                  <span className="block text-xs font-semibold text-white">{p.name}</span>
+                  <span className="block text-[10px] text-[#64748b]">{p.blurb}</span>
+                </button>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {[
+                { label: 'Background', value: bg, set: setBg, fallback: preset.swatches[0] },
+                { label: 'Accent', value: accent, set: setAccent, fallback: preset.swatches[1] },
+                { label: 'Text ink', value: ink, set: setInk, fallback: preset.swatches[2] },
+              ].map((f) => (
+                <div key={f.label}>
+                  <label className="block text-[11px] font-medium text-white mb-1.5">
+                    {f.label} <span className="text-[#64748b] font-normal">(optional)</span>
+                  </label>
+                  <div className="flex gap-2 items-center">
+                    <input
+                      type="color"
+                      value={isHexColor(f.value) && f.value ? f.value : f.fallback}
+                      onChange={(e) => f.set(e.target.value)}
+                      className="w-9 h-9 rounded-lg bg-transparent cursor-pointer flex-shrink-0"
+                      title={`Pick ${f.label.toLowerCase()} color`}
+                    />
+                    <input
+                      type="text"
+                      value={f.value}
+                      onChange={(e) => f.set(e.target.value)}
+                      placeholder={f.fallback}
+                      maxLength={7}
+                      className="flex-1 min-w-0 px-2.5 py-2 bg-[#0b0f19] border border-[#1e293b] rounded-lg text-xs font-mono text-white placeholder-[#64748b] focus:border-blue-500 focus:outline-hidden transition"
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div>
+                <span className="block text-[11px] font-medium text-white mb-1.5">Corners</span>
+                <div className="flex rounded-lg overflow-hidden border border-[#1e293b]">
+                  {(['pill', 'rounded', 'sharp'] as RadiusId[]).map((r) => (
+                    <button
+                      key={r}
+                      type="button"
+                      onClick={() => setRadius(r)}
+                      aria-pressed={radius === r}
+                      className={`flex-1 px-2 py-2 text-[11px] font-medium capitalize transition ${
+                        radius === r ? 'bg-blue-600 text-white' : 'bg-[#0b0f19] text-[#94a3b8] hover:text-white'
+                      }`}
+                    >
+                      {r}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="poll-font" className="block text-[11px] font-medium text-white mb-1.5">
+                  Font
+                </label>
+                <select
+                  id="poll-font"
+                  value={appearanceFont}
+                  onChange={(e) => setAppearanceFont(e.target.value as AppearanceFont)}
+                  className="w-full px-2.5 py-2 bg-[#0b0f19] border border-[#1e293b] rounded-lg text-xs text-white focus:border-blue-500 focus:outline-hidden"
+                >
+                  <option value="system">System</option>
+                  <option value="serif">Serif</option>
+                  <option value="mono">Mono</option>
+                  <option value="condensed">Condensed</option>
+                </select>
+              </div>
+
+              <div>
+                <label htmlFor="poll-layout" className="block text-[11px] font-medium text-white mb-1.5">
+                  Layout
+                </label>
+                <select
+                  id="poll-layout"
+                  value={layout}
+                  onChange={(e) => setLayout(e.target.value as 'list' | 'grid')}
+                  className="w-full px-2.5 py-2 bg-[#0b0f19] border border-[#1e293b] rounded-lg text-xs text-white focus:border-blue-500 focus:outline-hidden"
+                >
+                  <option value="list">List</option>
+                  <option value="grid">Grid (thumbnails)</option>
+                </select>
+              </div>
+
+              <div>
+                <span className="block text-[11px] font-medium text-white mb-1.5">On vote</span>
+                <button
+                  type="button"
+                  onClick={() => setEffect(effect === 'confetti' ? 'none' : 'confetti')}
+                  aria-pressed={effect === 'confetti'}
+                  className={`w-full px-2.5 py-2 rounded-lg text-xs font-medium border transition ${
+                    effect === 'confetti'
+                      ? 'bg-blue-600 border-blue-600 text-white'
+                      : 'bg-[#0b0f19] border-[#1e293b] text-[#94a3b8] hover:text-white'
+                  }`}
+                >
+                  {effect === 'confetti' ? 'Confetti on' : 'Confetti off'}
+                </button>
+              </div>
+            </div>
+          </div>
+
           {/* Optional Close Date */}
           <div className="pt-2">
             <label htmlFor="poll-close-at" className="block text-xs font-medium text-white mb-1.5">
@@ -322,8 +530,15 @@ export default function PollCreator() {
           </span>
         </div>
 
-        {/* Preview Card */}
-        <div className="bg-[#111827] border border-[#1e293b] rounded-2xl p-5 shadow-xl space-y-4">
+        {/* Preview Card (theme-aware simulation) */}
+        <div
+          className="border rounded-2xl p-5 shadow-xl space-y-4"
+          style={{
+            background: bg.trim() || (theme === 'minimal' ? '#111827' : preset.swatches[0]),
+            borderColor: '#1e293b',
+            fontFamily: FONT_STACK[appearanceFont],
+          }}
+        >
           <div className="space-y-1.5">
             <h3 className="font-bold text-base text-white leading-snug">
               {title || 'Your poll question will appear here...'}
@@ -340,8 +555,13 @@ export default function PollCreator() {
             {options.map((opt, i) => (
               <div
                 key={opt.id}
-                className="w-full text-left px-3.5 py-2.5 rounded-xl border border-[#1e293b] bg-[#0b0f19] text-xs font-medium text-[#f8fafc] flex items-center gap-2.5"
+                className="w-full text-left px-3.5 py-2.5 border border-[#1e293b] bg-[#0b0f19] text-xs font-medium text-[#f8fafc] flex items-center gap-2.5"
+                style={{ borderRadius: RADIUS_PX[radius] }}
               >
+                <span
+                  className="w-2 h-2 rounded-full flex-shrink-0"
+                  style={{ background: accent.trim() || preset.swatches[1] }}
+                />
                 {opt.icon_or_image && (
                   <span className="text-sm">{opt.icon_or_image}</span>
                 )}
@@ -355,6 +575,7 @@ export default function PollCreator() {
 
           <div className="pt-3 border-t border-[#1e293b] flex justify-between items-center text-[11px] text-[#64748b] font-mono">
             <span>Mode: {resultDisplay}</span>
+            <span>Theme: {preset.name}{effect === 'confetti' ? ' + confetti' : ''}</span>
             <span>Powered by PollLabs</span>
           </div>
         </div>
@@ -426,6 +647,19 @@ export default function PollCreator() {
                   </button>
                 </div>
               </div>
+            </div>
+
+            <div className="pt-1">
+              <label className="block font-medium text-[#94a3b8] mb-1">
+                Live preview — real widget with your {preset.name} theme
+              </label>
+              <iframe
+                src={`${getSiteUrl()}/embed?id=${createdPoll.id}`}
+                title={`Live preview of ${createdPoll.title}`}
+                className="w-full rounded-xl border border-[#1e293b] bg-white"
+                height={380}
+                loading="lazy"
+              />
             </div>
 
             <div className="pt-3 border-t border-[#1e293b] flex justify-end gap-2">
