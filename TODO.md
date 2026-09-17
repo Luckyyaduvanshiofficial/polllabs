@@ -11,8 +11,8 @@ This document tracks all tasks, deliverables, and implementation phases accordin
 - **Phase 3: Backend API & Security (FastAPI)** — **100%** (Completed & Reviewed)
 - **Phase 4: Embeddable Widgets (Svelte & SVG)** — **100%** (Completed & Reviewed)
 - **Phase 5: Frontend Web & Dashboard (Astro + React)** — **100%** (Completed & Standards/Spec Hardened)
-- **Phase 6: Testing, Polish & Documentation** — **95%** (In Progress)
-- **Phase 7: Custom Poll Themes** — **85%** (In Progress, Phases 1–3 + 5 done)
+- **Phase 6: Testing, Polish & Documentation** — **99%** (E2E integration pending live server)
+- **Phase 7: Custom Poll Themes** — **100%** (Completed)
 
 ---
 
@@ -130,7 +130,7 @@ This document tracks all tasks, deliverables, and implementation phases accordin
 - [x] Zero-tolerance secret hygiene verification: clean `git diff` with zero tracked secrets
 - [x] Agent memory file (`memory.md`) created for fast onboarding and context handoff
 - [ ] End-to-end integration with frontend & PocketBase running concurrently
-- [ ] Verify SEO meta tags and social open-graph previews
+- [x] Verify SEO meta tags and social open-graph previews
 
 ---
 
@@ -138,6 +138,6 @@ This document tracks all tasks, deliverables, and implementation phases accordin
 - [x] Phase 1 — Data model: `PollAppearance` Pydantic schema (theme, bg/accent/ink hex, radius, font, effect, layout) with server-side validation, `appearance` JSON field migration (`1789638852_poll_appearance.js`, field `ugvszf94`), create/update/response endpoint wiring with legacy-None fallback, 9 new tests (29/29 pass)
 - [x] Phase 2 — Preset theme pack in widget (minimal/whatsapp/telegram/story/youtube-grid via data-theme + CSS vars, radius/font hooks, grid layout, data-effect hook for Phase 6, gzip 4.9KB < 15KB, live PB→API appearance round-trip verified) + fixed pre-existing 0-byte JSON write block (options 20000 / appearance 5000)
 - [x] Phase 3 — Creator studio theme picker (5 preset cards) + customizer (bg/accent/ink pickers with hex validation, corners, font, layout, confetti toggle), theme-aware simulated preview, appearance POST, live widget iframe in success modal
-- [ ] Phase 4 — Image uploads (`POST /polls/{id}/images` + PB file storage) + YouTube-style grid layout
+- [x] Phase 4 — Image uploads (`POST /polls/{id}/images` + PB file storage) + YouTube-style grid layout
 - [x] Phase 5 — Behaviors: multiple answers, quiz mode, visible voters (60 tests pass, 915-line widget, PollCreator toggles, PB migration `1789641000_behaviors.js`, pb_schema.json synced)
-- [ ] Phase 6 — Hand-rolled confetti celebration + docs + bundle verification
+- [x] Phase 6 — Hand-rolled confetti celebration + docs + bundle verification
