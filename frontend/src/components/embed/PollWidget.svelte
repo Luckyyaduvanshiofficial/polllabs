@@ -121,8 +121,92 @@
       ? poll.appearance.font
       : 'system'
   );
-  // data-effect hook for Phase 6 confetti (no behavior yet)
+  // data-effect hook for Phase 6 confetti
   let effect = $derived(poll?.appearance?.effect === 'confetti' ? 'confetti' : 'none');
+
+  // --- Phase 6: canvas confetti (hand-rolled, ~1.5KB) ---
+  const CONFETTI_COLORS = ['#3b82f6', '#ef4444', '#f59e0b', '#10b981', '#8b5cf6', '#ec4899'];
+  const CONFETTI_COUNT = 60;
+  const CONFETTI_DURATION = 2000;
+
+  function fireConfetti() {
+    if (effect !== 'confetti') return;
+    if (typeof window === 'undefined') return;
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+
+    const container = document.querySelector('.poll-widget-container');
+    if (!container) return;
+
+    const rect = container.getBoundingClientRect();
+    const canvas = document.createElement('canvas');
+    canvas.width = rect.width;
+    canvas.height = rect.height;
+    canvas.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:100';
+    container.style.position = 'relative';
+    container.appendChild(canvas);
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) { canvas.remove(); return; }
+
+    const particles: {
+      x: number; y: number;
+      vx: number; vy: number;
+      w: number; h: number;
+      rot: number; rv: number;
+      color: string; life: number;
+    }[] = [];
+
+    for (let i = 0; i < CONFETTI_COUNT; i++) {
+      particles.push({
+        x: rect.width * 0.3 + Math.random() * rect.width * 0.4,
+        y: rect.height * 0.3 + Math.random() * rect.height * 0.2,
+        vx: (Math.random() - 0.5) * 8,
+        vy: -(Math.random() * 6 + 2),
+        w: Math.random() * 8 + 4,
+        h: Math.random() * 4 + 2,
+        rot: Math.random() * Math.PI * 2,
+        rv: (Math.random() - 0.5) * 0.3,
+        color: CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)],
+        life: 1,
+      });
+    }
+
+    const start = performance.now();
+    let raf: number;
+
+    function tick(now: number) {
+      const elapsed = now - start;
+      const progress = Math.min(elapsed / CONFETTI_DURATION, 1);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      for (const p of particles) {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.15;
+        p.rot += p.rv;
+        p.life = 1 - progress;
+
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rot);
+        ctx.globalAlpha = p.life;
+        ctx.fillStyle = p.color;
+        ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+        ctx.restore();
+      }
+
+      if (progress < 1) {
+        raf = requestAnimationFrame(tick);
+      } else {
+        canvas.remove();
+      }
+    }
+
+    raf = requestAnimationFrame(tick);
+    // Cleanup on unmount or navigation
+    const cleanup = () => { cancelAnimationFrame(raf); canvas.remove(); };
+    window.addEventListener('beforeunload', cleanup, { once: true });
+  }
 
   let customStyle = $derived.by(() => {
     const parts: string[] = [];
@@ -254,6 +338,12 @@
           total_votes: data.total_votes,
           options: data.options,
         };
+      }
+
+      // Phase 6: fire confetti on success
+      if (effect === 'confetti') {
+        // Run on next tick so DOM updates to results view first
+        requestAnimationFrame(() => fireConfetti());
       }
     } catch (err: any) {
       errorMsg = err.message || 'Error recording vote. Please try again.';
