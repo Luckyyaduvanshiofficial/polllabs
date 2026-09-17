@@ -21,7 +21,7 @@
 
 ## 3. Git Workflow
 
-- Remote repository: `https://github.com/Luckyyaduvanshiofficial/polllabs.git`
+- Remote repository: `https://github.com/Luckyyaduvanshiofficial/polls-lab.git`
 - Default branch: `main`
 - Maintain clean atomic commits with conventional commit messages (`feat:`, `fix:`, `chore:`, `docs:`, `refactor:`).
 - Push to `origin main` whenever code or documentation changes are made.

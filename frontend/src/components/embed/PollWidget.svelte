@@ -448,7 +448,7 @@
         The poll may have been deleted by its owner or reached the end of its active window.
       </p>
       <a
-        href="https://github.com/Luckyyaduvanshiofficial/polllabs"
+        href="https://github.com/Luckyyaduvanshiofficial/polls-lab"
         target="_blank"
         rel="noopener noreferrer"
         class="inline-block mt-3 text-xs text-blue-600 dark:text-blue-400 hover:underline font-medium"
@@ -640,7 +640,7 @@
       </div>
 
       <a
-        href="https://github.com/Luckyyaduvanshiofficial/polllabs"
+        href="https://github.com/Luckyyaduvanshiofficial/polls-lab"
         target="_blank"
         rel="noopener noreferrer"
         class="hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium flex items-center gap-1"
