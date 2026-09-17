@@ -1,0 +1,37 @@
+# Python
+backend/.venv/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Node / Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.astro/
+.npm
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Database / PocketBase
+database/pocketbase
+database/pocketbase.exe
+database/pb_data/
+!database/pb_migrations/
+!database/pb_schema.json
+
+# Environment variables
+.env
+*.env
+!.env.example
+
+# OS & Editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
