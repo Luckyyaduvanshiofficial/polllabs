@@ -1,6 +1,6 @@
 # PollLabs — Agent Memory & Codebase Context
 
-> **Last updated**: 2026-09-17 · **HEAD commit**: `6ca526f` on `main`
+> **Last updated**: 2026-09-17 · **HEAD commit**: `4db4e21` on `main`
 > Read this file first before touching any code. It gives you the full context in ~5 minutes.
 
 ---
