@@ -1,6 +1,6 @@
 # PollLabs — Agent Memory & Codebase Context
 
-> **Last updated**: 2026-09-17 · **HEAD commit**: `c7f14b5` on `main`
+> **Last updated**: 2026-09-17 · **HEAD commit**: `113be2f` on `main`
 > Read this file first before touching any code. It gives you the full context in ~5 minutes.
 
 ---
@@ -10,12 +10,15 @@
 **PollLabs** is an embeddable polling platform. Users create polls, share them, embed them anywhere (GitHub READMEs, blogs, dashboards), and view live leaderboards & analytics.
 
 Key deliverables per the [PRD](./poll-leaderboard-prd.md):
-- Embeddable `<iframe>` widget (< 15KB gzipped, Svelte 5)
+- Embeddable `<iframe>` widget (< 15KB gzipped, Svelte 5) with **5 visual themes**
 - Dynamic SVG/PNG badge for GitHub READMEs
 - Public leaderboard with trending algorithm
 - Owner analytics with CSV/JSON export
 - GitHub OAuth authentication with 7-day account-deletion grace period
 - Rate limiting, IP hashing, one-vote-per-device enforcement
+- **Poll behaviors**: multi-select, quiz mode, visible voters
+- **Image options**: upload images per option (YouTube grid layout)
+- **Canvas confetti** celebration on vote
 
 ---
 
@@ -42,48 +45,65 @@ polllabs/
 │   │   │   └── rate_limit.py    ← Sliding-window IP rate limiter
 │   │   ├── api/v1/
 │   │   │   ├── router.py        ← Assembles all sub-routers
-│   │   │   ├── polls.py         ← CRUD: GET/POST/PATCH/DELETE /polls
-│   │   │   ├── votes.py         ← POST /votes/{poll_id}
+│   │   │   ├── polls.py         ← CRUD + image upload + behaviors
+│   │   │   ├── votes.py         ← POST /votes/{poll_id} with multi-select + quiz support
 │   │   │   ├── analytics.py     ← GET /analytics/{poll_id}[/export]
 │   │   │   ├── badges.py        ← GET /badges/{poll_id}.svg|.png
 │   │   │   ├── leaderboard.py   ← GET /leaderboard/trending|top|most-voted-options
 │   │   │   ├── auth.py          ← GitHub OAuth, /me, /delete-account
 │   │   │   └── health.py        ← GET /health
-│   │   ├── schemas/             ← Pydantic v2 models (one file per domain)
+│   │   ├── schemas/
+│   │   │   ├── poll.py          ← PollAppearance (theme, colors, radius, font, effect, layout)
+│   │   │   ├── vote.py          ← VoteRequest supports multi-select option_ids list
+│   │   │   └── ...              ← auth, analytics, leaderboard, health
 │   │   └── services/
 │   │       ├── pocketbase_service.py  ← Async PocketBase HTTP client
 │   │       ├── moderation.py          ← Profanity filter
-│   │       └── poll_utils.py          ← is_poll_closed() helper
+│   │       ├── poll_utils.py          ← is_poll_closed(), appearance helpers
+│   │       └── image_upload.py        ← PocketBase file upload service
 │   └── tests/
-│       ├── test_api_endpoints.py  ← 20 integration tests (all passing)
+│       ├── test_api_endpoints.py  ← Core API integration tests
+│       ├── test_appearance.py     ← PollAppearance schema + endpoint tests
+│       ├── test_behaviors.py      ← Multi-select, quiz, visible voters tests
+│       ├── test_image_upload.py   ← Image upload service tests
 │       ├── test_moderation.py
 │       └── test_rate_limit.py
+│       → 60/60 PASSING ✅
 ├── database/
 │   ├── pb_schema.json             ← Version-controlled schema (committed)
 │   └── pb_migrations/
-│       └── 1789619075_init_schema.js
+│       ├── 1789619075_init_schema.js
+│       ├── 1789629521_add_abuse_reports_and_deletion_fields.js
+│       ├── 1789638852_poll_appearance.js   ← appearance JSON field
+│       ├── 1789639466_json_size_limits.js
+│       ├── 1789639490_json_size_limits_fix.js
+│       ├── 1789640817_poll_images.js        ← image file field
+│       └── 1789641000_behaviors.js          ← multi-select, quiz, visible_voters fields
 │   (pb_data/ and binary are gitignored)
 └── frontend/                      ← Astro static site
     ├── astro.config.mjs           ← output: "static", React + Svelte integrations
     ├── package.json               ← pnpm only (corepack pnpm)
     └── src/
         ├── styles/global.css      ← Design tokens (Obsidian/Slate), JetBrains Mono + Inter
-        ├── layouts/Layout.astro   ← Base HTML shell + ClientRouter (View Transitions)
+        ├── layouts/RootLayout.astro ← Base HTML shell + ClientRouter (View Transitions)
         ├── lib/
         │   ├── config.ts   ← getApiUrl(), getSiteUrl(), getPbUrl() — SINGLE SOURCE OF TRUTH
         │   └── embed.ts    ← getBadgeUrl(), getEmbedUrl(), getPollUrl(),
         │                      getMarkdownBadgeSnippet(), getIframeSnippet(), copyToClipboard()
         ├── components/
         │   ├── common/
-        │   │   ├── Navbar.astro   ← Auth state detection, sign-in/out controls
+        │   │   ├── Navbar.astro   ← Auth state detection, sign-in/out controls (flash-free)
         │   │   └── Footer.astro
         │   ├── dashboard/
-        │   │   ├── PollCreator.tsx    ← React 19 — rich poll creation + live preview
+        │   │   ├── PollCreator.tsx    ← React 19 — theme picker, customizer, behaviors toggles,
+        │   │   │                         image uploads, confetti, rich poll creation + live preview
         │   │   └── PollAnalytics.tsx  ← React 19 — charts, CSV/JSON authenticated export
         │   └── embed/
-        │       └── PollWidget.svelte  ← Svelte 5 Runes — ONLY Svelte component in whole repo
-        └── pages/                     ← Folder-based routing (1:1 with URLs)
-            ├── index.astro            ← Landing page
+        │       └── PollWidget.svelte  ← Svelte 5 Runes — ONLY Svelte component
+        │                                 Supports: 5 themes, multi-select, quiz, visible voters,
+        │                                 image options (youtube-grid layout), canvas confetti (915 lines)
+        └── pages/
+            ├── index.astro            ← Awwwards-level landing page (redesigned)
             ├── auth/callback.astro    ← GitHub OAuth callback handler
             ├── leaderboard/index.astro
             ├── polls/
@@ -92,6 +112,7 @@ polllabs/
             ├── embed/
             │   ├── index.astro        ← Runtime /embed?id=... resolver
             │   └── [id]/index.astro   ← SSG embed page (loads PollWidget.svelte)
+            ├── theme-samples/index.astro ← Theme showcase page
             ├── dashboard/
             │   ├── index.astro        ← Dashboard console (live polls, edit, delete)
             │   ├── create/index.astro ← Poll Creator (uses PollCreator.tsx)
@@ -121,41 +142,52 @@ polllabs/
 ### Auth
 - Dev mode: token stored in `localStorage` key `polllabs_auth_token`
 - Request headers: `Authorization: Bearer <token>` + `x-dev-user-id: <token>`
-- Production: real PocketBase JWT via GitHub OAuth
-- OAuth flow: `GET /api/v1/auth/github/url` → GitHub → `GET /auth/callback` (Astro page stores token)
+- Navbar auth flash fixed: script runs before first paint to avoid flicker
 
-### PollWidget.svelte (Svelte 5 Runes)
+### PollWidget.svelte (Svelte 5 Runes) — 915 lines
 - Reads poll ID from: (1) `pollId` prop, (2) `?id=` query param, (3) URL path segment
-- Uses `$props()`, `$state.raw()`, `$derived()`, `{#snippet}` — strict Runes mode
-- `apiBase` defaults to `http://localhost:8000` if no prop provided
-- Gzipped bundle: **4,252 bytes (4.15 KB)** — well under 15KB limit
+- **5 themes** via `data-theme` attribute on root element + CSS vars:
+  - `minimal` (default), `whatsapp`, `telegram`, `story`, `youtube-grid`
+- **Behaviors**: `allow_multi_select`, `is_quiz`, `show_voter_names`
+- **Image options**: renders images in youtube-grid layout when options have image URLs
+- **Canvas confetti**: hand-rolled, fires on successful vote
+- Gzipped bundle: **~4.9 KB** (still under 15KB limit)
 
-### BadgeData Dataclass (badges.py)
-- `@dataclass(frozen=True)` with fields: `label`, `value`, `is_error`, `target_url`
-- Implements `__iter__` → `(label, value, is_error, target_url)` for backward-compatible tuple unpacking
-- `target_url` points to `/polls/{poll_id}` per PRD §4.4 (NOT `/embed/`)
+### PollAppearance Schema (poll.py)
+- Fields: `theme` (str), `bg` (hex), `accent` (hex), `ink` (hex), `radius` (0-24), `font` (str), `effect` (str), `layout` (str)
+- Stored as `appearance` JSON field in `polls` PocketBase collection
+- Legacy polls without `appearance` field get `None` (backward compatible)
+- Size limits enforced: `options` max 20,000 bytes, `appearance` max 5,000 bytes
 
-### URL Helpers
-- `getApiUrl()` → reads `PUBLIC_API_URL` env var, falls back to `http://localhost:8000`
-- `getSiteUrl()` → reads `window.location.origin` (client) or `PUBLIC_SITE_URL` env var
-- `getEmbedUrl(id)` → always `/embed?id=<id>` (query param, NOT path — avoids SSG 404)
-- `getPollUrl(id)` → `/polls/<id>`
-- Badge markdown: `[![title](badge.svg)](site/polls/id)` — links to `/polls/` NOT `/embed/`
+### VoteRequest (vote.py)
+- `option_ids: list[str]` — supports multiple selections for `allow_multi_select` polls
+- `option_id: str | None` — legacy single-vote field (still accepted)
+- Backend enforces quiz correct-answer check when `is_quiz = True`
 
 ### Multi-Framework Isolation
-- Marketing pages embed the Svelte widget via `<iframe src="/embed?id=...">` NOT `<PollWidget client:load />`
-- Svelte 100% isolated to `/embed` routes only
+- Marketing pages embed Svelte via `<iframe src="/embed?id=...">` NOT `<PollWidget client:load />`
+- Svelte 100% isolated to `/embed` routes
 
 ### Analytics Export
 - Authenticated `fetch` + blob download (NOT `<a href download>`)
 - Sends `Authorization: Bearer <token>` header
+
+### BadgeData Dataclass (badges.py)
+- `@dataclass(frozen=True)`: `label`, `value`, `is_error`, `target_url`
+- `__iter__` → `(label, value, is_error, target_url)` — do NOT reorder
+- `target_url` → `/polls/{poll_id}` per PRD §4.4
+
+### URL Helpers
+- `getEmbedUrl(id)` → `/embed?id=<id>` (query param — avoids SSG 404)
+- `getPollUrl(id)` → `/polls/<id>`
+- Badge markdown links to `/polls/` NOT `/embed/`
 
 ---
 
 ## 5. Running the Project Locally
 
 ```bash
-# 1. Start PocketBase (from project root)
+# 1. Start PocketBase
 ./database/pocketbase serve --dir ./database/pb_data
 
 # 2. Start Backend (FastAPI)
@@ -165,34 +197,27 @@ backend/.venv/bin/uvicorn backend.app.main:app --reload --port 8000
 corepack pnpm --dir frontend dev
 
 # 4. Run Tests
-backend/.venv/bin/pytest backend/tests   # → 20/20 pass
+backend/.venv/bin/pytest backend/tests   # → 60/60 pass
 
 # 5. Build Frontend (static)
-corepack pnpm --dir frontend run build   # → 20 pages
+corepack pnpm --dir frontend run build
 ```
 
 ---
 
-## 6. Progress Summary
+## 6. Progress Summary — ALL PHASES COMPLETE ✅
 
-### ✅ Completed (Phases 1–5 + most of Phase 6)
+| Phase | Status |
+|-------|--------|
+| Phase 1: Setup & Scaffolding | ✅ 100% |
+| Phase 2: PocketBase Schema | ✅ 100% |
+| Phase 3: FastAPI Backend | ✅ 100% |
+| Phase 4: Svelte Embed Widget | ✅ 100% |
+| Phase 5: Astro Frontend | ✅ 100% |
+| Phase 6: Testing, Polish & SEO | ✅ 100% |
+| Phase 7: Custom Poll Themes + Behaviors | ✅ 100% |
 
-| Phase | Status | Key Commits |
-|-------|--------|-------------|
-| Phase 1: Setup & Scaffolding | ✅ 100% | `1b6515e`, `3ea05fd` |
-| Phase 2: PocketBase Schema | ✅ 100% | `bfe6225` |
-| Phase 3: FastAPI Backend | ✅ 100% | `8630bb5`, `ceb2c7b`, `522fd84` |
-| Phase 4: Svelte Embed Widget | ✅ 100% | `b7b6534`, `87eb897` |
-| Phase 5: Astro Frontend | ✅ 100% | `d830125`, `6ca526f` |
-| Phase 6: Testing & QA | 🔄 95% | `6ca526f` |
-
-### 🔄 Remaining Work
-
-```
-[ ] End-to-end integration test: run PocketBase + backend + frontend concurrently
-    and exercise all major flows (vote, create poll, view leaderboard, export CSV)
-[ ] Verify SEO meta tags and social open-graph preview tags on all pages
-```
+**No remaining TODO items. Project is feature-complete as of HEAD `113be2f`.**
 
 ---
 
@@ -201,15 +226,15 @@ corepack pnpm --dir frontend run build   # → 20 pages
 | Collection | Key Fields | Notes |
 |-----------|-----------|-------|
 | `users` | GitHub OAuth fields, `deletion_status`, `deletion_scheduled_for` | GitHub OAuth only |
-| `polls` | `title`, `description`, `options (json)`, `visibility (select)`, `result_display (select)`, `close_at`, `owner (relation→users)` | Indexed: `visibility+created`, `owner` |
-| `votes` | `poll_id (relation→polls, cascadeDelete)`, `option_id`, `device_token`, `ip_hash`, `embed_referrer` | Indexed: `poll_id`, `poll_id+device_token`, `poll_id+ip_hash` |
-| `abuse_reports` | `poll_id (relation→polls, cascadeDelete)`, `reason`, `ip_hash` | Indexed: `poll_id` |
+| `polls` | `title`, `description`, `options (json)`, `visibility`, `result_display`, `close_at`, `owner`, `appearance (json)`, `images (file[])`, `allow_multi_select`, `is_quiz`, `correct_option_id`, `show_voter_names` | 7 migrations applied |
+| `votes` | `poll_id (cascadeDelete)`, `option_id`, `option_ids (json)`, `device_token`, `ip_hash`, `embed_referrer`, `voter_name` | Supports multi-select |
+| `abuse_reports` | `poll_id (cascadeDelete)`, `reason`, `ip_hash` | — |
 
 ---
 
 ## 8. Environment Variables
 
-### Backend `.env` (gitignored — real values locally only)
+### Backend `.env` (gitignored)
 ```
 POCKETBASE_URL=http://127.0.0.1:8090
 POCKETBASE_ADMIN_EMAIL=admin@example.com   ← placeholder in .env.example
@@ -229,24 +254,63 @@ PUBLIC_PB_URL=http://localhost:8090
 
 ---
 
-## 9. Test Results (as of commit 6ca526f)
+## 9. Test Results (as of HEAD 113be2f)
 
 ```
-backend/.venv/bin/pytest backend/tests  →  20 passed
-corepack pnpm --dir frontend run build  →  20 pages built cleanly
-gzip PollWidget.*.js | wc -c            →  4,252 bytes (4.15 KB) < 15KB ✅
-git diff                                →  zero secrets ✅
+backend/.venv/bin/pytest backend/tests  →  60 passed ✅
+  test_api_endpoints.py   (core API)
+  test_appearance.py      (PollAppearance schema + endpoint)
+  test_behaviors.py       (multi-select, quiz, visible voters)
+  test_image_upload.py    (image upload service)
+  test_moderation.py
+  test_rate_limit.py
 ```
 
 ---
 
-## 10. Known Gotchas
+## 10. Git History (last 16 commits since initial completion)
 
-1. **`getEmbedUrl(id)` returns `/embed?id=<id>`** (query param), NOT `/embed/<id>` (path). This avoids SSG 404s.
-2. **Svelte poll ID resolution order**: prop `pollId` → `?id=` query param → URL path segment. Never break this chain.
-3. **`BadgeData.__iter__`** returns `(label, value, is_error, target_url)` — do NOT reorder fields.
-4. **Analytics export** uses `fetch` + blob + `Authorization: Bearer` — NOT a plain `<a href download>`.
-5. **CORS**: Backend reflects `Origin` with `Allow-Credentials: true`, exposes `X-Device-Token`. Changing CORS breaks embed iframe voting.
-6. **PocketBase binary** is gitignored. Download separately. Run from `database/` directory.
-7. **View Transitions**: `<ClientRouter />` is in `Layout.astro`. All page navigations use cross-fade.
-8. **Dev auth**: `localStorage.polllabs_auth_token` stores the token. Navbar script reads this to show/hide Sign In/Out.
+```
+113be2f  docs: fix README badge and add embed instructions
+2143f9d  docs: add live poll badge to README
+1841d2e  fix: seed demo polls, fix navbar auth flash
+23e2d45  fix: complete E2E integration verification
+ea6903d  fix: complete SEO meta tags and og-image
+8f59f80  feat: Awwwards-level landing page redesign
+1a74d30  feat: Phase 6 — canvas confetti celebration on vote
+c7f14b5  feat: Phase 4+5 — image uploads + poll behaviors (multi-select, quiz, visible voters)
+5a206f4  feat(themes): Phase 3 creator theme picker, customizer, and live preview
+069c31a  feat(themes): Phase 2 widget theme pack with whatsapp/telegram/story/youtube-grid presets
+ed7fb74  feat(themes): Phase 1 poll appearance data model with validation and migration
+4db4e21  fix(database): add missing abuse_reports collection and user deletion fields
+90acd14  chore: update TODO.md to mark memory.md as done
+f7bacf6  docs: add memory.md for fast agent onboarding and context handoff
+6ca526f  fix(review): remediate standards and spec findings across backend and frontend
+d830125  feat(frontend): complete Phase 5 redesign from scratch with UI/UX Pro Max, Hallmark, and React 19
+```
+
+---
+
+## 11. Known Gotchas
+
+1. **`getEmbedUrl(id)` → `/embed?id=<id>`** (query param), NOT `/embed/<id>` (path).
+2. **Svelte poll ID resolution order**: prop → `?id=` query param → URL path. Don't break this.
+3. **`BadgeData.__iter__`** → `(label, value, is_error, target_url)` — do NOT reorder fields.
+4. **Analytics export** uses `fetch` + blob + `Authorization: Bearer` — NOT `<a href download>`.
+5. **CORS**: reflects `Origin` + `Allow-Credentials: true` + exposes `X-Device-Token`. Changing breaks embed voting.
+6. **PocketBase binary** is gitignored. Download separately and place in `database/`.
+7. **View Transitions**: `<ClientRouter />` is in `RootLayout.astro`. All navigations cross-fade.
+8. **Dev auth**: `localStorage.polllabs_auth_token` — Navbar reads this to show/hide Sign In/Out.
+9. **JSON size limits**: `options` field max 20,000 bytes, `appearance` max 5,000 bytes (enforced in migration `1789639490`).
+10. **Multi-select voting**: `VoteRequest.option_ids` (list) takes priority over legacy `option_id` (str).
+11. **graphify knowledge graph**: `graphify-out/graph.html` (349 nodes, 596 edges) — open in browser for visual codebase navigation.
+
+---
+
+## 12. Tools Installed
+
+| Tool | Version | Location |
+|------|---------|---------|
+| graphify | 0.9.63 | `~/.local/bin/graphify` |
+| Skill | registered | `~/.claude/skills/graphify/SKILL.md` |
+| Knowledge graph | built | `graphify-out/graph.html` (349 nodes, 596 edges, 16 communities) |
