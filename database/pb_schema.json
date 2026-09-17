@@ -1,0 +1,294 @@
+[
+  {
+    "id": "25gr2lxfynb2l7k",
+    "system": 0,
+    "type": "base",
+    "name": "polls",
+    "schema": [
+      {
+        "system": false,
+        "id": "5eeebids",
+        "name": "title",
+        "type": "text",
+        "required": true,
+        "presentable": false,
+        "unique": false,
+        "options": {
+          "min": 3,
+          "max": 200,
+          "pattern": ""
+        }
+      },
+      {
+        "system": false,
+        "id": "59syoode",
+        "name": "description",
+        "type": "text",
+        "required": false,
+        "presentable": false,
+        "unique": false,
+        "options": {
+          "min": null,
+          "max": 1000,
+          "pattern": ""
+        }
+      },
+      {
+        "system": false,
+        "id": "yov5vvgk",
+        "name": "options",
+        "type": "json",
+        "required": true,
+        "presentable": false,
+        "unique": false,
+        "options": {
+          "maxSize": 0
+        }
+      },
+      {
+        "system": false,
+        "id": "95snehn9",
+        "name": "visibility",
+        "type": "select",
+        "required": true,
+        "presentable": false,
+        "unique": false,
+        "options": {
+          "maxSelect": 1,
+          "values": [
+            "public",
+            "private"
+          ]
+        }
+      },
+      {
+        "system": false,
+        "id": "p2ourzrx",
+        "name": "result_display",
+        "type": "select",
+        "required": true,
+        "presentable": false,
+        "unique": false,
+        "options": {
+          "maxSelect": 1,
+          "values": [
+            "show_counts",
+            "show_percentage",
+            "hidden_until_close"
+          ]
+        }
+      },
+      {
+        "system": false,
+        "id": "zeslo5df",
+        "name": "close_at",
+        "type": "date",
+        "required": false,
+        "presentable": false,
+        "unique": false,
+        "options": {
+          "min": "",
+          "max": ""
+        }
+      },
+      {
+        "system": false,
+        "id": "zt9r1eii",
+        "name": "owner",
+        "type": "relation",
+        "required": true,
+        "presentable": false,
+        "unique": false,
+        "options": {
+          "collectionId": "_pb_users_auth_",
+          "cascadeDelete": false,
+          "minSelect": null,
+          "maxSelect": 1,
+          "displayFields": null
+        }
+      },
+      {
+        "system": false,
+        "id": "0djrm0ht",
+        "name": "total_votes",
+        "type": "number",
+        "required": false,
+        "presentable": false,
+        "unique": false,
+        "options": {
+          "min": 0,
+          "max": null,
+          "noDecimal": false
+        }
+      }
+    ],
+    "indexes": [
+      "CREATE INDEX idx_polls_visibility ON polls (visibility, created)",
+      "CREATE INDEX idx_polls_owner ON polls (owner)"
+    ],
+    "listRule": "visibility = \"public\" || owner = @request.auth.id",
+    "viewRule": "visibility = \"public\" || visibility = \"private\" || owner = @request.auth.id",
+    "createRule": "@request.auth.id != \"\"",
+    "updateRule": "owner = @request.auth.id",
+    "deleteRule": "owner = @request.auth.id",
+    "options": {},
+    "created": "2026-09-17 04:25:19.976Z",
+    "updated": "2026-09-17 04:25:19.976Z"
+  },
+  {
+    "id": "_pb_users_auth_",
+    "system": 0,
+    "type": "auth",
+    "name": "users",
+    "schema": [
+      {
+        "system": false,
+        "id": "users_name",
+        "name": "name",
+        "type": "text",
+        "required": false,
+        "presentable": false,
+        "unique": false,
+        "options": {
+          "min": null,
+          "max": null,
+          "pattern": ""
+        }
+      },
+      {
+        "system": false,
+        "id": "users_avatar",
+        "name": "avatar",
+        "type": "file",
+        "required": false,
+        "presentable": false,
+        "unique": false,
+        "options": {
+          "mimeTypes": [
+            "image/jpeg",
+            "image/png",
+            "image/svg+xml",
+            "image/gif",
+            "image/webp"
+          ],
+          "thumbs": null,
+          "maxSelect": 1,
+          "maxSize": 5242880,
+          "protected": false
+        }
+      }
+    ],
+    "indexes": [],
+    "listRule": "id = @request.auth.id",
+    "viewRule": "id = @request.auth.id",
+    "createRule": "",
+    "updateRule": "id = @request.auth.id",
+    "deleteRule": "id = @request.auth.id",
+    "options": {
+      "allowEmailAuth": true,
+      "allowOAuth2Auth": true,
+      "allowUsernameAuth": true,
+      "exceptEmailDomains": null,
+      "manageRule": null,
+      "minPasswordLength": 8,
+      "onlyEmailDomains": null,
+      "onlyVerified": false,
+      "requireEmail": false
+    },
+    "created": "2026-09-17 04:00:49.632Z",
+    "updated": "2026-09-17 04:00:49.634Z"
+  },
+  {
+    "id": "51nbs51bjj9fvix",
+    "system": 0,
+    "type": "base",
+    "name": "votes",
+    "schema": [
+      {
+        "system": false,
+        "id": "6nbxsxla",
+        "name": "poll_id",
+        "type": "relation",
+        "required": true,
+        "presentable": false,
+        "unique": false,
+        "options": {
+          "collectionId": "25gr2lxfynb2l7k",
+          "cascadeDelete": true,
+          "minSelect": null,
+          "maxSelect": 1,
+          "displayFields": null
+        }
+      },
+      {
+        "system": false,
+        "id": "nuv7axyw",
+        "name": "option_id",
+        "type": "text",
+        "required": true,
+        "presentable": false,
+        "unique": false,
+        "options": {
+          "min": null,
+          "max": null,
+          "pattern": ""
+        }
+      },
+      {
+        "system": false,
+        "id": "nxuxaq9s",
+        "name": "device_token",
+        "type": "text",
+        "required": true,
+        "presentable": false,
+        "unique": false,
+        "options": {
+          "min": null,
+          "max": null,
+          "pattern": ""
+        }
+      },
+      {
+        "system": false,
+        "id": "gfiet60r",
+        "name": "ip_hash",
+        "type": "text",
+        "required": true,
+        "presentable": false,
+        "unique": false,
+        "options": {
+          "min": null,
+          "max": null,
+          "pattern": ""
+        }
+      },
+      {
+        "system": false,
+        "id": "vtgfo2ai",
+        "name": "embed_referrer",
+        "type": "text",
+        "required": false,
+        "presentable": false,
+        "unique": false,
+        "options": {
+          "min": null,
+          "max": null,
+          "pattern": ""
+        }
+      }
+    ],
+    "indexes": [
+      "CREATE INDEX idx_votes_poll ON votes (poll_id)",
+      "CREATE INDEX idx_votes_device_poll ON votes (poll_id, device_token)",
+      "CREATE INDEX idx_votes_ip_poll ON votes (poll_id, ip_hash)"
+    ],
+    "listRule": null,
+    "viewRule": null,
+    "createRule": "",
+    "updateRule": null,
+    "deleteRule": null,
+    "options": {},
+    "created": "2026-09-17 04:25:19.980Z",
+    "updated": "2026-09-17 04:25:19.980Z"
+  }
+]

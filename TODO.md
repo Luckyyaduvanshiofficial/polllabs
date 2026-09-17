@@ -7,8 +7,8 @@ This document tracks all tasks, deliverables, and implementation phases accordin
 ## 📊 Overall Progress
 
 - **Phase 1: Setup & Scaffolding** — **100%** (Completed)
-- **Phase 2: Database Layer (PocketBase)** — **0%** (Up Next)
-- **Phase 3: Backend API & Security (FastAPI)** — **25%** (In Progress)
+- **Phase 2: Database Layer (PocketBase)** — **100%** (Completed)
+- **Phase 3: Backend API & Security (FastAPI)** — **25%** (Up Next)
 - **Phase 4: Embeddable Widgets (Svelte & SVG)** — **25%** (In Progress)
 - **Phase 5: Frontend Web & Dashboard (Astro + React)** — **30%** (In Progress)
 - **Phase 6: Testing, Polish & Documentation** — **0%**
@@ -30,15 +30,15 @@ This document tracks all tasks, deliverables, and implementation phases accordin
 ---
 
 ## 🗄️ Phase 2: Database Schema & Collections (PocketBase)
-- [ ] Create `polls` collection:
+- [x] Create `polls` collection:
   - Fields: `title`, `description`, `options` (json), `visibility` (`public`/`private`), `result_display` (`show_counts`/`show_percentage`/`hidden_until_close`), `close_at`, `owner` (relation to users)
-  - Indexes: `idx_polls_visibility` (`visibility, created`)
-- [ ] Create `votes` collection:
+  - Indexes: `idx_polls_visibility` (`visibility, created`), `idx_polls_owner` (`owner`)
+- [x] Create `votes` collection:
   - Fields: `poll_id` (relation to `polls` with `cascadeDelete: true`), `option_id`, `device_token`, `ip_hash`, `embed_referrer`
-  - Indexes: `idx_votes_poll_id`, `idx_votes_device_token`, `idx_votes_ip_hash`
-- [ ] Configure collection API Rules (public read for public polls, owner-only edit/delete, anonymous vote submission)
-- [ ] Export schema to `database/pb_schema.json`
-- [ ] Add PocketBase migration scripts in `database/pb_migrations/`
+  - Indexes: `idx_votes_poll` (`poll_id`), `idx_votes_device_poll` (`poll_id, device_token`), `idx_votes_ip_poll` (`poll_id, ip_hash`)
+- [x] Configure collection API Rules (public read for public polls, owner-only edit/delete, anonymous vote submission)
+- [x] Export schema to `database/pb_schema.json`
+- [x] Add PocketBase migration scripts in `database/pb_migrations/1789619075_init_schema.js`
 
 ---
 
