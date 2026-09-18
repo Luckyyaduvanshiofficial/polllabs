@@ -1,37 +1,56 @@
 ---
 /**
- * Ft4 Dense typographic colophon. A single mono block of credits and status
- * rather than four columns of links, which suits a tool whose surface area is
- * small and whose audience reads mono comfortably.
+ * Ft1 mast-headed footer: wordmark and one line of what this is, with a small
+ * set of grouped links beside it. Kept short on purpose so the page ends
+ * quietly instead of in four columns of sitemap.
  *
- * The API links resolve at runtime through getApiUrl() rather than being
- * hardcoded to localhost, so a deployed build points at the deployed API.
+ * API links resolve at runtime through getApiUrl(), so a deployed build points
+ * at the deployed API rather than localhost.
  */
 import { getApiUrl } from '../../lib/config';
 
 const year = new Date().getFullYear();
 const apiUrl = getApiUrl();
 const repo = 'https://github.com/Luckyyaduvanshiofficial/polls-lab';
+
+const groups = [
+  {
+    heading: 'Product',
+    links: [
+      { href: '/polls', label: 'Browse polls' },
+      { href: '/leaderboard', label: 'Leaderboard' },
+      { href: '/theme-samples', label: 'Themes' },
+      { href: '/dashboard/create', label: 'Create a poll' },
+    ],
+  },
+  {
+    heading: 'Developers',
+    links: [
+      { href: '/docs', label: 'Documentation' },
+      { href: `${apiUrl}/docs`, label: 'OpenAPI reference', external: true },
+      { href: `${repo}/blob/main/docs/self-hosting.md`, label: 'Self-hosting', external: true },
+      { href: repo, label: 'Source', external: true },
+    ],
+  },
+];
 ---
 
 <footer class="foot rule-top">
   <div class="shell foot__inner">
-    <p class="foot__colophon">
-      <span class="foot__mark">polls-lab</span> builds embeddable polls, live SVG badges and public
-      leaderboards. Astro, Svelte 5 and Tailwind on the front; FastAPI and PocketBase behind.
-      Apache 2.0 licensed. Anonymous voting, hashed IPs, no third-party trackers.
-      &copy; {year}.
-    </p>
-
-    <nav class="foot__links" aria-label="Resources">
-      <a href="/docs">docs</a>
-      <a href="/leaderboard">leaderboard</a>
-      <a href="/theme-samples">themes</a>
-      <a href={repo} target="_blank" rel="noopener noreferrer">source</a>
-      <a href={`${repo}/blob/main/docs/self-hosting.md`} target="_blank" rel="noopener noreferrer">
-        self-hosting
+    <div class="foot__mast">
+      <a href="/" class="foot__brand">
+        <span class="foot__mark" aria-hidden="true">
+          <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+            <circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="1.6" opacity="0.28" />
+            <path d="M10 1a9 9 0 0 1 0 18Z" fill="currentColor" />
+          </svg>
+        </span>
+        <span class="foot__name">Polls Lab</span>
       </a>
-      <a href={`${apiUrl}/docs`} target="_blank" rel="noopener noreferrer">openapi</a>
+      <p class="foot__line">
+        Embeddable polls and live README badges. Anonymous voting, hashed IP addresses, no
+        third-party trackers.
+      </p>
       <a
         href={`${apiUrl}/api/v1/health`}
         target="_blank"
@@ -40,63 +59,103 @@ const repo = 'https://github.com/Luckyyaduvanshiofficial/polls-lab';
         data-health-link
       >
         <span class="foot__dot" data-health-dot aria-hidden="true"></span>
-        <span data-health-text>api status</span>
+        <span data-health-text>Checking API</span>
       </a>
-    </nav>
+    </div>
+
+    <div class="foot__groups">
+      {
+        groups.map((group) => (
+          <nav class="foot__group" aria-label={group.heading}>
+            <h2 class="foot__heading">{group.heading}</h2>
+            <ul class="foot__list">
+              {group.links.map((link) => (
+                <li>
+                  <a
+                    href={link.href}
+                    target={link.external ? '_blank' : undefined}
+                    rel={link.external ? 'noopener noreferrer' : undefined}
+                  >
+                    {link.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        ))
+      }
+    </div>
+  </div>
+
+  <div class="shell foot__base">
+    <p>&copy; {year} Polls Lab. Apache 2.0 licensed.</p>
+    <a href={`${repo}/blob/main/LICENSE`} target="_blank" rel="noopener noreferrer">Licence</a>
   </div>
 </footer>
 
 <style>
   .foot {
     margin-top: auto;
-    padding-block: var(--space-xl);
+    padding-top: var(--space-2xl);
   }
 
   .foot__inner {
     display: grid;
-    gap: var(--space-md);
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+    gap: var(--space-2xl);
+    padding-bottom: var(--space-xl);
   }
 
-  .foot__colophon {
-    font-size: var(--text-xs);
-    line-height: 1.75;
-    color: var(--color-ink-3);
-    max-width: 78ch;
+  .foot__brand {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
   }
 
   .foot__mark {
-    color: var(--color-ink);
-    font-weight: 600;
-  }
-
-  .foot__links {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-md);
-    font-size: var(--text-xs);
-  }
-
-  .foot__links a {
-    color: var(--color-ink-3);
-    text-decoration: underline;
-    text-decoration-color: var(--color-rule-strong);
-    text-underline-offset: 3px;
-    min-height: 1.75rem;
-    display: inline-flex;
-    align-items: center;
-  }
-
-  .foot__links a:hover {
+    display: grid;
+    place-items: center;
+    width: 1.25rem;
+    height: 1.25rem;
     color: var(--color-accent);
-    text-decoration-color: var(--color-accent);
+  }
+
+  .foot__mark svg {
+    width: 100%;
+    height: 100%;
+  }
+
+  .foot__name {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    letter-spacing: var(--tracking-tight);
+    color: var(--color-ink);
+  }
+
+  .foot__line {
+    margin-top: var(--space-sm);
+    font-size: var(--text-sm);
+    color: var(--color-ink-3);
+    max-width: 44ch;
+    line-height: var(--leading-body);
   }
 
   .foot__status {
-    gap: 0.5ch;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+    margin-top: var(--space-md);
+    min-height: 1.75rem;
+    font-size: var(--text-xs);
+    color: var(--color-ink-3);
   }
 
-  /* This dot carries real state (a live health probe), which is the only case
-   * where a status dot earns its place. */
+  .foot__status:hover {
+    color: var(--color-ink);
+  }
+
+  /* This dot carries real state from a live health probe, which is the only
+   * case where a status dot earns its place. */
   .foot__dot {
     width: 6px;
     height: 6px;
@@ -106,16 +165,84 @@ const repo = 'https://github.com/Luckyyaduvanshiofficial/polls-lab';
   }
 
   .foot__dot[data-state='up'] {
-    background: var(--color-accent);
+    background: var(--color-ok);
   }
 
   .foot__dot[data-state='down'] {
     background: var(--color-danger);
   }
 
+  .foot__groups {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-xl);
+  }
+
+  .foot__heading {
+    font-size: var(--text-xs);
+    font-weight: 600;
+    letter-spacing: var(--tracking-flat);
+    color: var(--color-ink);
+  }
+
+  .foot__list {
+    list-style: none;
+    margin: var(--space-sm) 0 0;
+    padding: 0;
+    display: grid;
+    gap: var(--space-2xs);
+  }
+
+  .foot__list a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 1.875rem;
+    font-size: var(--text-sm);
+    color: var(--color-ink-3);
+  }
+
+  .foot__list a:hover {
+    color: var(--color-accent-strong);
+  }
+
+  .foot__base {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-md);
+    padding-block: var(--space-md) var(--space-xl);
+    border-top: var(--rule-hair) solid var(--color-rule);
+    font-size: var(--text-xs);
+    color: var(--color-ink-4);
+  }
+
+  .foot__base a {
+    min-height: 1.75rem;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .foot__base a:hover {
+    color: var(--color-ink-2);
+  }
+
+  @media (max-width: 60rem) {
+    .foot__inner {
+      grid-template-columns: minmax(0, 1fr);
+      gap: var(--space-xl);
+    }
+  }
+
   @media (max-width: 40rem) {
-    .foot__links {
-      gap: var(--space-sm) var(--space-md);
+    .foot__groups {
+      grid-template-columns: minmax(0, 1fr);
+      gap: var(--space-lg);
+    }
+
+    .foot__base {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: var(--space-xs);
     }
   }
 </style>
@@ -131,10 +258,10 @@ const repo = 'https://github.com/Luckyyaduvanshiofficial/polls-lab';
     const result = await getHealth();
     if (result.ok) {
       dot.dataset.state = 'up';
-      text.textContent = 'api reachable';
+      text.textContent = 'API operational';
     } else {
       dot.dataset.state = 'down';
-      text.textContent = 'api unreachable';
+      text.textContent = 'API unreachable';
     }
   }
 

@@ -1,79 +1,87 @@
 ---
 /**
- * N8 Terminal command nav. The links read as CLI flags, which fits a product
- * whose main surface is a README badge. The blinking caret is permitted here
- * only: it signals "you would type next" rather than decorating the page.
+ * N1b canonical three-section nav: wordmark left, link cluster centre, account
+ * actions right. Frosts against the paper on scroll rather than sitting on a
+ * hard rule, which is what keeps a light header feeling light.
  */
 const currentPath = Astro.url.pathname;
 
 const links = [
-  { href: '/polls', flag: '--polls' },
-  { href: '/leaderboard', flag: '--board' },
-  { href: '/docs', flag: '--docs' },
+  { href: '/polls', label: 'Polls' },
+  { href: '/leaderboard', label: 'Leaderboard' },
+  { href: '/docs', label: 'Docs' },
 ];
 
 const isActive = (path: string) =>
   path === '/' ? currentPath === '/' : currentPath.startsWith(path);
 ---
 
-<header class="nav rule-bottom">
+<header class="nav" data-nav>
   <div class="shell nav__inner">
-    <a href="/" class="nav__brand" aria-label="Polls Lab home">
-      <span class="nav__prompt" aria-hidden="true">&gt;</span>
-      <span class="nav__word">polls-lab</span>
+    <a href="/" class="brand" aria-label="Polls Lab home">
+      <span class="brand__mark" aria-hidden="true">
+        <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+          <circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="1.6" opacity="0.28" />
+          <path
+            d="M10 1a9 9 0 0 1 0 18Z"
+            fill="currentColor"
+          />
+        </svg>
+      </span>
+      <span class="brand__name">Polls Lab</span>
     </a>
 
-    <nav class="nav__flags" aria-label="Main">
+    <nav class="nav__links" aria-label="Main">
       {
         links.map((link) => (
           <a
             href={link.href}
-            class:list={['nav__flag', { 'nav__flag--on': isActive(link.href) }]}
+            class:list={['nav__link', { 'nav__link--on': isActive(link.href) }]}
             aria-current={isActive(link.href) ? 'page' : undefined}
           >
-            {link.flag}
+            {link.label}
           </a>
         ))
       }
       <a
         href="/dashboard"
-        class:list={['nav__flag', 'nav__flag--auth', { 'nav__flag--on': isActive('/dashboard') }]}
+        class:list={['nav__link', { 'nav__link--on': isActive('/dashboard') }]}
         data-auth-only
         hidden
       >
-        --dashboard
+        Dashboard
       </a>
-      <span class="nav__caret" aria-hidden="true">&#9646;</span>
     </nav>
 
     <div class="nav__actions">
-      <button type="button" class="btn btn--quiet" data-signin hidden>sign in</button>
-      <button type="button" class="btn btn--quiet" data-signout hidden>sign out</button>
-      <a href="/dashboard/create" class="btn btn--primary nav__cta">New poll</a>
+      <button type="button" class="btn btn--quiet" data-signin hidden>Sign in</button>
+      <button type="button" class="btn btn--quiet" data-signout hidden>Sign out</button>
+      <a href="/dashboard/create" class="btn btn--primary nav__cta">Create poll</a>
+
       <button
         type="button"
-        class="nav__burger btn btn--quiet"
+        class="nav__burger"
         data-burger
         aria-expanded="false"
         aria-controls="nav-drawer"
-        aria-label="Toggle menu"
+        aria-label="Open menu"
       >
-        <span aria-hidden="true">menu</span>
+        <span class="nav__burger-bars" aria-hidden="true"></span>
       </button>
     </div>
   </div>
 
-  <div class="nav__drawer rule-top" id="nav-drawer" data-drawer hidden>
+  <div class="nav__drawer" id="nav-drawer" data-drawer hidden>
     <div class="shell nav__drawer-inner">
       {
         links.map((link) => (
           <a href={link.href} class="nav__drawer-link">
-            {link.flag.replace('--', '')}
+            {link.label}
           </a>
         ))
       }
-      <a href="/dashboard" class="nav__drawer-link" data-auth-only hidden>dashboard</a>
-      <a href="/dashboard/create" class="nav__drawer-link nav__drawer-link--cta">new poll</a>
+      <a href="/dashboard" class="nav__drawer-link" data-auth-only hidden>Dashboard</a>
+      <a href="/dashboard/create" class="btn btn--primary nav__drawer-cta">Create poll</a>
     </div>
   </div>
 
@@ -85,85 +93,79 @@ const isActive = (path: string) =>
     position: sticky;
     top: 0;
     z-index: 40;
-    background: color-mix(in oklab, var(--color-paper) 88%, transparent);
-    backdrop-filter: blur(10px);
+    background: color-mix(in oklab, var(--color-paper) 82%, transparent);
+    backdrop-filter: saturate(180%) blur(12px);
+    transition: box-shadow var(--dur-mid) var(--ease-out);
+  }
+
+  /* The rule only appears once the page has moved, so the header reads as part
+   * of the paper at rest. */
+  .nav[data-scrolled='true'] {
+    box-shadow: 0 1px 0 var(--color-rule);
   }
 
   .nav__inner {
     display: flex;
     align-items: center;
-    gap: var(--space-lg);
-    min-height: 3.25rem;
+    gap: var(--space-xl);
+    min-height: 4rem;
   }
 
-  .nav__brand {
+  .brand {
     display: inline-flex;
-    align-items: baseline;
-    gap: 0.4ch;
-    font-size: var(--text-sm);
-    font-weight: 600;
+    align-items: center;
+    gap: var(--space-xs);
     flex-shrink: 0;
   }
 
-  .nav__prompt {
+  .brand__mark {
+    display: grid;
+    place-items: center;
+    width: 1.375rem;
+    height: 1.375rem;
     color: var(--color-accent);
   }
 
-  .nav__word {
+  .brand__mark svg {
+    width: 100%;
+    height: 100%;
+  }
+
+  .brand__name {
+    font-size: var(--text-base);
+    font-weight: 600;
+    letter-spacing: var(--tracking-tight);
     color: var(--color-ink);
   }
 
-  .nav__brand:hover .nav__word {
-    color: var(--color-accent);
-  }
-
-  .nav__flags {
+  .nav__links {
     display: flex;
-    align-items: baseline;
-    gap: var(--space-md);
-    font-size: var(--text-sm);
+    align-items: center;
+    gap: var(--space-2xs);
     flex: 1;
     min-width: 0;
   }
 
-  .nav__flag {
+  .nav__link {
+    padding: var(--space-xs) var(--space-md);
+    border-radius: var(--radius-pill);
+    font-size: var(--text-sm);
+    font-weight: 500;
     color: var(--color-ink-3);
-    text-decoration: underline;
-    text-decoration-color: transparent;
-    text-underline-offset: 3px;
+    white-space: nowrap;
     transition:
       color var(--dur-fast) var(--ease-out),
-      text-decoration-color var(--dur-fast) var(--ease-out);
-    white-space: nowrap;
+      background-color var(--dur-fast) var(--ease-out);
   }
 
-  .nav__flag:hover {
+  .nav__link:hover {
     color: var(--color-ink);
-    text-decoration-color: var(--color-ink-4);
+    background: var(--color-paper-3);
   }
 
-  .nav__flag--on {
-    color: var(--color-accent);
-    text-decoration-color: var(--color-accent);
-  }
-
-  .nav__caret {
-    display: inline-block;
-    width: 1ch;
-    color: var(--color-accent);
-    animation: nav-blink 1.05s steps(2) infinite;
-  }
-
-  @keyframes nav-blink {
-    50% {
-      opacity: 0;
-    }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .nav__caret {
-      animation: none;
-    }
+  .nav__link--on {
+    color: var(--color-accent-strong);
+    background: var(--color-accent-soft);
   }
 
   .nav__actions {
@@ -174,23 +176,58 @@ const isActive = (path: string) =>
   }
 
   .nav__error {
-    margin: 0;
     padding: var(--space-xs) var(--page-gutter);
-    background: var(--color-danger-wash);
+    background: var(--color-danger-soft);
     color: var(--color-danger);
     font-size: var(--text-xs);
     border-top: var(--rule-hair) solid var(--color-danger);
   }
 
-  .nav__burger,
-  .nav__drawer {
+  .nav__burger {
     display: none;
+    appearance: none;
+    background: transparent;
+    border: var(--rule-hair) solid var(--color-rule-strong);
+    border-radius: var(--radius-pill);
+    width: 2.5rem;
+    height: 2.5rem;
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
   }
 
-  /* Below the layout breakpoint the flag row collapses behind `menu`, keeping
-   * the terminal voice rather than switching to a hamburger glyph. */
+  .nav__burger-bars,
+  .nav__burger-bars::before,
+  .nav__burger-bars::after {
+    display: block;
+    width: 15px;
+    height: 1.5px;
+    background: var(--color-ink-2);
+    border-radius: var(--radius-pill);
+  }
+
+  .nav__burger-bars::before,
+  .nav__burger-bars::after {
+    content: '';
+    position: relative;
+  }
+
+  .nav__burger-bars::before {
+    top: -4.5px;
+  }
+
+  .nav__burger-bars::after {
+    top: 3px;
+  }
+
+  .nav__drawer {
+    display: none;
+    border-top: var(--rule-hair) solid var(--color-rule);
+    background: var(--color-paper);
+  }
+
   @media (max-width: 60rem) {
-    .nav__flags {
+    .nav__links {
       display: none;
     }
 
@@ -207,33 +244,40 @@ const isActive = (path: string) =>
     }
 
     .nav__drawer-inner {
-      display: flex;
-      flex-direction: column;
-      padding-block: var(--space-xs);
+      display: grid;
+      gap: var(--space-2xs);
+      padding-block: var(--space-md) var(--space-lg);
     }
 
     .nav__drawer-link {
-      padding: var(--space-sm) 0;
-      min-height: 2.75rem;
       display: flex;
       align-items: center;
-      font-size: var(--text-sm);
+      min-height: 2.75rem;
+      padding: var(--space-xs) var(--space-sm);
+      border-radius: var(--radius-md);
+      font-size: var(--text-base);
+      font-weight: 500;
       color: var(--color-ink-2);
-      border-bottom: var(--rule-hair) solid var(--color-rule);
     }
 
-    .nav__drawer-link:last-child {
-      border-bottom: none;
+    .nav__drawer-link:hover {
+      background: var(--color-paper-3);
+      color: var(--color-ink);
     }
 
-    .nav__drawer-link--cta {
-      color: var(--color-accent);
+    .nav__drawer-cta {
+      margin-top: var(--space-sm);
+      justify-self: start;
     }
   }
 
   @media (max-width: 40rem) {
+    .nav__inner {
+      gap: var(--space-md);
+    }
+
     .nav__cta {
-      padding-inline: var(--space-sm);
+      display: none;
     }
   }
 </style>
@@ -262,19 +306,21 @@ const isActive = (path: string) =>
     box.hidden = false;
   }
 
+  let onScroll: (() => void) | null = null;
+
   function wire() {
     syncAuthChrome();
 
     document.querySelectorAll<HTMLButtonElement>('[data-signin]').forEach((btn) => {
       btn.onclick = async () => {
         btn.disabled = true;
-        btn.textContent = 'opening GitHub';
+        btn.textContent = 'Opening GitHub';
         try {
           await startSignIn(window.location.pathname);
         } catch (err) {
           showAuthError(err instanceof Error ? err.message : 'Could not start sign-in.');
           btn.disabled = false;
-          btn.textContent = 'sign in';
+          btn.textContent = 'Sign in';
         }
       };
     });
@@ -290,7 +336,20 @@ const isActive = (path: string) =>
         const open = !drawer.hidden;
         drawer.hidden = open;
         burger.setAttribute('aria-expanded', String(!open));
+        burger.setAttribute('aria-label', open ? 'Open menu' : 'Close menu');
       };
+    }
+
+    // Passive listener, and it only toggles one attribute, so it never
+    // measures layout on scroll.
+    const nav = document.querySelector<HTMLElement>('[data-nav]');
+    if (nav) {
+      if (onScroll) window.removeEventListener('scroll', onScroll);
+      onScroll = () => {
+        nav.dataset.scrolled = String(window.scrollY > 4);
+      };
+      onScroll();
+      window.addEventListener('scroll', onScroll, { passive: true });
     }
   }
 
