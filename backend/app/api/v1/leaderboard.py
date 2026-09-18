@@ -7,6 +7,7 @@ from app.schemas.leaderboard import (
     MostVotedOptionItem,
 )
 from app.api.v1.polls import map_poll_to_response
+from app.services.poll_utils import is_poll_closed
 
 router = APIRouter(prefix="/leaderboard", tags=["Leaderboard"])
 
@@ -36,7 +37,9 @@ async def get_trending_polls(
     Differentiated from all-time /top by prioritizing newly active and viral polls.
     """
     seven_days_ago = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
-    filter_expr = f'visibility="public" && total_votes > 0 && created >= "{seven_days_ago}"'
+    # Keyed on `updated`, which advances when a vote is recorded, so a long-lived
+    # poll surging this week trends and a stale one drops off (PRD §3.1, §4.3).
+    filter_expr = f'visibility="public" && total_votes > 0 && updated >= "{seven_days_ago}"'
     trending_res = await fetch_leaderboard_polls(
         pb=pb,
         filter_expr=filter_expr,
@@ -85,6 +88,13 @@ async def get_most_voted_options(
 
     all_options: list[MostVotedOptionItem] = []
     for poll in result.get("items", []):
+        # This endpoint is public and anonymous, so polls that mask raw counts
+        # are excluded rather than having their counts republished (PRD §3.2).
+        result_display = poll.get("result_display", "show_counts")
+        if result_display == "show_percentage":
+            continue
+        if result_display == "hidden_until_close" and not is_poll_closed(poll.get("close_at")):
+            continue
         for opt in poll.get("options", []):
             if opt.get("vote_count", 0) > 0:
                 all_options.append(

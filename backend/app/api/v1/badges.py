@@ -103,7 +103,9 @@ def format_badge_data(poll: dict | None) -> BadgeData:
     if result_display == "hidden_until_close" and not closed:
         return BadgeData(label=label, value="results hidden until close", is_error=False, target_url=target_url)
 
-    # Compute leading option breakdown
+    # Compute leading option breakdown. Badges are public and anonymous, so a
+    # show_percentage poll must not expose raw counts here either (PRD §3.2).
+    hide_counts = result_display == "show_percentage"
     options = poll.get("options", [])
     if options and total_votes > 0:
         leading = max(options, key=lambda x: x.get("vote_count", 0))
@@ -111,7 +113,9 @@ def format_badge_data(poll: dict | None) -> BadgeData:
         leading_text = leading.get("text", "leading")
         if len(leading_text) > 16:
             leading_text = f"{leading_text[:14]}…"
-        value = f"{leading_text} {pct}% ({total_votes})"
+        value = f"{leading_text} {pct}%" if hide_counts else f"{leading_text} {pct}% ({total_votes})"
+    elif hide_counts:
+        value = "no votes yet"
     else:
         value = f"{total_votes} votes"
 

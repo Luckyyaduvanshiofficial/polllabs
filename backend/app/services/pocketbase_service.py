@@ -8,9 +8,37 @@ from app.core.config import settings
 
 logger = logging.getLogger("polls-lab.pocketbase")
 
+# One timeout for every PocketBase call; the two constructors below must agree.
+REQUEST_TIMEOUT_SECONDS = 10.0
+
 def sanitize_identifier(value: str) -> str:
     """Sanitizes alphanumeric IDs to prevent filter expression tampering."""
     return re.sub(r"[^a-zA-Z0-9_\-]", "", value)
+
+
+# Fields a client may sort polls by. Anything else is ignored rather than passed
+# through to PocketBase, which would otherwise accept arbitrary sort expressions.
+SORTABLE_POLL_FIELDS = frozenset({"created", "updated", "total_votes", "title", "close_at"})
+DEFAULT_POLL_SORT = "-created"
+
+
+def sanitize_sort_expr(value: str, allowed: frozenset[str], default: str) -> str:
+    """
+    Validates a comma-separated sort expression against a field whitelist,
+    preserving PocketBase's leading '-' for descending order.
+    """
+    if not value:
+        return default
+    clean_terms: list[str] = []
+    for term in value.split(","):
+        term = term.strip()
+        if not term:
+            continue
+        descending = term.startswith("-")
+        field = term.lstrip("+-")
+        if field in allowed:
+            clean_terms.append(f"-{field}" if descending else field)
+    return ",".join(clean_terms) if clean_terms else default
 
 class AsyncPocketBaseService:
     def __init__(self, base_url: str = settings.POCKETBASE_URL):
@@ -21,7 +49,7 @@ class AsyncPocketBaseService:
     async def start(self) -> None:
         """Initializes long-lived HTTP client for connection pooling."""
         if self._client is None or self._client.is_closed:
-            self._client = httpx.AsyncClient(base_url=self.base_url, timeout=10.0)
+            self._client = httpx.AsyncClient(base_url=self.base_url, timeout=REQUEST_TIMEOUT_SECONDS)
 
     async def close(self) -> None:
         """Gracefully closes long-lived HTTP client."""
@@ -43,7 +71,7 @@ class AsyncPocketBaseService:
             or getattr(self, "_loop", None) != current_loop
         ):
             self._loop = current_loop
-            self._client = httpx.AsyncClient(base_url=self.base_url, timeout=2.0)
+            self._client = httpx.AsyncClient(base_url=self.base_url, timeout=REQUEST_TIMEOUT_SECONDS)
         return self._client
 
     async def get_admin_token(self) -> str:
@@ -95,6 +123,31 @@ class AsyncPocketBaseService:
         except Exception as err:
             logger.warning("PocketBase request error [%s %s]: %s", method, path, err)
             return None
+
+    async def verify_user_token(self, token: str) -> str | None:
+        """
+        Verifies an auth token with PocketBase and returns the authenticated
+        user id, or None when the token is invalid or expired.
+
+        The token payload is NOT trusted: PocketBase re-signs and re-checks it
+        via auth-refresh, so a forged or unsigned JWT cannot establish identity.
+        """
+        if not token:
+            return None
+        try:
+            client = await self._get_client()
+            resp = await client.post(
+                "/api/collections/users/auth-refresh",
+                headers={"Authorization": token},
+            )
+        except Exception as err:
+            logger.warning("Token verification request failed: %s", err)
+            return None
+
+        if resp.status_code != 200:
+            return None
+        record = resp.json().get("record") or {}
+        return record.get("id") or None
 
     # --- Polls CRUD ---
 
@@ -163,22 +216,6 @@ class AsyncPocketBaseService:
 
     # --- Votes CRUD ---
 
-    async def has_device_voted(self, poll_id: str, device_token: str) -> bool:
-        """Checks if a device token has already cast a vote for a specific poll with sanitized binding."""
-        clean_poll_id = sanitize_identifier(poll_id)
-        clean_token = sanitize_identifier(device_token)
-        filter_expr = f'poll_id="{clean_poll_id}" && device_token="{clean_token}"'
-
-        resp = await self._request(
-            "GET",
-            "/api/collections/votes/records",
-            params={"filter": filter_expr, "perPage": 1},
-        )
-        if resp and resp.status_code == 200:
-            data = resp.json()
-            return data.get("totalItems", 0) > 0
-        return False
-
     async def get_existing_vote(self, poll_id: str, device_token: str) -> dict[str, Any] | None:
         """Returns the existing vote record for a device on a poll, or None."""
         clean_poll_id = sanitize_identifier(poll_id)
@@ -206,14 +243,34 @@ class AsyncPocketBaseService:
             raise ValueError(detail)
         return resp.json()
 
+    async def update_vote(self, vote_id: str, vote_data: dict[str, Any]) -> dict[str, Any]:
+        """Updates an existing vote record in place (multi-select selection changes)."""
+        clean_id = sanitize_identifier(vote_id)
+        resp = await self._request(
+            "PATCH",
+            f"/api/collections/votes/records/{clean_id}",
+            json_data=vote_data,
+        )
+        if not resp or resp.status_code != 200:
+            detail = resp.text if resp else "Database unreachable"
+            raise ValueError(detail)
+        return resp.json()
+
     async def record_vote_and_increment(
         self,
         poll_id: str,
         vote_data: dict[str, Any],
+        existing_vote_id: str | None = None,
+        newly_counted_ids: list[str] | None = None,
     ) -> tuple[dict[str, Any], dict[str, Any]]:
         """
-        Atomically records a vote and increments poll counters in PocketBase.
+        Records a vote and increments poll counters in PocketBase.
         Handles both single-choice (str) and multi-select (list) option_id values.
+
+        `existing_vote_id` updates that record instead of inserting a new one and
+        suppresses the total_votes increment, so a device counts once per poll.
+        `newly_counted_ids` limits option increments to options not already
+        counted for this device.
         """
         poll = await self.get_poll(poll_id)
         if not poll:
@@ -223,64 +280,39 @@ class AsyncPocketBaseService:
         raw_option_id = vote_data["option_id"]
         option_ids = raw_option_id if isinstance(raw_option_id, list) else [raw_option_id]
 
-        # 1. Cast individual vote record (option_id stored as-is in JSON)
-        vote_resp = await self.cast_vote(vote_data)
+        # Options whose counts change. On a repeat multi-select vote only the
+        # newly added options are counted, and the device is not counted toward
+        # total_votes a second time — otherwise revisiting a poll inflates both.
+        increment_ids = list(option_ids) if newly_counted_ids is None else list(newly_counted_ids)
+
+        # 1. Record the vote: update the device's existing record in place when
+        # it has one, so a device holds exactly one vote row per poll.
+        if existing_vote_id:
+            vote_resp = await self.update_vote(existing_vote_id, vote_data)
+        else:
+            vote_resp = await self.cast_vote(vote_data)
 
         # 2. Update option-specific counts and atomically increment total_votes
         options = poll.get("options", [])
-        for oid in option_ids:
+        for oid in increment_ids:
             for opt in options:
                 if opt.get("id") == oid:
                     opt["vote_count"] = opt.get("vote_count", 0) + 1
                     break
 
-        update_payload = {
-            "options": options,
-            "total_votes+": 1,
-        }
+        update_payload: dict[str, Any] = {"options": options}
+        counts_new_voter = existing_vote_id is None
+        if counts_new_voter:
+            update_payload["total_votes+"] = 1
+
         updated_poll = await self.update_poll(poll_id, update_payload)
         # Ensure returned poll reflects latest total_votes for display mapping
-        if "total_votes" not in updated_poll or updated_poll["total_votes"] == poll.get("total_votes", 0):
+        if counts_new_voter and (
+            "total_votes" not in updated_poll
+            or updated_poll["total_votes"] == poll.get("total_votes", 0)
+        ):
             updated_poll["total_votes"] = poll.get("total_votes", 0) + 1
         return vote_resp, updated_poll
-
-    async def list_voters_for_poll(self, poll_id: str, option_id: str) -> list[str]:
-        """Returns anonymized device_token list for a specific option on a poll (visible voters feature)."""
-        clean_poll_id = sanitize_identifier(poll_id)
-        clean_option = sanitize_identifier(option_id)
-        filter_expr = f'poll_id="{clean_poll_id}"'
-
-        all_tokens: list[str] = []
-        page = 1
-        per_page = 200
-
-        while True:
-            resp = await self._request(
-                "GET",
-                "/api/collections/votes/records",
-                params={"filter": filter_expr, "page": page, "perPage": per_page},
-            )
-            if not resp or resp.status_code != 200:
-                break
-
-            data = resp.json()
-            for vote in data.get("items", []):
-                # option_id may be a string or a JSON array
-                vote_opt = vote.get("option_id")
-                if isinstance(vote_opt, list):
-                    if clean_option in vote_opt:
-                        token = vote.get("device_token", "")
-                        all_tokens.append(token[:8] + "..." if len(token) > 8 else token)
-                elif isinstance(vote_opt, str) and vote_opt == clean_option:
-                    token = vote.get("device_token", "")
-                    all_tokens.append(token[:8] + "..." if len(token) > 8 else token)
-
-            total_pages = data.get("totalPages", 1)
-            if page >= total_pages or len(data.get("items", [])) == 0:
-                break
-            page += 1
-
-        return all_tokens
 
     async def list_votes_for_poll(self, poll_id: str) -> list[dict[str, Any]]:
         """Fetches all votes for a poll with automatic pagination (PRD §5)."""
@@ -380,6 +412,14 @@ class AsyncPocketBaseService:
 
     # --- User Lifecycle & Deletion ---
 
+    async def get_user(self, user_id: str) -> dict[str, Any] | None:
+        """Returns a user record, or None when it is missing."""
+        clean_id = sanitize_identifier(user_id)
+        resp = await self._request("GET", f"/api/collections/users/records/{clean_id}")
+        if resp and resp.status_code == 200:
+            return resp.json()
+        return None
+
     async def set_user_deletion_status(
         self,
         user_id: str,
@@ -416,10 +456,36 @@ class AsyncPocketBaseService:
         users = resp.json().get("items", [])
         purged = 0
         for u in users:
+            # polls.owner is not a cascading relation, so owned polls are removed
+            # explicitly first. Deleting a poll cascades to its votes, abuse
+            # reports and images. Without this the user row disappears and the
+            # polls survive as orphans (PRD §7).
+            await self.delete_polls_owned_by(u["id"])
             del_resp = await self._request("DELETE", f"/api/collections/users/records/{u['id']}")
             if del_resp and del_resp.status_code == 204:
                 purged += 1
         return purged
+
+    async def delete_polls_owned_by(self, user_id: str) -> int:
+        """Deletes every poll owned by a user, cascading to votes and reports."""
+        clean_user_id = sanitize_identifier(user_id)
+        deleted = 0
+        while True:
+            resp = await self._request(
+                "GET",
+                "/api/collections/polls/records",
+                params={"filter": f'owner="{clean_user_id}"', "perPage": 100},
+            )
+            if not resp or resp.status_code != 200:
+                return deleted
+            items = resp.json().get("items", [])
+            if not items:
+                return deleted
+            for poll in items:
+                if await self.delete_poll(poll["id"]):
+                    deleted += 1
+            if len(items) < 100:
+                return deleted
 
 def get_pb_service(request: Request) -> AsyncPocketBaseService:
     """FastAPI dependency yielding async PocketBase service managed on application state."""

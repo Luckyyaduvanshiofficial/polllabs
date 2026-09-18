@@ -1,6 +1,7 @@
+import logging
 import uuid
 from datetime import datetime, timedelta, timezone
-from typing import Any
+from typing import Annotated, Any
 from fastapi import APIRouter, File, Form, HTTPException, Query, Request, UploadFile, status
 from app.schemas.poll import (
     PollCreate,
@@ -23,7 +24,14 @@ from app.services.image_upload import (
     sanitize_filename,
 )
 from app.services.moderation import validate_content_safety
+from app.services.pocketbase_service import (
+    DEFAULT_POLL_SORT,
+    SORTABLE_POLL_FIELDS,
+    sanitize_sort_expr,
+)
 from app.services.poll_utils import coerce_appearance, is_poll_closed
+
+logger = logging.getLogger("polls-lab.polls")
 
 router = APIRouter(prefix="/polls", tags=["Polls"])
 
@@ -34,7 +42,7 @@ def sanitize_poll_options_for_display(
     correct_options: list[str] | None = None,
     show_voters: bool = False,
     device_token: str | None = None,
-    pb=None,
+    has_voted: bool = False,
 ) -> tuple[list[PollOptionResponse], int | None]:
     """
     Applies PRD §3.2 result display rules (show_counts, show_percentage, hidden_until_close).
@@ -66,13 +74,19 @@ def sanitize_poll_options_for_display(
             display_count = None
             display_pct = percentage
             display_total_votes = None
-        else:
+        elif has_voted:
             display_count = count
             display_pct = percentage
+        else:
+            # show_counts reveals raw numbers only after the viewer has voted
+            # (PRD §3.2); before that, percentages only.
+            display_count = None
+            display_pct = percentage
+            display_total_votes = None
 
-        # Quiz mode: mark correct/incorrect after voter has voted
+        # Quiz mode: reveal correctness only once the voter has actually voted
         is_correct = None
-        if is_quiz and correct_options and device_token:
+        if is_quiz and correct_options and has_voted:
             is_correct = opt_dict["id"] in correct_options
 
         # Visible voters: anonymized device token list
@@ -94,7 +108,11 @@ def sanitize_poll_options_for_display(
 
     # Double check total_votes masking when not owner
     if not is_owner:
-        if result_display == "show_percentage" or (result_display == "hidden_until_close" and not closed):
+        if (
+            result_display == "show_percentage"
+            or (result_display == "hidden_until_close" and not closed)
+            or (result_display == "show_counts" and not has_voted)
+        ):
             display_total_votes = None
 
     return sanitized, display_total_votes
@@ -108,9 +126,20 @@ def is_hidden_results(result_display: str, closed: bool, is_owner: bool) -> bool
         return True
     return False
 
-def map_poll_to_response(poll: dict[str, Any], is_owner: bool = False) -> PollResponse:
+def map_poll_to_response(
+    poll: dict[str, Any],
+    is_owner: bool = False,
+    has_voted: bool = False,
+) -> PollResponse:
     """Transforms raw PocketBase dictionary to strongly-typed PollResponse model."""
-    sanitized_options, total_votes = sanitize_poll_options_for_display(poll, is_owner=is_owner)
+    sanitized_options, total_votes = sanitize_poll_options_for_display(
+        poll,
+        is_owner=is_owner,
+        is_quiz=poll.get("is_quiz", False) or False,
+        correct_options=poll.get("correct_options"),
+        show_voters=poll.get("show_voters", False) or False,
+        has_voted=has_voted,
+    )
     return PollResponse(
         id=poll["id"],
         title=poll["title"],
@@ -142,7 +171,7 @@ async def list_public_polls(
         page=page,
         per_page=per_page,
         filter_expr='visibility="public"',
-        sort_expr=sort,
+        sort_expr=sanitize_sort_expr(sort, SORTABLE_POLL_FIELDS, DEFAULT_POLL_SORT),
     )
     raw_items = result.get("items", [])
     items = [map_poll_to_response(item, is_owner=False) for item in raw_items]
@@ -158,6 +187,7 @@ async def list_public_polls(
 @router.get("/{poll_id}", response_model=PollResponse)
 async def get_poll(
     poll_id: str,
+    request: Request,
     pb: PocketBaseDep,
     current_user_id: OptionalUser = None,
 ) -> PollResponse:
@@ -173,7 +203,16 @@ async def get_poll(
         )
 
     is_owner = bool(current_user_id and current_user_id == poll.get("owner"))
-    return map_poll_to_response(poll, is_owner=is_owner)
+
+    # Raw counts under show_counts are only for viewers who already voted
+    # (PRD §3.2), identified by the device token the server issued.
+    device_token = request.cookies.get("polls-lab_device_token") or request.headers.get(
+        "x-device-token"
+    )
+    has_voted = bool(
+        device_token and await pb.get_existing_vote(poll_id, device_token)
+    )
+    return map_poll_to_response(poll, is_owner=is_owner, has_voted=has_voted)
 
 @router.post("", response_model=PollResponse, status_code=status.HTTP_201_CREATED)
 @router.post("/", response_model=PollResponse, status_code=status.HTTP_201_CREATED)
@@ -236,9 +275,10 @@ async def create_poll(
         created = await pb.create_poll(poll_record)
         return map_poll_to_response(created, is_owner=True)
     except Exception as err:
+        logger.exception("Failed to create poll: %s", err)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to create poll: {err}",
+            detail="Could not create the poll. Please try again.",
         )
 
 @router.patch("/{poll_id}", response_model=PollResponse)
@@ -298,17 +338,18 @@ async def update_poll(
         updated = await pb.update_poll(poll_id, update_dict)
         return map_poll_to_response(updated, is_owner=True)
     except Exception as err:
+        logger.exception("Failed to update poll: %s", err)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to update poll: {err}",
+            detail="Could not update the poll. Please try again.",
         )
 
 @router.post("/images", response_model=PollImageResponse, status_code=status.HTTP_201_CREATED)
 async def upload_poll_image(
     pb: PocketBaseDep,
     user_id: CurrentUser,
-    file: UploadFile = File(...),
-    poll_id: str | None = Form(default=None),
+    file: Annotated[UploadFile, File()],
+    poll_id: Annotated[str | None, Form()] = None,
 ) -> PollImageResponse:
     """
     Uploads a poll option image for YouTube-style thumbnail showdowns (Phase 4).

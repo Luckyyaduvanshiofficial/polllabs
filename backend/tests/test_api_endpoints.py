@@ -2,6 +2,7 @@ import json
 from fastapi.testclient import TestClient
 from app.main import app
 from app.api.v1.polls import sanitize_poll_options_for_display
+from tests.conftest import TEST_ADMIN_KEY
 
 client = TestClient(app)
 
@@ -228,7 +229,7 @@ def test_purge_expired_accounts_admin_protection():
     assert resp_invalid.status_code == 403
 
     # With valid admin key -> 200
-    valid_key = settings.POCKETBASE_ADMIN_PASSWORD or "polls-lab-admin-secret"
+    valid_key = TEST_ADMIN_KEY
     resp_valid = client.post(
         "/api/v1/auth/purge-expired-accounts",
         headers={"X-Admin-Key": valid_key},

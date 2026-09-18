@@ -1,15 +1,14 @@
 from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter
-from pydantic import BaseModel, ConfigDict
-from app.core.dependencies import CurrentUser, PocketBaseDep
-from app.schemas.auth import GitHubAuthUrlResponse, UserResponse, DeletionStatusResponse
+from app.core.dependencies import AdminAuth, CurrentUser, PocketBaseDep
+from app.schemas.auth import (
+    DeletionStatusResponse,
+    GitHubAuthUrlResponse,
+    PurgeResponse,
+    UserResponse,
+)
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
-
-class PurgeResponse(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-    purged_count: int
-    message: str
 
 @router.get("/github/url", response_model=GitHubAuthUrlResponse)
 def get_github_auth_url() -> GitHubAuthUrlResponse:
@@ -22,11 +21,18 @@ def get_github_auth_url() -> GitHubAuthUrlResponse:
     )
 
 @router.get("/me", response_model=UserResponse)
-def get_current_user(user_id: CurrentUser) -> UserResponse:
+async def get_current_user(user_id: CurrentUser, pb: PocketBaseDep) -> UserResponse:
     """
-    Returns current authenticated user identity.
+    Returns the current user identity along with account deletion state, so a
+    pending_deletion account can be shown its remaining grace period (PRD §7).
     """
-    return UserResponse(user_id=user_id, provider="github")
+    record = await pb.get_user(user_id) or {}
+    return UserResponse(
+        user_id=user_id,
+        provider="github",
+        deletion_status=record.get("deletion_status") or "active",
+        deletion_scheduled_for=record.get("deletion_scheduled_for") or None,
+    )
 
 @router.post("/delete-account", response_model=DeletionStatusResponse)
 async def request_account_deletion(
@@ -68,8 +74,6 @@ async def cancel_account_deletion(
         status="active",
         message="Account deletion request successfully cancelled. Your account remains active.",
     )
-
-from app.core.dependencies import AdminAuth, CurrentUser, PocketBaseDep
 
 @router.post("/purge-expired-accounts", response_model=PurgeResponse)
 async def purge_expired_accounts(

@@ -34,6 +34,7 @@ def test_quiz_mode_marks_correct_options():
         correct_options=["o1", "o3"],
         show_voters=False,
         device_token="some-token",
+        has_voted=True,
     )
     assert opts[0].is_correct is True
     assert opts[1].is_correct is False
@@ -41,7 +42,7 @@ def test_quiz_mode_marks_correct_options():
 
 
 def test_quiz_mode_no_token_no_correct():
-    """Without a device_token, is_correct stays None even for quiz polls."""
+    """Before the viewer has voted, is_correct stays None even for quiz polls."""
     opts, _ = sanitize_poll_options_for_display(
         MOCK_POLL,
         is_owner=False,
@@ -276,19 +277,39 @@ class FakeBehaviorPbService:
         self._votes.append(vote_data)
         return {"id": f"vote_{self._vote_count}", **vote_data}
 
-    async def record_vote_and_increment(self, poll_id, vote_data):
+    async def record_vote_and_increment(
+        self,
+        poll_id,
+        vote_data,
+        existing_vote_id=None,
+        newly_counted_ids=None,
+    ):
         poll = self._polls.get(poll_id, {})
         options = poll.get("options", [])
         raw_oid = vote_data["option_id"]
         option_ids = raw_oid if isinstance(raw_oid, list) else [raw_oid]
-        for oid in option_ids:
+        increment_ids = option_ids if newly_counted_ids is None else newly_counted_ids
+        for oid in increment_ids:
             for opt in options:
                 if opt.get("id") == oid:
                     opt["vote_count"] = opt.get("vote_count", 0) + 1
                     break
         self._vote_count += 1
-        poll["total_votes"] = poll.get("total_votes", 0) + 1
+        if existing_vote_id is None:
+            # A returning device is not counted toward total_votes a second time
+            poll["total_votes"] = poll.get("total_votes", 0) + 1
+        else:
+            for v in self._votes:
+                if v.get("id") == existing_vote_id:
+                    v.update(vote_data)
         return {"id": f"vote_{self._vote_count}"}, poll
+
+    async def update_vote(self, vote_id, vote_data):
+        for v in self._votes:
+            if v.get("id") == vote_id:
+                v.update(vote_data)
+                return v
+        return {"id": vote_id, **vote_data}
 
     async def list_voters_for_poll(self, poll_id, option_id):
         return []

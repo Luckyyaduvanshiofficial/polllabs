@@ -1,3 +1,4 @@
+import logging
 import uuid
 from fastapi import APIRouter, HTTPException, Request, Response, status
 from app.schemas.vote import VoteRequest, VoteResponse
@@ -5,6 +6,8 @@ from app.core.rate_limit import check_ip_rate_limit, hash_ip
 from app.core.dependencies import PocketBaseDep
 from app.api.v1.polls import sanitize_poll_options_for_display
 from app.services.poll_utils import is_poll_closed
+
+logger = logging.getLogger("polls-lab.votes")
 
 router = APIRouter(prefix="/votes", tags=["Votes"])
 
@@ -45,10 +48,14 @@ async def submit_vote(
             detail="This poll is closed and no longer accepting votes.",
         )
 
-    # 3. Primary Signal: Device Token (Cookie, Header, or LocalStorage payload)
+    # 3. Primary Signal: Device Token.
+    # Server-controlled sources win: the httpOnly cookie the server issued, then
+    # the header set by the embed. A body-supplied token is only honoured when
+    # neither exists, and cannot override them — otherwise a client rotates the
+    # token per request and votes without limit (PRD §4.6).
     cookie_token = request.cookies.get("polls-lab_device_token")
     header_token = request.headers.get("x-device-token")
-    device_token = vote.device_token or cookie_token or header_token or str(uuid.uuid4())
+    device_token = cookie_token or header_token or vote.device_token or str(uuid.uuid4())
 
     # 4. Normalize option_id to list for uniform handling
     option_ids = vote.option_id if isinstance(vote.option_id, list) else [vote.option_id]
@@ -59,6 +66,7 @@ async def submit_vote(
 
     # 6. Check for existing vote — different logic for single vs multi-select
     existing_vote = await pb.get_existing_vote(poll_id, device_token)
+    previously_counted: list[str] = []
     if existing_vote:
         if not is_multi:
             # Single-choice: reject duplicate outright
@@ -70,6 +78,7 @@ async def submit_vote(
         existing_opt = existing_vote.get("option_id", [])
         if isinstance(existing_opt, str):
             existing_opt = [existing_opt]
+        previously_counted = list(existing_opt)
         # Merge with new selections (deduplicated)
         merged = list(dict.fromkeys(existing_opt + option_ids))
         if len(merged) > max_selections:
@@ -106,12 +115,23 @@ async def submit_vote(
         "embed_referrer": vote.embed_referrer or request.headers.get("referer", ""),
     }
 
+    # Only options this device has not already been counted for get incremented,
+    # and an existing voter is not counted toward total_votes again (PRD §4.6).
+    newly_counted = [oid for oid in option_ids if oid not in previously_counted]
+
     try:
-        _, updated_poll = await pb.record_vote_and_increment(poll_id, vote_record)
+        _, updated_poll = await pb.record_vote_and_increment(
+            poll_id,
+            vote_record,
+            existing_vote_id=existing_vote.get("id") if existing_vote else None,
+            newly_counted_ids=newly_counted,
+        )
     except Exception as err:
+        # Logged server-side; the client gets no database internals.
+        logger.exception("Failed to record vote for poll %s: %s", poll_id, err)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to record vote: {err}",
+            detail="Could not record your vote. Please try again.",
         )
 
     # 10. Set httpOnly cookie for voter tracking across embeds
@@ -125,10 +145,12 @@ async def submit_vote(
     )
 
     # 11. Apply result display masking so voter responses do not leak counts (PRD §3.2)
+    # The caller has just voted, so raw counts are theirs to see under
+    # show_counts (PRD §3.2); show_percentage/hidden_until_close still mask.
     sanitized_options, total_votes = sanitize_poll_options_for_display(
         updated_poll, is_owner=False, is_quiz=poll.get("is_quiz", False),
         correct_options=poll.get("correct_options"), show_voters=poll.get("show_voters", False),
-        device_token=device_token, pb=pb,
+        device_token=device_token, has_voted=True,
     )
 
     return VoteResponse(

@@ -2,11 +2,40 @@ import csv
 import io
 import json
 from collections import Counter
-from fastapi import APIRouter, HTTPException, Response, status
+from typing import Any, Literal
+
+from fastapi import APIRouter, HTTPException, Query, Response, status
 from app.core.dependencies import CurrentUser, PocketBaseDep
 from app.schemas.analytics import AnalyticsResponse
 
 router = APIRouter(prefix="/analytics", tags=["Analytics"])
+
+# Spreadsheet formula-injection prefixes. embed_referrer is client-supplied, so a
+# value starting with one of these executes when an owner opens the CSV export.
+_CSV_FORMULA_PREFIXES = ("=", "+", "-", "@", "\t", "\r")
+
+
+def vote_option_ids(vote: dict[str, Any]) -> list[str]:
+    """
+    Returns a vote's selected option ids. Multi-select records store a list,
+    single-choice records a bare string, so both shapes are normalized here
+    rather than indexing a dict with a possibly-unhashable value.
+    """
+    raw = vote.get("option_id")
+    if isinstance(raw, list):
+        return [str(oid) for oid in raw]
+    if raw is None or raw == "":
+        return []
+    return [str(raw)]
+
+
+def csv_safe(value: object) -> str:
+    """Neutralizes spreadsheet formula injection in exported cells."""
+    text = "" if value is None else str(value)
+    if text.startswith(_CSV_FORMULA_PREFIXES):
+        return "'" + text
+    return text
+
 
 @router.get("/{poll_id}", response_model=AnalyticsResponse)
 async def get_poll_analytics(
@@ -42,7 +71,9 @@ async def get_poll_analytics(
     # Breakdown by option
     option_map = {opt["id"]: opt.get("text", opt["id"]) for opt in poll.get("options", [])}
     option_counts = Counter(
-        option_map.get(v.get("option_id"), "Unknown") for v in votes
+        option_map.get(oid, "Unknown")
+        for v in votes
+        for oid in vote_option_ids(v)
     )
 
     # Timeline breakdown (votes over time, grouped by date YYYY-MM-DD)
@@ -65,7 +96,7 @@ async def export_poll_data(
     poll_id: str,
     user_id: CurrentUser,
     pb: PocketBaseDep,
-    format: str = "json",
+    export_format: Literal["json", "csv"] = Query(default="json", alias="format"),
 ) -> Response:
     """
     Exports raw poll votes in valid CSV or JSON format (PRD §4.3).
@@ -80,18 +111,19 @@ async def export_poll_data(
     votes = await pb.list_votes_for_poll(poll_id)
     option_map = {opt["id"]: opt.get("text", opt["id"]) for opt in poll.get("options", [])}
 
-    if format.lower() == "csv":
+    if export_format == "csv":
         output = io.StringIO()
         writer = csv.writer(output)
         writer.writerow(["Vote ID", "Option ID", "Option Text", "Created At", "Referrer"])
         for v in votes:
-            writer.writerow([
-                v.get("id"),
-                v.get("option_id"),
-                option_map.get(v.get("option_id"), ""),
-                v.get("created"),
-                v.get("embed_referrer") or "Direct",
-            ])
+            for oid in vote_option_ids(v) or [""]:
+                writer.writerow([
+                    csv_safe(v.get("id")),
+                    csv_safe(oid),
+                    csv_safe(option_map.get(oid, "")),
+                    csv_safe(v.get("created")),
+                    csv_safe(v.get("embed_referrer") or "Direct"),
+                ])
 
         return Response(
             content=output.getvalue(),
@@ -105,12 +137,13 @@ async def export_poll_data(
     export_data = [
         {
             "id": v.get("id"),
-            "option_id": v.get("option_id"),
-            "option_text": option_map.get(v.get("option_id"), ""),
+            "option_id": oid,
+            "option_text": option_map.get(oid, ""),
             "created": v.get("created"),
             "referrer": v.get("embed_referrer") or "Direct",
         }
         for v in votes
+        for oid in vote_option_ids(v) or [""]
     ]
     return Response(
         content=json.dumps(export_data, indent=2),
