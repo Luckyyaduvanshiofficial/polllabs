@@ -52,6 +52,11 @@ const ogImage = new URL('/og-image.svg', Astro.url.origin).href;
     <meta name="twitter:image" content={ogImage} />
     <meta name="theme-color" content="#fdfdfe" />
 
+    <!-- Written by the container entrypoint at start-up, so the API and
+         PocketBase origins are runtime values rather than build-time ones.
+         Loaded before any module runs and deliberately not deferred. -->
+    <script is:inline src="/runtime-config.js"></script>
+
     <ClientRouter />
   </head>
   <body>

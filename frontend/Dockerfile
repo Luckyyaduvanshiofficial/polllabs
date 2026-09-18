@@ -25,5 +25,14 @@ RUN pnpm run build
 FROM nginx:1.27-alpine AS runner
 COPY --from=builder /app/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+# The entrypoint writes runtime-config.js at container start, so PUBLIC_API_URL
+# and PUBLIC_PB_URL can be ordinary runtime environment variables. Astro would
+# otherwise only see them at build time, and an image built without the build
+# args ships localhost origins that fail for every visitor.
+COPY docker-entrypoint.sh /docker-entrypoint-polls-lab.sh
+RUN chmod +x /docker-entrypoint-polls-lab.sh
+
 EXPOSE 80
+ENTRYPOINT ["/docker-entrypoint-polls-lab.sh"]
 CMD ["nginx", "-g", "daemon off;"]

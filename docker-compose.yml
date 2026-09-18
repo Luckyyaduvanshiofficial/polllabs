@@ -58,6 +58,12 @@ services:
         - PUBLIC_PB_URL=${PUBLIC_PB_URL:-https://db.your-domain.com}
     container_name: polls-lab-frontend
     restart: unless-stopped
+    # Also passed at runtime: the entrypoint regenerates runtime-config.js on
+    # start, so these take effect without rebuilding the image.
+    environment:
+      - PUBLIC_API_URL=${PUBLIC_API_URL:-http://localhost:8000}
+      - PUBLIC_SITE_URL=${PUBLIC_SITE_URL:-http://localhost:4321}
+      - PUBLIC_PB_URL=${PUBLIC_PB_URL:-http://localhost:8090}
     ports:
       - "80:80"
     depends_on:

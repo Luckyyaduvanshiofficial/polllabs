@@ -10,8 +10,31 @@ function trim(value: string): string {
   return value.replace(/\/+$/, '');
 }
 
+/**
+ * Origins written by the container entrypoint into runtime-config.js, loaded
+ * before this module runs.
+ *
+ * Astro inlines `PUBLIC_*` at build time, so an image built without those build
+ * args ships localhost origins and every request from a deployed site goes to
+ * the viewer's own machine. Reading them at runtime means ordinary environment
+ * variables work and one image serves any environment. Runtime wins over the
+ * build-time value; build-time still covers `pnpm dev` and plain static hosting.
+ */
+interface RuntimeConfig {
+  apiUrl?: string;
+  siteUrl?: string;
+  pbUrl?: string;
+}
+
+function runtime(): RuntimeConfig {
+  if (typeof window === 'undefined') return {};
+  return (window as unknown as { __POLLS_LAB_CONFIG__?: RuntimeConfig }).__POLLS_LAB_CONFIG__ ?? {};
+}
+
 /** FastAPI backend origin (no trailing slash). */
 export function getApiUrl(): string {
+  const fromRuntime = runtime().apiUrl;
+  if (fromRuntime) return trim(fromRuntime);
   const fromEnv = import.meta.env?.PUBLIC_API_URL as string | undefined;
   if (fromEnv) return trim(fromEnv);
   return 'http://localhost:8000';
@@ -22,6 +45,8 @@ export function getSiteUrl(): string {
   if (typeof window !== 'undefined' && window.location?.origin) {
     return window.location.origin;
   }
+  const fromRuntime = runtime().siteUrl;
+  if (fromRuntime) return trim(fromRuntime);
   const fromEnv = import.meta.env?.PUBLIC_SITE_URL as string | undefined;
   if (fromEnv) return trim(fromEnv);
   return 'http://localhost:4321';
@@ -29,6 +54,8 @@ export function getSiteUrl(): string {
 
 /** PocketBase origin, used directly for the OAuth2 handshake. */
 export function getPbUrl(): string {
+  const fromRuntime = runtime().pbUrl;
+  if (fromRuntime) return trim(fromRuntime);
   const fromEnv = import.meta.env?.PUBLIC_PB_URL as string | undefined;
   if (fromEnv) return trim(fromEnv);
   return 'http://localhost:8090';
@@ -73,8 +100,8 @@ export function warnIfMisconfigured(): void {
   console.error(
     `[polls-lab] ${broken.join(' and ')} still ` +
       `${broken.length > 1 ? 'point' : 'points'} at localhost in this build, so requests go to ` +
-      `the viewer's own machine and fail. These are build-time values: set them as build args ` +
-      `and rebuild the frontend image.`
+      `the viewer's own machine and fail. Set them as environment variables on the frontend ` +
+      `service and restart it.`
   );
 }
 
