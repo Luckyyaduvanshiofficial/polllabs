@@ -202,3 +202,62 @@ Two-axis review (standards vs. PRD) of the whole FastAPI backend, then remediati
 - [ ] No scheduler invokes `/auth/purge-expired-accounts`; the 7-day lifecycle needs a cron trigger
 - [ ] `show_voters` is non-functional (always returns `[]`); the PRD defers it, so it was left inert rather than built out
 - [ ] Rate limiting is per-worker in-memory; a strict global quota needs Redis
+
+---
+
+## 🖥️ Phase 10: Frontend Rebuild (developer-tool dense) + Real OAuth
+Full front-end rebuild in a mono-forward, data-dense direction, plus the auth wiring the
+hardened backend requires. 27 pages build clean; embed widget 6.7 KB gzipped (budget 15 KB).
+
+### Auth (was fully broken against the hardened API)
+- [x] Real PocketBase GitHub OAuth2 with PKCE (`src/lib/auth.ts`). The callback previously
+  fabricated a token from the OAuth code prefix (`github_${code.slice(0,16)}`), which the
+  backend now rejects; every dashboard call also sent `x-dev-user-id`, disabled by default
+- [x] `/auth/callback` exchanges the code with PocketBase, stores the signed token, and reports
+  precise setup failures (provider not enabled, callback URL mismatch, replayed link)
+- [x] Removed every `dev-user-local` fallback and `x-dev-user-id` header from the frontend
+- [x] Signed-out gates on `/dashboard` and `/dashboard/create` instead of forms that cannot submit
+- [x] 401 responses clear the session so the UI cannot loop on a dead token
+
+### Logic layer
+- [x] Typed API client (`src/lib/api.ts`) covering polls, votes, leaderboard, analytics, export,
+  auth and image upload. Returns a tagged result union; every caller renders an error state
+- [x] Loading, error, empty and unauthenticated states on every data-backed page
+- [x] Added `/dashboard/analytics?id=<id>`: the SSG `[id]` route 404s for polls created after the
+  last build, so the dashboard now links to a route that resolves any id
+- [x] Analytics export keeps the authenticated fetch + blob download (needs an auth header)
+- [x] Pending-deletion notice on the dashboard, reading the `deletion_status` now exposed by `/auth/me`
+- [x] Footer API links resolve through `getApiUrl()`; they were hardcoded to `localhost:8000`
+
+### Design system
+- [x] `src/styles/tokens.css`: OKLCH palette, 4pt spacing, type scale, one radius scale, three
+  easings. No component inlines a raw colour
+- [x] Tailwind v4 `@theme inline` bridge so utilities consume the same tokens
+- [x] Terminal theme (dark paper, mono display, phosphor accent), Workbench macrostructure,
+  N8 terminal-command nav, Ft4 dense colophon footer
+- [x] Buttons and inputs carry all eight states; focus rings show instantly and are never animated
+- [x] Tabular numerals everywhere; hairline rules replace card boxes
+
+### Pages rebuilt
+- [x] `/` Workbench fold pairing the copyable snippet with the live widget, then three copy
+  surfaces, a guarantees spec sheet, a verb-labelled flow, and a typographic close
+- [x] `/polls` Index-First list with sort, pagination and a `?id=` resolver
+- [x] `/polls/[id]` poll page with embed sidebar
+- [x] `/leaderboard` three ranked tables behind one WAI-ARIA tab strip with arrow-key navigation
+- [x] `/docs` Component Playground with a working embed builder and live badge preview
+- [x] `/dashboard` owner list with embed, edit and delete dialogs replacing `confirm()`/`alert()`
+- [x] `/theme-samples` now previews the five real poll themes; it was a self-labelled scratch
+  sampler showing site design directions that were never product themes
+- [x] `/embed` and `/embed/[id]` kept chrome-free and React-free (Svelte island only)
+- [x] Accessibility: skip link, labelled controls, `aria-live` regions, 44px hit targets on mobile,
+  reduced-motion honoured, text alternative for the analytics bar chart
+- [x] No em-dashes in visible copy, per repo style
+
+### Known remaining gaps
+- [ ] The dashboard can only list **public** polls. `GET /polls` filters to `visibility="public"`
+  and there is no owner-scoped listing, so private polls work but cannot be listed. Needs a
+  backend endpoint (e.g. `GET /polls/mine`); the page states this rather than implying completeness
+- [ ] GitHub OAuth must be enabled in the PocketBase admin UI, with the OAuth app's callback set
+  to `<site>/auth/callback`, before sign-in works
+- [ ] `PollCreator.tsx` keeps its original Tailwind styling; only its auth calls were rewritten.
+  Restyling it to the token system is still open
