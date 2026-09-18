@@ -1,209 +1,299 @@
 ---
+/**
+ * N8 Terminal command nav. The links read as CLI flags, which fits a product
+ * whose main surface is a README badge. The blinking caret is permitted here
+ * only: it signals "you would type next" rather than decorating the page.
+ */
 const currentPath = Astro.url.pathname;
-const isActive = (path: string) => {
-  if (path === '/' && currentPath === '/') return true;
-  if (path !== '/' && currentPath.startsWith(path)) return true;
-  return false;
-};
+
+const links = [
+  { href: '/polls', flag: '--polls' },
+  { href: '/leaderboard', flag: '--board' },
+  { href: '/docs', flag: '--docs' },
+];
+
+const isActive = (path: string) =>
+  path === '/' ? currentPath === '/' : currentPath.startsWith(path);
 ---
 
-<header class="fixed top-0 left-0 right-0 z-50 flex justify-center px-4 pt-4 pointer-events-none">
-  <nav class="pointer-events-auto flex items-center justify-between gap-6 px-5 py-2.5 rounded-full bg-white/[0.04] backdrop-blur-xl border border-white/[0.06] shadow-[0_8px_32px_rgba(0,0,0,0.3)] max-w-5xl w-full">
-    <!-- Brand -->
-    <a href="/" class="flex items-center gap-2.5 group focus-visible:outline-hidden shrink-0">
-      <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center font-mono font-bold text-[11px] text-white group-hover:scale-110 transition-transform duration-300">
-        PL
-      </div>
-      <span class="font-bold text-sm tracking-tight text-white group-hover:text-blue-400 transition-colors hidden sm:block">
-        Polls Lab
-      </span>
+<header class="nav rule-bottom">
+  <div class="shell nav__inner">
+    <a href="/" class="nav__brand" aria-label="Polls Lab home">
+      <span class="nav__prompt" aria-hidden="true">&gt;</span>
+      <span class="nav__word">polls-lab</span>
     </a>
 
-    <!-- Desktop Navigation — center -->
-    <div class="hidden md:flex items-center gap-1 text-[13px] font-medium">
-      <a
-        href="/leaderboard"
-        class={`px-3 py-1.5 rounded-full transition duration-200 ${
-          isActive('/leaderboard')
-            ? 'bg-white/10 text-white'
-            : 'text-[#94a3b8] hover:text-white hover:bg-white/[0.05]'
-        }`}
-      >
-        Leaderboard
-      </a>
+    <nav class="nav__flags" aria-label="Main">
+      {
+        links.map((link) => (
+          <a
+            href={link.href}
+            class:list={['nav__flag', { 'nav__flag--on': isActive(link.href) }]}
+            aria-current={isActive(link.href) ? 'page' : undefined}
+          >
+            {link.flag}
+          </a>
+        ))
+      }
       <a
         href="/dashboard"
-        class={`px-3 py-1.5 rounded-full transition duration-200 ${
-          isActive('/dashboard')
-            ? 'bg-white/10 text-white'
-            : 'text-[#94a3b8] hover:text-white hover:bg-white/[0.05]'
-        }`}
+        class:list={['nav__flag', 'nav__flag--auth', { 'nav__flag--on': isActive('/dashboard') }]}
+        data-auth-only
+        hidden
       >
-        Dashboard
+        --dashboard
       </a>
-      <a
-        href="/docs"
-        class={`px-3 py-1.5 rounded-full transition duration-200 ${
-          isActive('/docs')
-            ? 'bg-white/10 text-white'
-            : 'text-[#94a3b8] hover:text-white hover:bg-white/[0.05]'
-        }`}
-      >
-        Docs
-      </a>
-    </div>
+      <span class="nav__caret" aria-hidden="true">&#9646;</span>
+    </nav>
 
-    <!-- Actions — right -->
-    <div class="flex items-center gap-2.5 shrink-0">
-      <!-- GitHub -->
-      <a
-        href="https://github.com/Luckyyaduvanshiofficial/polls-lab"
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label="GitHub Repository"
-        class="hidden sm:inline-flex items-center justify-center w-8 h-8 rounded-full text-[#94a3b8] hover:text-white hover:bg-white/[0.06] transition"
-      >
-        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-          <path fill-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clip-rule="evenodd" />
-        </svg>
-      </a>
-
-      <!-- Auth Controls -->
-      <div id="nav-auth-container" class="hidden sm:flex items-center gap-1.5">
-        <a
-          id="nav-login-btn"
-          href="/auth/callback?code=github_dev_oauth"
-          class="hidden items-center gap-1.5 px-3 py-1.5 rounded-full text-[#94a3b8] hover:text-white hover:bg-white/[0.06] text-[13px] font-medium transition"
-        >
-          <span>Sign In</span>
-        </a>
-        <button
-          id="nav-logout-btn"
-          type="button"
-          class="hidden px-3 py-1.5 rounded-full text-[#94a3b8] hover:text-red-400 hover:bg-red-500/10 text-[13px] font-medium transition"
-        >
-          Sign Out
-        </button>
-      </div>
-
-      <!-- Primary CTA -->
-      <a
-        href="/dashboard/create"
-        class="btn-interactive inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-blue-600 hover:bg-blue-500 text-white text-[13px] font-semibold shadow-[0_0_20px_rgba(59,130,246,0.3)] hover:shadow-[0_0_28px_rgba(59,130,246,0.4)] transition-all duration-300"
-      >
-        <span>Create Poll</span>
-      </a>
-
-      <!-- Mobile Hamburger -->
+    <div class="nav__actions">
+      <button type="button" class="btn btn--quiet" data-signin hidden>sign in</button>
+      <button type="button" class="btn btn--quiet" data-signout hidden>sign out</button>
+      <a href="/dashboard/create" class="btn btn--primary nav__cta">New poll</a>
       <button
-        id="mobile-menu-btn"
         type="button"
-        aria-label="Toggle navigation menu"
+        class="nav__burger btn btn--quiet"
+        data-burger
         aria-expanded="false"
-        class="md:hidden inline-flex items-center justify-center w-8 h-8 rounded-full text-[#94a3b8] hover:text-white hover:bg-white/[0.06] transition"
+        aria-controls="nav-drawer"
+        aria-label="Toggle menu"
       >
-        <svg id="menu-icon-open" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-        </svg>
-        <svg id="menu-icon-close" class="w-4 h-4 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-        </svg>
+        <span aria-hidden="true">menu</span>
       </button>
     </div>
-  </nav>
+  </div>
 
-  <!-- Mobile Drawer -->
-  <div id="mobile-menu" class="hidden md:hidden pointer-events-auto absolute top-[72px] left-4 right-4 rounded-2xl bg-[#111827]/95 backdrop-blur-xl border border-white/[0.06] shadow-2xl p-3 space-y-1 max-w-5xl mx-auto">
-    <a
-      href="/leaderboard"
-      class={`block px-4 py-2.5 rounded-xl text-sm font-medium ${
-        isActive('/leaderboard') ? 'bg-white/10 text-white' : 'text-[#94a3b8] hover:text-white hover:bg-white/[0.05]'
-      }`}
-    >
-      Leaderboard
-    </a>
-    <a
-      href="/dashboard"
-      class={`block px-4 py-2.5 rounded-xl text-sm font-medium ${
-        isActive('/dashboard') ? 'bg-white/10 text-white' : 'text-[#94a3b8] hover:text-white hover:bg-white/[0.05]'
-      }`}
-    >
-      Dashboard
-    </a>
-    <a
-      href="/docs"
-      class={`block px-4 py-2.5 rounded-xl text-sm font-medium ${
-        isActive('/docs') ? 'bg-white/10 text-white' : 'text-[#94a3b8] hover:text-white hover:bg-white/[0.05]'
-      }`}
-    >
-      Documentation
-    </a>
-    <div class="pt-2 mt-1 border-t border-white/[0.06] flex justify-between items-center px-4">
-      <span class="text-[11px] text-[#64748b] font-mono">Polls Lab v1.0</span>
-      <a
-        href="https://github.com/Luckyyaduvanshiofficial/polls-lab"
-        target="_blank"
-        rel="noopener noreferrer"
-        class="text-[11px] text-blue-400 hover:underline flex items-center gap-1"
-      >
-        GitHub
-      </a>
+  <div class="nav__drawer rule-top" id="nav-drawer" data-drawer hidden>
+    <div class="shell nav__drawer-inner">
+      {
+        links.map((link) => (
+          <a href={link.href} class="nav__drawer-link">
+            {link.flag.replace('--', '')}
+          </a>
+        ))
+      }
+      <a href="/dashboard" class="nav__drawer-link" data-auth-only hidden>dashboard</a>
+      <a href="/dashboard/create" class="nav__drawer-link nav__drawer-link--cta">new poll</a>
     </div>
   </div>
+
+  <p class="nav__error" role="alert" data-auth-error hidden></p>
 </header>
 
-<script>
-  function setupMobileMenu() {
-    const btn = document.getElementById('mobile-menu-btn');
-    const menu = document.getElementById('mobile-menu');
-    const iconOpen = document.getElementById('menu-icon-open');
-    const iconClose = document.getElementById('menu-icon-close');
+<style>
+  .nav {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    background: color-mix(in oklab, var(--color-paper) 88%, transparent);
+    backdrop-filter: blur(10px);
+  }
 
-    if (btn && menu && iconOpen && iconClose) {
-      btn.onclick = () => {
-        const isOpen = !menu.classList.contains('hidden');
-        if (isOpen) {
-          menu.classList.add('hidden');
-          iconOpen.classList.remove('hidden');
-          iconClose.classList.add('hidden');
-          btn.setAttribute('aria-expanded', 'false');
-        } else {
-          menu.classList.remove('hidden');
-          iconOpen.classList.add('hidden');
-          iconClose.classList.remove('hidden');
-          btn.setAttribute('aria-expanded', 'true');
+  .nav__inner {
+    display: flex;
+    align-items: center;
+    gap: var(--space-lg);
+    min-height: 3.25rem;
+  }
+
+  .nav__brand {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.4ch;
+    font-size: var(--text-sm);
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+
+  .nav__prompt {
+    color: var(--color-accent);
+  }
+
+  .nav__word {
+    color: var(--color-ink);
+  }
+
+  .nav__brand:hover .nav__word {
+    color: var(--color-accent);
+  }
+
+  .nav__flags {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-md);
+    font-size: var(--text-sm);
+    flex: 1;
+    min-width: 0;
+  }
+
+  .nav__flag {
+    color: var(--color-ink-3);
+    text-decoration: underline;
+    text-decoration-color: transparent;
+    text-underline-offset: 3px;
+    transition:
+      color var(--dur-fast) var(--ease-out),
+      text-decoration-color var(--dur-fast) var(--ease-out);
+    white-space: nowrap;
+  }
+
+  .nav__flag:hover {
+    color: var(--color-ink);
+    text-decoration-color: var(--color-ink-4);
+  }
+
+  .nav__flag--on {
+    color: var(--color-accent);
+    text-decoration-color: var(--color-accent);
+  }
+
+  .nav__caret {
+    display: inline-block;
+    width: 1ch;
+    color: var(--color-accent);
+    animation: nav-blink 1.05s steps(2) infinite;
+  }
+
+  @keyframes nav-blink {
+    50% {
+      opacity: 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .nav__caret {
+      animation: none;
+    }
+  }
+
+  .nav__actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    flex-shrink: 0;
+  }
+
+  .nav__error {
+    margin: 0;
+    padding: var(--space-xs) var(--page-gutter);
+    background: var(--color-danger-wash);
+    color: var(--color-danger);
+    font-size: var(--text-xs);
+    border-top: var(--rule-hair) solid var(--color-danger);
+  }
+
+  .nav__burger,
+  .nav__drawer {
+    display: none;
+  }
+
+  /* Below the layout breakpoint the flag row collapses behind `menu`, keeping
+   * the terminal voice rather than switching to a hamburger glyph. */
+  @media (max-width: 60rem) {
+    .nav__flags {
+      display: none;
+    }
+
+    .nav__burger {
+      display: inline-flex;
+    }
+
+    .nav__drawer {
+      display: block;
+    }
+
+    .nav__drawer[hidden] {
+      display: none;
+    }
+
+    .nav__drawer-inner {
+      display: flex;
+      flex-direction: column;
+      padding-block: var(--space-xs);
+    }
+
+    .nav__drawer-link {
+      padding: var(--space-sm) 0;
+      min-height: 2.75rem;
+      display: flex;
+      align-items: center;
+      font-size: var(--text-sm);
+      color: var(--color-ink-2);
+      border-bottom: var(--rule-hair) solid var(--color-rule);
+    }
+
+    .nav__drawer-link:last-child {
+      border-bottom: none;
+    }
+
+    .nav__drawer-link--cta {
+      color: var(--color-accent);
+    }
+  }
+
+  @media (max-width: 40rem) {
+    .nav__cta {
+      padding-inline: var(--space-sm);
+    }
+  }
+</style>
+
+<script>
+  import { isSignedIn, signOut, startSignIn } from '../../lib/auth';
+
+  function syncAuthChrome() {
+    const signedIn = isSignedIn();
+
+    document.querySelectorAll<HTMLElement>('[data-auth-only]').forEach((el) => {
+      el.hidden = !signedIn;
+    });
+    document.querySelectorAll<HTMLElement>('[data-signin]').forEach((el) => {
+      el.hidden = signedIn;
+    });
+    document.querySelectorAll<HTMLElement>('[data-signout]').forEach((el) => {
+      el.hidden = !signedIn;
+    });
+  }
+
+  function showAuthError(message: string) {
+    const box = document.querySelector<HTMLElement>('[data-auth-error]');
+    if (!box) return;
+    box.textContent = message;
+    box.hidden = false;
+  }
+
+  function wire() {
+    syncAuthChrome();
+
+    document.querySelectorAll<HTMLButtonElement>('[data-signin]').forEach((btn) => {
+      btn.onclick = async () => {
+        btn.disabled = true;
+        btn.textContent = 'opening GitHub';
+        try {
+          await startSignIn(window.location.pathname);
+        } catch (err) {
+          showAuthError(err instanceof Error ? err.message : 'Could not start sign-in.');
+          btn.disabled = false;
+          btn.textContent = 'sign in';
         }
+      };
+    });
+
+    document.querySelectorAll<HTMLButtonElement>('[data-signout]').forEach((btn) => {
+      btn.onclick = () => signOut('/');
+    });
+
+    const burger = document.querySelector<HTMLButtonElement>('[data-burger]');
+    const drawer = document.querySelector<HTMLElement>('[data-drawer]');
+    if (burger && drawer) {
+      burger.onclick = () => {
+        const open = !drawer.hidden;
+        drawer.hidden = open;
+        burger.setAttribute('aria-expanded', String(!open));
       };
     }
   }
 
-  function setupAuthState() {
-    const loginBtn = document.getElementById('nav-login-btn');
-    const logoutBtn = document.getElementById('nav-logout-btn');
-    const token = typeof window !== 'undefined' ? localStorage.getItem('polls-lab_auth_token') : null;
-
-    if (token) {
-      loginBtn?.classList.add('hidden');
-      loginBtn?.classList.remove('inline-flex');
-      logoutBtn?.classList.remove('hidden');
-      logoutBtn?.classList.add('inline-flex');
-    } else {
-      loginBtn?.classList.remove('hidden');
-      loginBtn?.classList.add('inline-flex');
-      logoutBtn?.classList.add('hidden');
-      logoutBtn?.classList.remove('inline-flex');
-    }
-
-    logoutBtn?.addEventListener('click', () => {
-      localStorage.removeItem('polls-lab_auth_token');
-      window.location.href = '/';
-    });
-  }
-
-  setupMobileMenu();
-  setupAuthState();
-  document.addEventListener('astro:page-load', () => {
-    setupMobileMenu();
-    setupAuthState();
-  });
+  wire();
+  document.addEventListener('astro:page-load', wire);
 </script>

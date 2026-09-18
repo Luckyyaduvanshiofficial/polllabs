@@ -1,441 +1,775 @@
 ---
+/**
+ * Owner dashboard.
+ *
+ * Constraint worth knowing: the API's only list endpoint is GET /polls, which
+ * filters to visibility="public". There is no "polls I own" endpoint, so this
+ * page lists public polls and keeps the ones owned by the signed-in user.
+ * Private polls cannot be listed until the backend grows an owner-scoped
+ * endpoint; the page says so rather than pretending the list is complete.
+ */
 import RootLayout from '../../layouts/RootLayout.astro';
-
-// Sample owner polls for static demonstration
-const userPolls = [
-  {
-    id: 'demo-frameworks',
-    title: 'Which web framework is your team prioritizing in 2026?',
-    total_votes: 1420,
-    visibility: 'public',
-    result_display: 'show_counts',
-    status: 'active',
-    created: '2026-03-12',
-    leading: 'Svelte 5 (46%)',
-  },
-  {
-    id: 'poll-state-manager',
-    title: 'Which state management library do you prefer in React?',
-    total_votes: 1248,
-    visibility: 'public',
-    result_display: 'show_percentage',
-    status: 'active',
-    created: '2026-03-10',
-    leading: 'Zustand (58%)',
-  },
-  {
-    id: 'poll-private-team-sync',
-    title: 'Q2 Internal Engineering Hackathon Focus Area',
-    total_votes: 46,
-    visibility: 'private',
-    result_display: 'hidden_until_close',
-    status: 'active',
-    created: '2026-03-15',
-    leading: 'Results Hidden (46)',
-  },
-];
 ---
 
-<RootLayout title="Dashboard — Polls Lab">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
-    <!-- Header & Quick Action -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-[#1e293b]">
+<RootLayout title="Dashboard · Polls Lab" noindex>
+  <section class="shell dash">
+    <header class="dash__head">
       <div>
-        <span class="text-xs font-mono text-blue-400 uppercase tracking-wider">Console</span>
-        <h1 class="text-3xl font-extrabold text-white mt-1">Poll Management</h1>
-        <p class="text-xs text-[#94a3b8] mt-1">
-          Monitor real-time votes, copy markdown badges, and inspect referrer telemetry.
+        <h1 class="dash__title">Dashboard</h1>
+        <p class="dash__lede" data-owner-line>Your polls, newest first.</p>
+      </div>
+      <a href="/dashboard/create" class="btn btn--primary">New poll</a>
+    </header>
+
+    <!-- Unauthenticated -->
+    <div class="state" data-signedout hidden>
+      <p class="state__msg">Sign in to manage your polls.</p>
+      <p class="state__hint">
+        Polls Lab uses GitHub via PocketBase. Voting never needs an account; creating and editing
+        does.
+      </p>
+      <button type="button" class="btn btn--primary" data-signin-cta>Sign in with GitHub</button>
+      <p class="state__err" data-signin-error hidden></p>
+    </div>
+
+    <div data-authed hidden>
+      <!-- Pending deletion notice, read from /auth/me. -->
+      <div class="notice" data-deletion hidden>
+        <p class="notice__title">This account is scheduled for deletion</p>
+        <p class="notice__body">
+          Everything you own is removed when the grace period ends
+          <span data-deletion-when></span>. You can stop this at any time before then.
         </p>
+        <button type="button" class="btn btn--ghost" data-cancel-deletion>Keep my account</button>
       </div>
 
-      <div class="flex items-center gap-3">
-        <a
-          href="/dashboard/create"
-          class="btn-interactive inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg shadow-sm transition"
-        >
-          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-          </svg>
-          <span>Create New Poll</span>
-        </a>
-      </div>
-    </div>
-
-    <!-- Overview Stats Bar -->
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-      <div class="p-5 rounded-xl bg-[#111827] border border-[#1e293b]">
-        <span class="text-xs text-[#94a3b8] font-medium">Active Polls</span>
-        <div class="text-2xl font-mono font-bold text-white mt-1">3</div>
-        <span class="text-[11px] text-[#64748b]">2 public • 1 private</span>
-      </div>
-      <div class="p-5 rounded-xl bg-[#111827] border border-[#1e293b]">
-        <span class="text-xs text-[#94a3b8] font-medium">Total Votes Captured</span>
-        <div class="text-2xl font-mono font-bold text-emerald-400 mt-1">2,714</div>
-        <span class="text-[11px] text-[#64748b]">Across all active widgets</span>
-      </div>
-      <div class="p-5 rounded-xl bg-[#111827] border border-[#1e293b]">
-        <span class="text-xs text-[#94a3b8] font-medium">Verified Embed Sources</span>
-        <div class="text-2xl font-mono font-bold text-cyan-400 mt-1">18</div>
-        <span class="text-[11px] text-[#64748b]">GitHub READMEs, Astro & Docs</span>
-      </div>
-    </div>
-
-    <!-- Polls Management Table -->
-    <div class="bg-[#111827] border border-[#1e293b] rounded-2xl overflow-hidden shadow-xl">
-      <div class="px-6 py-4 border-b border-[#1e293b] flex items-center justify-between">
-        <h3 class="text-sm font-semibold text-white">Your Created Polls</h3>
-        <span class="text-xs font-mono text-[#64748b]">{userPolls.length} total</span>
-      </div>
-
-      <div class="divide-y divide-[#1e293b]">
-        {userPolls.map((poll) => (
-          <div class="p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-[#151d2f]/50 transition">
-            <div class="space-y-2 max-w-xl">
-              <div class="flex flex-wrap items-center gap-2">
-                <span class={`text-[10px] font-mono uppercase px-2 py-0.5 rounded ${
-                  poll.visibility === 'public'
-                    ? 'bg-emerald-950/60 text-emerald-400 border border-emerald-800/50'
-                    : 'bg-purple-950/60 text-purple-300 border border-purple-800/50'
-                }`}>
-                  {poll.visibility}
-                </span>
-                <span class="text-[10px] font-mono text-[#94a3b8] px-2 py-0.5 rounded bg-[#1e293b]">
-                  {poll.result_display}
-                </span>
-                <span class="text-xs text-[#64748b] font-mono">Created {poll.created}</span>
-              </div>
-
-              <h4 class="text-base font-semibold text-white leading-snug">
-                <a href={`/polls/${poll.id}`} class="hover:text-blue-400 transition">
-                  {poll.title}
-                </a>
-              </h4>
-
-              <div class="text-xs text-[#94a3b8] flex items-center gap-4">
-                <span>Total Votes: <strong class="text-white font-mono">{poll.total_votes.toLocaleString()}</strong></span>
-                <span>•</span>
-                <span>Leading: <strong class="text-emerald-400">{poll.leading}</strong></span>
-              </div>
+      <!-- Loading -->
+      <div class="rows" data-loading>
+        {
+          [0, 1, 2].map(() => (
+            <div class="row">
+              <div class="skeleton" style="height:0.9rem;width:34%"></div>
+              <div class="skeleton" style="height:0.7rem;width:6rem;margin-left:auto"></div>
             </div>
-
-            <!-- Action Controls -->
-            <div class="flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                data-id={poll.id}
-                data-title={poll.title}
-                class="embed-btn px-3 py-1.5 rounded-lg bg-[#1e293b] hover:bg-[#334155] text-white text-xs font-medium border border-[#334155] transition flex items-center gap-1.5"
-              >
-                <svg class="w-3.5 h-3.5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                </svg>
-                <span>Embed</span>
-              </button>
-
-              <button
-                type="button"
-                data-id={poll.id}
-                data-title={poll.title}
-                class="edit-poll-btn px-3 py-1.5 rounded-lg bg-[#1e293b] hover:bg-[#334155] text-white text-xs font-medium border border-[#334155] transition flex items-center gap-1.5"
-              >
-                <svg class="w-3.5 h-3.5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                </svg>
-                <span>Edit</span>
-              </button>
-
-              <a
-                href={`/dashboard/${poll.id}/analytics`}
-                class="px-3 py-1.5 rounded-lg bg-[#1e293b] hover:bg-[#334155] text-white text-xs font-medium border border-[#334155] transition flex items-center gap-1.5"
-              >
-                <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                </svg>
-                <span>Analytics</span>
-              </a>
-
-              <button
-                type="button"
-                data-id={poll.id}
-                data-title={poll.title}
-                class="delete-poll-btn px-2.5 py-1.5 rounded-lg text-[#64748b] hover:text-rose-400 hover:bg-rose-950/20 transition text-xs"
-                title="Delete Poll"
-              >
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
-              </button>
-            </div>
-          </div>
-        ))}
+          ))
+        }
       </div>
-    </div>
 
-    <!-- Account Privacy & Deletion Grace Period Panel (PRD §7) -->
-    <div class="p-6 rounded-2xl bg-[#0b0f19] border border-[#1e293b] space-y-4">
-      <div class="flex items-center justify-between">
-        <div>
-          <h4 class="text-sm font-semibold text-white">Account Privacy & Lifecycle (PRD §7)</h4>
-          <p class="text-xs text-[#94a3b8] mt-0.5">
-            Accounts operate on a 7-day grace period. Requesting deletion schedules all your polls and votes for permanent deletion.
-          </p>
-        </div>
-        <button
-          id="delete-account-btn"
-          type="button"
-          class="px-3 py-1.5 rounded-lg border border-red-900/60 text-red-400 hover:bg-red-950/30 text-xs font-medium transition"
-        >
-          Request Account Deletion
+      <!-- Error -->
+      <div class="state state--error" data-error hidden>
+        <p class="state__msg" data-error-text></p>
+        <button type="button" class="btn btn--ghost" data-retry>Try again</button>
+      </div>
+
+      <!-- Empty -->
+      <div class="state" data-empty hidden>
+        <p class="state__msg">No public polls under your account yet.</p>
+        <p class="state__hint">
+          Create one and you can embed it in a README the same minute. Private polls do not appear in
+          this list; the API has no owner-scoped listing yet.
+        </p>
+        <a href="/dashboard/create" class="btn btn--primary">Create your first poll</a>
+      </div>
+
+      <!-- List -->
+      <ul class="owned" data-results hidden></ul>
+
+      <p class="dash__footnote" data-footnote hidden>
+        Only public polls appear here. Private polls exist and keep working, but the API cannot list
+        them yet.
+      </p>
+
+      <!-- Account -->
+      <section class="danger rule-top" aria-labelledby="account-title">
+        <h2 id="account-title" class="danger__title">Account</h2>
+        <p class="danger__body">
+          Deleting your account starts a 7 day grace period. When it ends, the account and every poll
+          and vote it owns are removed permanently.
+        </p>
+        <button type="button" class="btn btn--danger" data-delete-account>
+          Request account deletion
         </button>
-      </div>
+        <p class="danger__result" data-account-msg hidden></p>
+      </section>
     </div>
-  </div>
+  </section>
 
-  <!-- Embed Modal -->
-  <dialog id="dash-embed-dialog" class="bg-[#0b0f19] text-[#f8fafc] p-6 rounded-2xl border border-[#1e293b] max-w-md w-full shadow-2xl backdrop:bg-black/75">
-    <div class="flex items-center justify-between mb-4">
-      <h3 class="text-base font-bold text-white">Embed Code Generator</h3>
-      <button id="close-dash-dialog" type="button" class="text-[#94a3b8] hover:text-white text-sm">✕</button>
-    </div>
-    <div class="space-y-4 text-xs">
-      <div>
-        <label class="block font-medium text-[#94a3b8] mb-1">GitHub README (SVG Badge)</label>
-        <pre class="bg-[#111827] p-2.5 rounded-lg text-emerald-300 font-mono text-[11px] overflow-x-auto select-all"><code id="dash-badge-code"></code></pre>
+  <!-- Embed dialog -->
+  <dialog class="modal" data-embed-dialog aria-labelledby="embed-dialog-title">
+    <div class="modal__inner">
+      <div class="modal__head">
+        <h2 id="embed-dialog-title" class="modal__title">Embed this poll</h2>
+        <button type="button" class="btn btn--quiet" data-close-embed aria-label="Close">close</button>
       </div>
-      <div>
-        <label class="block font-medium text-[#94a3b8] mb-1">Interactive Iframe (HTML)</label>
-        <pre class="bg-[#111827] p-2.5 rounded-lg text-cyan-300 font-mono text-[11px] overflow-x-auto select-all"><code id="dash-iframe-code"></code></pre>
+      <div class="modal__body">
+        <div class="snip">
+          <p class="field-label">Markdown badge</p>
+          <div class="code"><pre data-embed-badge><code></code></pre></div>
+          <button type="button" class="btn btn--quiet" data-copy-badge>copy</button>
+        </div>
+        <div class="snip">
+          <p class="field-label">Iframe</p>
+          <div class="code"><pre data-embed-iframe><code></code></pre></div>
+          <button type="button" class="btn btn--quiet" data-copy-iframe>copy</button>
+        </div>
       </div>
-      <button
-        id="dash-copy-btn"
-        type="button"
-        class="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white font-medium rounded-lg transition"
-      >
-        Copy Iframe Code
-      </button>
     </div>
   </dialog>
 
-  <!-- Edit Poll Modal (PRD §4.1) -->
-  <dialog id="dash-edit-dialog" class="bg-[#0b0f19] text-[#f8fafc] p-6 rounded-2xl border border-[#1e293b] max-w-md w-full shadow-2xl backdrop:bg-black/75">
-    <div class="flex items-center justify-between mb-4">
-      <h3 class="text-base font-bold text-white">Edit Poll Details</h3>
-      <button id="close-edit-dialog" type="button" class="text-[#94a3b8] hover:text-white text-sm">✕</button>
-    </div>
-    <form id="edit-poll-form" class="space-y-4 text-xs">
-      <input type="hidden" id="edit-poll-id" />
-      <div>
-        <label for="edit-poll-title" class="block font-medium text-[#94a3b8] mb-1">Poll Title</label>
-        <input
-          id="edit-poll-title"
-          required
-          class="w-full px-3 py-2 bg-[#111827] border border-[#1e293b] rounded-lg text-white font-sans text-xs focus:border-blue-500 focus:outline-hidden"
-        />
+  <!-- Edit dialog -->
+  <dialog class="modal" data-edit-dialog aria-labelledby="edit-dialog-title">
+    <form class="modal__inner" data-edit-form>
+      <div class="modal__head">
+        <h2 id="edit-dialog-title" class="modal__title">Edit poll</h2>
+        <button type="button" class="btn btn--quiet" data-close-edit aria-label="Close">close</button>
       </div>
-      <div>
-        <label for="edit-poll-desc" class="block font-medium text-[#94a3b8] mb-1">Description (optional)</label>
-        <textarea
-          id="edit-poll-desc"
-          rows="3"
-          class="w-full px-3 py-2 bg-[#111827] border border-[#1e293b] rounded-lg text-white font-sans text-xs focus:border-blue-500 focus:outline-hidden"
-        ></textarea>
+      <div class="modal__body">
+        <input type="hidden" data-edit-id />
+        <div class="fieldrow">
+          <label class="field-label" for="edit-title">Title</label>
+          <input id="edit-title" class="input" type="text" required minlength="3" maxlength="200" data-edit-title />
+        </div>
+        <div class="fieldrow">
+          <label class="field-label" for="edit-desc">Description</label>
+          <textarea id="edit-desc" class="input" rows="3" maxlength="1000" data-edit-desc></textarea>
+        </div>
+        <p class="modal__err" data-edit-error hidden></p>
       </div>
-      <div class="flex justify-end gap-2 pt-2">
-        <button
-          id="cancel-edit-btn"
-          type="button"
-          class="px-3 py-1.5 rounded-lg bg-[#1e293b] hover:bg-[#334155] text-white text-xs font-medium"
-        >
-          Cancel
-        </button>
-        <button
-          type="submit"
-          class="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium"
-        >
-          Save Changes
-        </button>
+      <div class="modal__foot">
+        <button type="button" class="btn btn--ghost" data-cancel-edit>Cancel</button>
+        <button type="submit" class="btn btn--primary" data-save-edit>Save changes</button>
       </div>
     </form>
   </dialog>
+
+  <!-- Delete confirm -->
+  <dialog class="modal" data-del-dialog aria-labelledby="del-dialog-title">
+    <div class="modal__inner">
+      <div class="modal__head">
+        <h2 id="del-dialog-title" class="modal__title">Delete poll</h2>
+        <button type="button" class="btn btn--quiet" data-close-del aria-label="Close">close</button>
+      </div>
+      <div class="modal__body">
+        <p class="modal__text">
+          <span data-del-title></span> and all of its votes are removed permanently. Any badge or
+          embed pointing at it stops working.
+        </p>
+        <p class="modal__err" data-del-error hidden></p>
+      </div>
+      <div class="modal__foot">
+        <button type="button" class="btn btn--ghost" data-cancel-del>Keep it</button>
+        <button type="button" class="btn btn--danger" data-confirm-del>Delete permanently</button>
+      </div>
+    </div>
+  </dialog>
 </RootLayout>
 
-<script>
-  import { getApiUrl } from '../../lib/config';
-  import { getMarkdownBadgeSnippet, getIframeSnippet } from '../../lib/embed';
-
-  function setupDashboard() {
-    const embedDialog = document.getElementById('dash-embed-dialog') as HTMLDialogElement | null;
-    const closeEmbedDialog = document.getElementById('close-dash-dialog');
-    const badgeCode = document.getElementById('dash-badge-code');
-    const iframeCode = document.getElementById('dash-iframe-code');
-    const copyBtn = document.getElementById('dash-copy-btn');
-
-    const editDialog = document.getElementById('dash-edit-dialog') as HTMLDialogElement | null;
-    const closeEditDialog = document.getElementById('close-edit-dialog');
-    const cancelEditBtn = document.getElementById('cancel-edit-btn');
-    const editForm = document.getElementById('edit-poll-form') as HTMLFormElement | null;
-    const editPollId = document.getElementById('edit-poll-id') as HTMLInputElement | null;
-    const editPollTitle = document.getElementById('edit-poll-title') as HTMLInputElement | null;
-    const editPollDesc = document.getElementById('edit-poll-desc') as HTMLTextAreaElement | null;
-
-    const deleteAccountBtn = document.getElementById('delete-account-btn');
-    const apiBase = getApiUrl();
-    const token = typeof window !== 'undefined' ? localStorage.getItem('polls-lab_auth_token') || 'dev-user-local' : 'dev-user-local';
-
-    function attachActionListeners() {
-      // Embed triggers
-      document.querySelectorAll('.embed-btn').forEach((btn) => {
-        btn.addEventListener('click', () => {
-          const id = btn.getAttribute('data-id') || 'demo';
-          const title = btn.getAttribute('data-title') || 'Poll';
-          if (badgeCode) badgeCode.textContent = getMarkdownBadgeSnippet(title, id);
-          if (iframeCode) iframeCode.textContent = getIframeSnippet(id, 340);
-          embedDialog?.showModal();
-        });
-      });
-
-      // Edit triggers
-      document.querySelectorAll('.edit-poll-btn').forEach((btn) => {
-        btn.addEventListener('click', () => {
-          const id = btn.getAttribute('data-id') || '';
-          const title = btn.getAttribute('data-title') || '';
-          if (editPollId) editPollId.value = id;
-          if (editPollTitle) editPollTitle.value = title;
-          if (editPollDesc) editPollDesc.value = '';
-          editDialog?.showModal();
-        });
-      });
-
-      // Delete poll triggers (PRD §8)
-      document.querySelectorAll('.delete-poll-btn').forEach((btn) => {
-        btn.addEventListener('click', async () => {
-          const id = btn.getAttribute('data-id') || '';
-          const title = btn.getAttribute('data-title') || 'this poll';
-          const confirmed = confirm(`Are you sure you want to delete "${title}"? This will permanently remove the poll and all associated votes.`);
-          if (!confirmed || !id) return;
-
-          try {
-            const res = await fetch(`${apiBase}/api/v1/polls/${id}`, {
-              method: 'DELETE',
-              headers: {
-                'Authorization': `Bearer ${token}`,
-                'x-dev-user-id': token,
-              },
-            });
-            if (res.ok || res.status === 204) {
-              alert('Poll deleted successfully.');
-              window.location.reload();
-            } else {
-              const err = await res.json().catch(() => ({}));
-              alert(err.detail || 'Failed to delete poll.');
-            }
-          } catch (err: any) {
-            alert(err.message || 'Network error deleting poll.');
-          }
-        });
-      });
-    }
-
-    attachActionListeners();
-
-    // Dialog close listeners
-    closeEmbedDialog?.addEventListener('click', () => embedDialog?.close());
-    closeEditDialog?.addEventListener('click', () => editDialog?.close());
-    cancelEditBtn?.addEventListener('click', () => editDialog?.close());
-
-    copyBtn?.addEventListener('click', () => {
-      if (iframeCode?.textContent) {
-        navigator.clipboard.writeText(iframeCode.textContent).then(() => {
-          copyBtn.textContent = '✓ Copied Iframe Code!';
-          setTimeout(() => { copyBtn.textContent = 'Copy Iframe Code'; }, 2000);
-        });
-      }
-    });
-
-    // Handle Poll Edit Submit (PATCH /api/v1/polls/{id})
-    editForm?.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const id = editPollId?.value;
-      const newTitle = editPollTitle?.value.trim();
-      const newDesc = editPollDesc?.value.trim();
-      if (!id || !newTitle) return;
-
-      try {
-        const res = await fetch(`${apiBase}/api/v1/polls/${id}`, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-            'x-dev-user-id': token,
-          },
-          body: JSON.stringify({
-            title: newTitle,
-            description: newDesc || undefined,
-          }),
-        });
-
-        if (res.ok) {
-          editDialog?.close();
-          alert('Poll updated successfully.');
-          window.location.reload();
-        } else {
-          const err = await res.json().catch(() => ({}));
-          alert(err.detail || 'Failed to update poll.');
-        }
-      } catch (err: any) {
-        alert(err.message || 'Network error updating poll.');
-      }
-    });
-
-    // Handle Account Deletion (PRD §7: POST /api/v1/auth/delete-account)
-    deleteAccountBtn?.addEventListener('click', async () => {
-      const confirmed = confirm('Request 7-day account deletion grace period? All your polls and records will be scheduled for permanent purge.');
-      if (!confirmed) return;
-
-      try {
-        const res = await fetch(`${apiBase}/api/v1/auth/delete-account`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'x-dev-user-id': token,
-          },
-        });
-
-        if (res.ok) {
-          const data = await res.json();
-          alert(data.message || 'Account deletion initiated. 7-day grace period active.');
-        } else {
-          const err = await res.json().catch(() => ({}));
-          alert(err.detail || 'Failed to schedule account deletion.');
-        }
-      } catch (err: any) {
-        alert(err.message || 'Network error requesting account deletion.');
-      }
-    });
-
-    // Load Live Polls from backend
-    async function loadLivePolls() {
-      try {
-        const res = await fetch(`${apiBase}/api/v1/polls`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'x-dev-user-id': token,
-          },
-        });
-        if (res.ok) {
-          const data = await res.json();
-          // If the user has live polls, we can refresh the list
-          if (data.items && data.items.length > 0) {
-            // Update counts if present
-          }
-        }
-      } catch {}
-    }
-
-    loadLivePolls();
+<style>
+  .dash {
+    padding-block: var(--space-2xl) var(--space-3xl);
   }
 
-  setupDashboard();
-  document.addEventListener('astro:page-load', setupDashboard);
-</script>
+  .dash__head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--space-md);
+    flex-wrap: wrap;
+    margin-bottom: var(--space-xl);
+  }
 
+  .dash__title {
+    font-size: var(--text-2xl);
+  }
+
+  .dash__lede {
+    margin-top: var(--space-2xs);
+    font-size: var(--text-sm);
+    color: var(--color-ink-3);
+  }
+
+  .dash__footnote {
+    margin-top: var(--space-md);
+    font-size: var(--text-2xs);
+    color: var(--color-ink-4);
+    max-width: 64ch;
+    line-height: 1.7;
+  }
+
+  .owned {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border-top: var(--rule-hair) solid var(--color-rule);
+  }
+
+  .owned__item {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: var(--space-xs) var(--space-md);
+    padding-block: var(--space-md);
+    border-bottom: var(--rule-hair) solid var(--color-rule);
+  }
+
+  .owned__title {
+    font-size: var(--text-base);
+    color: var(--color-ink);
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .owned__meta {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-md);
+    font-size: var(--text-2xs);
+    color: var(--color-ink-4);
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+  }
+
+  .owned__votes {
+    font-size: var(--text-sm);
+    color: var(--color-ink-2);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .owned__actions {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2xs);
+  }
+
+  .notice {
+    display: grid;
+    gap: var(--space-xs);
+    justify-items: start;
+    padding: var(--space-md);
+    margin-bottom: var(--space-lg);
+    background: var(--color-warn-wash);
+    border-left: 2px solid var(--color-warn);
+  }
+
+  .notice__title {
+    font-size: var(--text-sm);
+    color: var(--color-ink);
+    font-weight: 600;
+  }
+
+  .notice__body {
+    font-size: var(--text-xs);
+    color: var(--color-ink-2);
+    line-height: 1.7;
+  }
+
+  .state {
+    padding-block: var(--space-2xl);
+    display: grid;
+    gap: var(--space-sm);
+    justify-items: start;
+    border-top: var(--rule-hair) solid var(--color-rule);
+  }
+
+  .state__msg {
+    font-size: var(--text-base);
+    color: var(--color-ink);
+  }
+
+  .state--error .state__msg {
+    color: var(--color-danger);
+  }
+
+  .state__hint {
+    font-size: var(--text-xs);
+    color: var(--color-ink-3);
+    max-width: 58ch;
+    line-height: 1.7;
+  }
+
+  .state__err {
+    font-size: var(--text-xs);
+    color: var(--color-danger);
+  }
+
+  .danger {
+    margin-top: var(--space-3xl);
+    padding-top: var(--space-xl);
+    display: grid;
+    gap: var(--space-sm);
+    justify-items: start;
+  }
+
+  .danger__title {
+    font-size: var(--text-sm);
+    color: var(--color-ink);
+  }
+
+  .danger__body {
+    font-size: var(--text-xs);
+    color: var(--color-ink-3);
+    max-width: 58ch;
+    line-height: 1.7;
+  }
+
+  .danger__result {
+    font-size: var(--text-xs);
+    color: var(--color-accent);
+  }
+
+  /* ---- Modals ---- */
+  .modal {
+    border: none;
+    padding: 0;
+    background: transparent;
+    max-width: min(38rem, calc(100vw - 2rem));
+    width: 100%;
+  }
+
+  .modal::backdrop {
+    background: oklch(8% 0.01 200 / 0.72);
+    backdrop-filter: blur(2px);
+  }
+
+  .modal__inner {
+    background: var(--color-paper-2);
+    border: var(--rule-hair) solid var(--color-rule-strong);
+    border-radius: var(--radius-md);
+    display: grid;
+  }
+
+  .modal__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-md);
+    padding: var(--space-md);
+    border-bottom: var(--rule-hair) solid var(--color-rule);
+  }
+
+  .modal__title {
+    font-size: var(--text-sm);
+  }
+
+  .modal__body {
+    padding: var(--space-md);
+    display: grid;
+    gap: var(--space-lg);
+  }
+
+  .modal__text {
+    font-size: var(--text-sm);
+    color: var(--color-ink-2);
+    line-height: 1.7;
+  }
+
+  .modal__foot {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-xs);
+    padding: var(--space-md);
+    border-top: var(--rule-hair) solid var(--color-rule);
+  }
+
+  .modal__err {
+    font-size: var(--text-xs);
+    color: var(--color-danger);
+    padding: var(--space-xs) var(--space-sm);
+    background: var(--color-danger-wash);
+    border-left: 2px solid var(--color-danger);
+  }
+
+  .fieldrow {
+    display: grid;
+    gap: var(--space-2xs);
+  }
+
+  .snip {
+    display: grid;
+    gap: var(--space-xs);
+    justify-items: start;
+  }
+
+  .snip .code {
+    width: 100%;
+  }
+
+  .snip pre {
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+
+  @media (max-width: 40rem) {
+    .dash__head {
+      align-items: stretch;
+    }
+  }
+</style>
+
+<script>
+  import {
+    listPolls,
+    deletePoll,
+    updatePoll,
+    getCurrentUser,
+    requestAccountDeletion,
+    cancelAccountDeletion,
+    type Poll,
+  } from '../../lib/api';
+  import { isSignedIn, readUserId, startSignIn } from '../../lib/auth';
+  import { getMarkdownBadgeSnippet, getIframeSnippet } from '../../lib/embed';
+
+  let owned: Poll[] = [];
+  let pendingDeleteId: string | null = null;
+
+  function el<T extends HTMLElement>(sel: string): T | null {
+    return document.querySelector<T>(sel);
+  }
+
+  function show(which: 'loading' | 'error' | 'empty' | 'results') {
+    const map = {
+      loading: '[data-loading]',
+      error: '[data-error]',
+      empty: '[data-empty]',
+      results: '[data-results]',
+    } as const;
+    for (const [key, sel] of Object.entries(map)) {
+      const node = el<HTMLElement>(sel);
+      if (node) node.hidden = key !== which;
+    }
+    const note = el<HTMLElement>('[data-footnote]');
+    if (note) note.hidden = which !== 'results';
+  }
+
+  function renderOwned() {
+    const list = el<HTMLUListElement>('[data-results]');
+    if (!list) return;
+    list.replaceChildren();
+
+    for (const poll of owned) {
+      const li = document.createElement('li');
+      li.className = 'owned__item';
+
+      const title = document.createElement('a');
+      title.className = 'owned__title';
+      title.href = `/polls?id=${encodeURIComponent(poll.id)}`;
+      title.textContent = poll.title;
+      li.append(title);
+
+      const votes = document.createElement('span');
+      votes.className = 'owned__votes';
+      votes.textContent = `${poll.total_votes ?? 0} votes`;
+      li.append(votes);
+
+      const meta = document.createElement('p');
+      meta.className = 'owned__meta';
+      const closed = poll.close_at && new Date(poll.close_at).getTime() <= Date.now();
+      meta.textContent = [
+        poll.visibility,
+        `${poll.options.length} options`,
+        poll.result_display.replace(/_/g, ' '),
+        closed ? 'closed' : null,
+      ]
+        .filter(Boolean)
+        .join('   /   ');
+      li.append(meta);
+
+      const actions = document.createElement('div');
+      actions.className = 'owned__actions';
+
+      const analytics = document.createElement('a');
+      analytics.className = 'btn btn--quiet';
+      analytics.href = `/dashboard/${encodeURIComponent(poll.id)}/analytics`;
+      analytics.textContent = 'analytics';
+      actions.append(analytics);
+
+      const embed = document.createElement('button');
+      embed.type = 'button';
+      embed.className = 'btn btn--quiet';
+      embed.textContent = 'embed';
+      embed.onclick = () => openEmbed(poll);
+      actions.append(embed);
+
+      const edit = document.createElement('button');
+      edit.type = 'button';
+      edit.className = 'btn btn--quiet';
+      edit.textContent = 'edit';
+      edit.onclick = () => openEdit(poll);
+      actions.append(edit);
+
+      const del = document.createElement('button');
+      del.type = 'button';
+      del.className = 'btn btn--quiet';
+      del.textContent = 'delete';
+      del.onclick = () => openDelete(poll);
+      actions.append(del);
+
+      li.append(actions);
+      list.append(li);
+    }
+  }
+
+  function setSnippet(sel: string, text: string) {
+    const pre = el<HTMLElement>(sel);
+    if (!pre) return;
+    pre.dataset.resolved = text;
+    const code = pre.querySelector('code');
+    if (code) code.textContent = text;
+  }
+
+  function openEmbed(poll: Poll) {
+    setSnippet('[data-embed-badge]', getMarkdownBadgeSnippet(poll.title, poll.id));
+    setSnippet('[data-embed-iframe]', getIframeSnippet(poll.id, 380));
+    el<HTMLDialogElement>('[data-embed-dialog]')?.showModal();
+  }
+
+  function openEdit(poll: Poll) {
+    const id = el<HTMLInputElement>('[data-edit-id]');
+    const title = el<HTMLInputElement>('[data-edit-title]');
+    const desc = el<HTMLTextAreaElement>('[data-edit-desc]');
+    const err = el<HTMLElement>('[data-edit-error]');
+    if (id) id.value = poll.id;
+    if (title) title.value = poll.title;
+    if (desc) desc.value = poll.description ?? '';
+    if (err) err.hidden = true;
+    el<HTMLDialogElement>('[data-edit-dialog]')?.showModal();
+  }
+
+  function openDelete(poll: Poll) {
+    pendingDeleteId = poll.id;
+    const name = el<HTMLElement>('[data-del-title]');
+    if (name) name.textContent = `"${poll.title}"`;
+    const err = el<HTMLElement>('[data-del-error]');
+    if (err) err.hidden = true;
+    el<HTMLDialogElement>('[data-del-dialog]')?.showModal();
+  }
+
+  async function loadOwned() {
+    show('loading');
+    const userId = readUserId();
+
+    // Walk pages so a user with many polls still sees all of their own.
+    const collected: Poll[] = [];
+    let page = 1;
+    let pages = 1;
+
+    do {
+      const result = await listPolls({ page, perPage: 100, sort: '-created' });
+      if (!result.ok) {
+        const text = el<HTMLElement>('[data-error-text]');
+        if (text) text.textContent = result.error;
+        show('error');
+        return;
+      }
+      collected.push(...result.data.items);
+      pages = result.data.total_pages || 1;
+      page += 1;
+    } while (page <= pages && page <= 10);
+
+    owned = userId ? collected.filter((p) => p.owner === userId) : [];
+
+    if (owned.length === 0) {
+      show('empty');
+      return;
+    }
+    renderOwned();
+    show('results');
+  }
+
+  async function loadAccount() {
+    const result = await getCurrentUser();
+    if (!result.ok) return;
+
+    const line = el<HTMLElement>('[data-owner-line]');
+    if (line) {
+      line.textContent = `Signed in as ${result.data.user_id}. Your polls, newest first.`;
+    }
+
+    if (result.data.deletion_status === 'pending_deletion') {
+      const box = el<HTMLElement>('[data-deletion]');
+      const when = el<HTMLElement>('[data-deletion-when]');
+      if (when && result.data.deletion_scheduled_for) {
+        const date = new Date(result.data.deletion_scheduled_for);
+        when.textContent = Number.isNaN(date.getTime())
+          ? ''
+          : ` on ${date.toLocaleDateString()}`;
+      }
+      if (box) box.hidden = false;
+    }
+  }
+
+  function wireDialogs() {
+    el<HTMLButtonElement>('[data-close-embed]')!.onclick = () =>
+      el<HTMLDialogElement>('[data-embed-dialog]')?.close();
+
+    const copyPairs: [string, string][] = [
+      ['[data-copy-badge]', '[data-embed-badge]'],
+      ['[data-copy-iframe]', '[data-embed-iframe]'],
+    ];
+    for (const [btnSel, preSel] of copyPairs) {
+      const btn = el<HTMLButtonElement>(btnSel);
+      if (!btn) continue;
+      btn.onclick = async () => {
+        const text = el<HTMLElement>(preSel)?.dataset.resolved ?? '';
+        if (!text) return;
+        const label = btn.textContent;
+        try {
+          await navigator.clipboard.writeText(text);
+          btn.textContent = 'copied';
+        } catch {
+          btn.textContent = 'copy failed';
+        }
+        window.setTimeout(() => {
+          btn.textContent = label;
+        }, 1600);
+      };
+    }
+
+    const editDialog = el<HTMLDialogElement>('[data-edit-dialog]');
+    el<HTMLButtonElement>('[data-close-edit]')!.onclick = () => editDialog?.close();
+    el<HTMLButtonElement>('[data-cancel-edit]')!.onclick = () => editDialog?.close();
+
+    const editForm = el<HTMLFormElement>('[data-edit-form]');
+    if (editForm) {
+      editForm.onsubmit = async (event) => {
+        event.preventDefault();
+        const id = el<HTMLInputElement>('[data-edit-id]')?.value ?? '';
+        const title = el<HTMLInputElement>('[data-edit-title]')?.value.trim() ?? '';
+        const desc = el<HTMLTextAreaElement>('[data-edit-desc]')?.value.trim() ?? '';
+        const save = el<HTMLButtonElement>('[data-save-edit]');
+        const err = el<HTMLElement>('[data-edit-error]');
+        if (!id || title.length < 3) return;
+
+        if (save) {
+          save.disabled = true;
+          save.textContent = 'saving';
+        }
+
+        const result = await updatePoll(id, { title, description: desc || null });
+
+        if (save) {
+          save.disabled = false;
+          save.textContent = 'Save changes';
+        }
+
+        if (!result.ok) {
+          if (err) {
+            err.textContent = result.error;
+            err.hidden = false;
+          }
+          return;
+        }
+
+        editDialog?.close();
+        await loadOwned();
+      };
+    }
+
+    const delDialog = el<HTMLDialogElement>('[data-del-dialog]');
+    el<HTMLButtonElement>('[data-close-del]')!.onclick = () => delDialog?.close();
+    el<HTMLButtonElement>('[data-cancel-del]')!.onclick = () => delDialog?.close();
+
+    const confirmDel = el<HTMLButtonElement>('[data-confirm-del]');
+    if (confirmDel) {
+      confirmDel.onclick = async () => {
+        if (!pendingDeleteId) return;
+        const err = el<HTMLElement>('[data-del-error]');
+        confirmDel.disabled = true;
+        confirmDel.textContent = 'deleting';
+
+        const result = await deletePoll(pendingDeleteId);
+
+        confirmDel.disabled = false;
+        confirmDel.textContent = 'Delete permanently';
+
+        if (!result.ok) {
+          if (err) {
+            err.textContent = result.error;
+            err.hidden = false;
+          }
+          return;
+        }
+
+        pendingDeleteId = null;
+        delDialog?.close();
+        await loadOwned();
+      };
+    }
+  }
+
+  function wireAccount() {
+    const del = el<HTMLButtonElement>('[data-delete-account]');
+    const msg = el<HTMLElement>('[data-account-msg]');
+
+    if (del) {
+      del.onclick = async () => {
+        del.disabled = true;
+        const result = await requestAccountDeletion();
+        del.disabled = false;
+        if (msg) {
+          msg.textContent = result.ok
+            ? 'Deletion scheduled. You have 7 days to change your mind; reload to see the notice.'
+            : result.error;
+          msg.hidden = false;
+        }
+      };
+    }
+
+    const cancel = el<HTMLButtonElement>('[data-cancel-deletion]');
+    if (cancel) {
+      cancel.onclick = async () => {
+        cancel.disabled = true;
+        const result = await cancelAccountDeletion();
+        cancel.disabled = false;
+        if (result.ok) {
+          const box = el<HTMLElement>('[data-deletion]');
+          if (box) box.hidden = true;
+        }
+      };
+    }
+  }
+
+  function init() {
+    const signedOut = el<HTMLElement>('[data-signedout]');
+    const authed = el<HTMLElement>('[data-authed]');
+
+    if (!isSignedIn()) {
+      if (signedOut) signedOut.hidden = false;
+      if (authed) authed.hidden = true;
+
+      const cta = el<HTMLButtonElement>('[data-signin-cta]');
+      const err = el<HTMLElement>('[data-signin-error]');
+      if (cta) {
+        cta.onclick = async () => {
+          cta.disabled = true;
+          try {
+            await startSignIn('/dashboard');
+          } catch (e) {
+            if (err) {
+              err.textContent = e instanceof Error ? e.message : 'Could not start sign-in.';
+              err.hidden = false;
+            }
+            cta.disabled = false;
+          }
+        };
+      }
+      return;
+    }
+
+    if (signedOut) signedOut.hidden = true;
+    if (authed) authed.hidden = false;
+
+    const retry = el<HTMLButtonElement>('[data-retry]');
+    if (retry) retry.onclick = () => loadOwned();
+
+    wireDialogs();
+    wireAccount();
+    loadAccount();
+    loadOwned();
+  }
+
+  init();
+  document.addEventListener('astro:page-load', init);
+</script>

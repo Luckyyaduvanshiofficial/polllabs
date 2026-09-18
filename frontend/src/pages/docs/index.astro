@@ -1,244 +1,458 @@
 ---
+/**
+ * Docs. Component Playground macrostructure (21): every block is a real
+ * snippet with a copy button, and the embed builder outputs live markup for a
+ * poll id the reader types in.
+ *
+ * Prose here opts into sans via .prose-sans; mono measure hurts reading speed
+ * for running text, while the snippets stay mono.
+ */
 import RootLayout from '../../layouts/RootLayout.astro';
-import { getBadgeUrl, getMarkdownBadgeSnippet } from '../../lib/embed';
 
-const defaultBadgeUrl = getBadgeUrl('demo-frameworks', 'svg');
-const defaultSnippet = getMarkdownBadgeSnippet('Poll', 'demo-frameworks', 'svg');
+const endpoints = [
+  { method: 'GET', path: '/api/v1/polls', note: 'List public polls. Paginated.' },
+  { method: 'GET', path: '/api/v1/polls/{id}', note: 'One poll, with results masked to your view.' },
+  { method: 'POST', path: '/api/v1/polls', note: 'Create a poll. Requires a bearer token.' },
+  { method: 'PATCH', path: '/api/v1/polls/{id}', note: 'Edit a poll you own.' },
+  { method: 'DELETE', path: '/api/v1/polls/{id}', note: 'Delete a poll you own.' },
+  { method: 'POST', path: '/api/v1/votes/{id}', note: 'Cast a vote. Anonymous, rate limited.' },
+  { method: 'GET', path: '/api/v1/badges/{id}.svg', note: 'Live badge. Also .png.' },
+  { method: 'GET', path: '/api/v1/leaderboard/trending', note: 'Polls with activity this week.' },
+  { method: 'GET', path: '/api/v1/analytics/{id}', note: 'Owner-only breakdown.' },
+  { method: 'GET', path: '/api/v1/analytics/{id}/export', note: 'CSV or JSON. Owner only.' },
+];
+
+const displayModes = [
+  {
+    mode: 'show_counts',
+    behaviour: 'Raw counts appear once the viewer has voted. Before that, percentages only.',
+  },
+  { mode: 'show_percentage', behaviour: 'Percentages always, raw counts never.' },
+  {
+    mode: 'hidden_until_close',
+    behaviour: 'Nothing until close_at passes. Set a close date, or results stay hidden.',
+  },
+];
 ---
 
-<RootLayout title="Documentation & API Reference — Polls Lab">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-16">
-    <!-- Header -->
-    <div class="max-w-3xl space-y-2 pb-8 border-b border-[#1e293b]">
-      <span class="text-xs font-mono text-cyan-400 uppercase tracking-wider">Developer Reference</span>
-      <h1 class="text-3xl sm:text-4xl font-extrabold text-white">Documentation & Integration</h1>
-      <p class="text-sm text-[#94a3b8] leading-relaxed">
-        Everything you need to drop interactive widgets, embed dynamic README badges, or automate polls via the Polls Lab REST API.
+<RootLayout
+  title="Docs · Polls Lab"
+  description="How to embed a Polls Lab poll, what the API exposes, and how result visibility works."
+>
+  <section class="shell docs">
+    <header class="docs__head">
+      <h1 class="docs__title">Docs</h1>
+      <p class="docs__lede prose-sans">
+        Everything below works against the live API. Paste a poll id into the builder and copy the
+        markup it produces.
       </p>
-    </div>
+    </header>
 
-    <!-- Section 1: Interactive Embed Playground -->
-    <section class="space-y-6">
-      <div>
-        <h2 class="text-xl font-bold text-white flex items-center gap-2">
-          <span class="w-6 h-6 rounded bg-blue-600/20 text-blue-400 font-mono text-xs flex items-center justify-center font-bold">01</span>
-          <span>Interactive Embed Playground</span>
-        </h2>
-        <p class="text-xs text-[#94a3b8] mt-1">
-          Select a format to preview and copy production-ready snippets for any poll.
-        </p>
+    <!-- Builder: the page's primary interactive block. -->
+    <section class="block" aria-labelledby="builder-title">
+      <h2 id="builder-title" class="block__title">Embed builder</h2>
+
+      <div class="builder">
+        <div class="builder__field">
+          <label class="field-label" for="poll-id">Poll id</label>
+          <input
+            id="poll-id"
+            class="input"
+            type="text"
+            value="demo-frameworks"
+            spellcheck="false"
+            autocomplete="off"
+            data-poll-id
+          />
+          <p class="builder__hint">
+            Find this in the address bar of any poll page, after <code>?id=</code>.
+          </p>
+        </div>
+
+        <div class="builder__field">
+          <label class="field-label" for="embed-kind">Output</label>
+          <select id="embed-kind" class="input" data-kind>
+            <option value="badge-md">Markdown badge, links to the poll</option>
+            <option value="badge-img">Markdown image, no link</option>
+            <option value="iframe">Interactive iframe</option>
+            <option value="html-badge">HTML badge with link</option>
+          </select>
+        </div>
       </div>
 
-      <div class="bg-[#111827] border border-[#1e293b] rounded-2xl p-6 shadow-xl space-y-6">
-        <!-- Controls -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label for="docs-poll-id" class="block text-xs font-medium text-white mb-1">
-              Poll ID
-            </label>
-            <input
-              id="docs-poll-id"
-              type="text"
-              value="demo-frameworks"
-              placeholder="e.g. demo-frameworks"
-              class="w-full px-3.5 py-2 bg-[#0b0f19] border border-[#1e293b] rounded-xl text-xs text-white font-mono focus:border-blue-500 focus:outline-hidden"
-            />
-          </div>
+      <div class="code builder__out">
+        <pre data-out><code></code></pre>
+      </div>
+      <div class="builder__actions">
+        <button type="button" class="btn btn--primary" data-copy-out>Copy snippet</button>
+        <a class="btn btn--ghost" data-preview target="_blank" rel="noopener noreferrer">
+          Open poll
+        </a>
+      </div>
 
-          <div>
-            <label for="docs-embed-format" class="block text-xs font-medium text-white mb-1">
-              Embed Format
-            </label>
-            <select
-              id="docs-embed-format"
-              class="w-full px-3.5 py-2 bg-[#0b0f19] border border-[#1e293b] rounded-xl text-xs text-white focus:border-blue-500 focus:outline-hidden"
-            >
-              <option value="badge-svg">GitHub README (SVG Badge)</option>
-              <option value="badge-png">Email / Forum (PNG Badge)</option>
-              <option value="iframe-html">HTML / Blog (Interactive Iframe)</option>
-            </select>
-          </div>
-        </div>
-
-        <!-- Live Visual Preview Box -->
-        <div class="p-4 rounded-xl bg-[#0b0f19] border border-[#1e293b] space-y-2">
-          <span class="text-[11px] font-mono text-[#64748b] uppercase tracking-wider block">Live Render Preview</span>
-          <div id="docs-preview-container" class="flex items-center justify-center p-4 min-h-[60px]">
-            <img
-              id="docs-badge-img"
-              src={defaultBadgeUrl}
-              alt="Live Badge Preview"
-              class="h-5"
-            />
-          </div>
-        </div>
-
-        <!-- Generated Code Box -->
-        <div class="space-y-2">
-          <div class="flex items-center justify-between text-xs">
-            <span class="font-mono text-[#94a3b8]">Generated Snippet:</span>
-            <button
-              id="docs-copy-btn"
-              type="button"
-              class="px-3 py-1 rounded-lg bg-[#1e293b] hover:bg-[#334155] text-white text-xs font-medium transition"
-            >
-              Copy Code
-            </button>
-          </div>
-          <pre class="bg-[#080c14] border border-[#1e293b] rounded-xl p-3.5 text-xs font-mono text-emerald-300 overflow-x-auto select-all"><code id="docs-code-output">{defaultSnippet}</code></pre>
-        </div>
+      <div class="builder__render">
+        <p class="field-label">Badge preview</p>
+        <img data-badge alt="Live badge preview for the poll id entered above" height="20" />
+        <p class="builder__fallback" data-badge-error hidden>
+          The badge did not load. Check that the poll id exists and the API is reachable.
+        </p>
       </div>
     </section>
 
-    <!-- Section 2: REST API Reference (v1) -->
-    <section class="space-y-6">
-      <div>
-        <h2 class="text-xl font-bold text-white flex items-center gap-2">
-          <span class="w-6 h-6 rounded bg-emerald-600/20 text-emerald-400 font-mono text-xs flex items-center justify-center font-bold">02</span>
-          <span>REST API Reference (`/api/v1`)</span>
-        </h2>
-        <p class="text-xs text-[#94a3b8] mt-1">
-          FastAPI backend with OpenAPI 3.1 documentation, strict Pydantic v2 typing, and scoped CORS.
-        </p>
+    <!-- Result visibility: F3 spec sheet. -->
+    <section class="block rule-top" aria-labelledby="display-title">
+      <h2 id="display-title" class="block__title">Result visibility</h2>
+      <p class="block__note prose-sans">
+        Masking happens on the server. A hidden count is never sent to the browser, so it cannot be
+        read out of the network tab.
+      </p>
+      <dl class="spec">
+        {
+          displayModes.map((row) => (
+            <div class="spec__row">
+              <dt class="spec__key"><code>{row.mode}</code></dt>
+              <dd class="spec__val">{row.behaviour}</dd>
+            </div>
+          ))
+        }
+      </dl>
+    </section>
+
+    <!-- API reference. -->
+    <section class="block rule-top" aria-labelledby="api-title">
+      <h2 id="api-title" class="block__title">API</h2>
+      <p class="block__note prose-sans">
+        Base URL is shown below. Full OpenAPI schema lives at <code>/docs</code> on the API host.
+      </p>
+      <div class="code api__base">
+        <pre data-api-base><code></code></pre>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <!-- Endpoint 1: Create Poll -->
-        <div class="p-5 rounded-2xl bg-[#111827] border border-[#1e293b] space-y-3 shadow-sm">
-          <div class="flex items-center gap-2 font-mono text-xs">
-            <span class="px-2 py-0.5 rounded bg-blue-950 text-blue-400 font-bold border border-blue-800/40">POST</span>
-            <span class="text-white">/api/v1/polls</span>
-          </div>
-          <p class="text-xs text-[#94a3b8]">Create a new poll with profanity moderation and option media.</p>
-          <pre class="bg-[#0b0f19] p-2.5 rounded-lg text-[11px] font-mono text-[#94a3b8] overflow-x-auto"><code>curl -X POST http://localhost:8000/api/v1/polls \
-  -H "Authorization: Bearer &lt;token&gt;" \
-  -H "Content-Type: application/json" \
-  -d '&#123;
-    "title": "Favorite language?",
-    "options": ["Python", "Rust", "Go"],
-    "visibility": "public"
-  &#125;'</code></pre>
-        </div>
+      <table class="api">
+        <thead>
+          <tr>
+            <th scope="col">Method</th>
+            <th scope="col">Path</th>
+            <th scope="col">Purpose</th>
+          </tr>
+        </thead>
+        <tbody>
+          {
+            endpoints.map((row) => (
+              <tr>
+                <td><span class="api__method" data-method={row.method}>{row.method}</span></td>
+                <td><code class="api__path">{row.path}</code></td>
+                <td class="api__note">{row.note}</td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </section>
 
-        <!-- Endpoint 2: Submit Vote -->
-        <div class="p-5 rounded-2xl bg-[#111827] border border-[#1e293b] space-y-3 shadow-sm">
-          <div class="flex items-center gap-2 font-mono text-xs">
-            <span class="px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 font-bold border border-emerald-800/40">POST</span>
-            <span class="text-white">/api/v1/votes/&#123;poll_id&#125;</span>
-          </div>
-          <p class="text-xs text-[#94a3b8]">Submit a vote. Issues httpOnly device token with duplicate protection.</p>
-          <pre class="bg-[#0b0f19] p-2.5 rounded-lg text-[11px] font-mono text-[#94a3b8] overflow-x-auto"><code>curl -X POST http://localhost:8000/api/v1/votes/demo-frameworks \
-  -H "Content-Type: application/json" \
-  -d '&#123;"option_id": "1"&#125;'</code></pre>
-        </div>
-
-        <!-- Endpoint 3: Public Leaderboard -->
-        <div class="p-5 rounded-2xl bg-[#111827] border border-[#1e293b] space-y-3 shadow-sm">
-          <div class="flex items-center gap-2 font-mono text-xs">
-            <span class="px-2 py-0.5 rounded bg-purple-950 text-purple-300 font-bold border border-purple-800/40">GET</span>
-            <span class="text-white">/api/v1/leaderboard/trending</span>
-          </div>
-          <p class="text-xs text-[#94a3b8]">Get trending public polls filtered to the last 7 days and sorted by velocity.</p>
-          <pre class="bg-[#0b0f19] p-2.5 rounded-lg text-[11px] font-mono text-[#94a3b8] overflow-x-auto"><code>curl http://localhost:8000/api/v1/leaderboard/trending?limit=10</code></pre>
-        </div>
-
-        <!-- Endpoint 4: Export Raw Data -->
-        <div class="p-5 rounded-2xl bg-[#111827] border border-[#1e293b] space-y-3 shadow-sm">
-          <div class="flex items-center gap-2 font-mono text-xs">
-            <span class="px-2 py-0.5 rounded bg-purple-950 text-purple-300 font-bold border border-purple-800/40">GET</span>
-            <span class="text-white">/api/v1/analytics/&#123;poll_id&#125;/export</span>
-          </div>
-          <p class="text-xs text-[#94a3b8]">Download complete raw poll vote records as CSV or JSON (Owner only).</p>
-          <pre class="bg-[#0b0f19] p-2.5 rounded-lg text-[11px] font-mono text-[#94a3b8] overflow-x-auto"><code>curl "http://localhost:8000/api/v1/analytics/demo/export?format=csv" \
-  -H "Authorization: Bearer &lt;token&gt;"</code></pre>
-        </div>
+    <!-- Auth. -->
+    <section class="block rule-top" aria-labelledby="auth-title">
+      <h2 id="auth-title" class="block__title">Authentication</h2>
+      <p class="block__note prose-sans">
+        Voting is anonymous and needs no token. Creating, editing and reading analytics need a
+        PocketBase session token, sent as a bearer header. The API verifies every token against
+        PocketBase, so a self-signed token is rejected.
+      </p>
+      <div class="code">
+        <pre><code>curl -H "Authorization: Bearer $TOKEN" \
+     API/api/v1/analytics/POLL_ID</code></pre>
       </div>
     </section>
 
-    <!-- Section 3: Self-Hosting & Deployment -->
-    <section class="space-y-6">
-      <div>
-        <h2 class="text-xl font-bold text-white flex items-center gap-2">
-          <span class="w-6 h-6 rounded bg-purple-600/20 text-purple-400 font-mono text-xs flex items-center justify-center font-bold">03</span>
-          <span>Self-Hosting Architecture</span>
-        </h2>
-        <p class="text-xs text-[#94a3b8] mt-1">
-          PocketBase SQLite single-binary design ensures anyone can run Polls Lab offline or in production.
-        </p>
-      </div>
-
-      <div class="p-6 rounded-2xl bg-[#111827] border border-[#1e293b] space-y-4 shadow-xl text-xs text-[#94a3b8]">
-        <p class="leading-relaxed">
-          Polls Lab is designed around zero operational friction. The persistence layer runs on standalone PocketBase SQLite, allowing local testing without Docker, and production deployment on Azure Free VMs, Linux VPS, or Fly.io persistent NVMe volumes.
-        </p>
-        <div class="flex gap-4 pt-2">
-          <a
-            href="https://github.com/Luckyyaduvanshiofficial/polls-lab/blob/main/docs/self-hosting.md"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-semibold transition"
-          >
-            Read Complete Self-Hosting Guide (Fly.io & Azure) →
-          </a>
-        </div>
-      </div>
+    <!-- Themes pointer. -->
+    <section class="block rule-top" aria-labelledby="themes-title">
+      <h2 id="themes-title" class="block__title">Themes</h2>
+      <p class="block__note prose-sans">
+        Each poll carries its own appearance: five preset themes plus colour, corner, font and layout
+        overrides. The
+        <a class="link" href="/theme-samples">theme reference</a> renders all five side by side.
+      </p>
     </section>
-  </div>
+  </section>
 </RootLayout>
 
-<script>
-  import { getMarkdownBadgeSnippet, getIframeSnippet, getBadgeUrl } from '../../lib/embed';
+<style>
+  .docs {
+    padding-block: var(--space-2xl) var(--space-3xl);
+  }
 
-  function setupDocsPlayground() {
-    const pollIdInput = document.getElementById('docs-poll-id') as HTMLInputElement | null;
-    const formatSelect = document.getElementById('docs-embed-format') as HTMLSelectElement | null;
-    const codeOutput = document.getElementById('docs-code-output');
-    const previewContainer = document.getElementById('docs-preview-container');
-    const copyBtn = document.getElementById('docs-copy-btn');
+  .docs__title {
+    font-size: var(--text-2xl);
+  }
 
-    function updateSnippet() {
-      const pollId = pollIdInput?.value.trim() || 'demo-frameworks';
-      const format = formatSelect?.value || 'badge-svg';
-      let snippet = '';
+  .docs__lede {
+    margin-top: var(--space-xs);
+  }
 
-      if (format === 'badge-svg') {
-        snippet = getMarkdownBadgeSnippet('Poll', pollId, 'svg');
-        const badgeUrl = getBadgeUrl(pollId, 'svg');
-        if (previewContainer) {
-          previewContainer.innerHTML = `<a href="${badgeUrl}" target="_blank"><img src="${badgeUrl}" alt="Badge" class="h-5" /></a>`;
-        }
-      } else if (format === 'badge-png') {
-        snippet = getMarkdownBadgeSnippet('Poll', pollId, 'png');
-        const badgeUrl = getBadgeUrl(pollId, 'png');
-        if (previewContainer) {
-          previewContainer.innerHTML = `<a href="${badgeUrl}" target="_blank"><img src="${badgeUrl}" alt="Badge" class="h-5" /></a>`;
-        }
-      } else if (format === 'iframe-html') {
-        snippet = getIframeSnippet(pollId, 340);
-        if (previewContainer) {
-          previewContainer.innerHTML = `<span class="text-xs text-[#94a3b8] font-mono">Interactive Iframe Preview (width: 100%, height: 340px)</span>`;
-        }
-      }
+  .block {
+    padding-block: var(--space-2xl);
+  }
 
-      if (codeOutput) codeOutput.textContent = snippet;
+  .block__title {
+    font-size: var(--text-lg);
+    margin-bottom: var(--space-xs);
+  }
+
+  .block__note {
+    margin-bottom: var(--space-lg);
+    font-size: 0.9375rem;
+  }
+
+  .link {
+    color: var(--color-accent);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  /* ---- Builder ---- */
+  .builder {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-lg);
+    margin-bottom: var(--space-lg);
+  }
+
+  .builder__field {
+    display: grid;
+    gap: var(--space-2xs);
+    align-content: start;
+  }
+
+  .builder__hint {
+    font-size: var(--text-2xs);
+    color: var(--color-ink-4);
+  }
+
+  .builder__hint code,
+  .block__note code {
+    color: var(--color-accent);
+  }
+
+  .builder__out pre {
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+
+  .builder__actions {
+    display: flex;
+    gap: var(--space-xs);
+    margin-top: var(--space-sm);
+    flex-wrap: wrap;
+  }
+
+  .builder__render {
+    margin-top: var(--space-xl);
+    display: grid;
+    gap: var(--space-xs);
+    justify-items: start;
+  }
+
+  .builder__fallback {
+    font-size: var(--text-xs);
+    color: var(--color-warn);
+  }
+
+  /* ---- Spec sheet ---- */
+  .spec {
+    margin: 0;
+    border-top: var(--rule-hair) solid var(--color-rule);
+  }
+
+  .spec__row {
+    display: grid;
+    grid-template-columns: 16rem 1fr;
+    gap: var(--space-md);
+    padding-block: var(--space-sm);
+    border-bottom: var(--rule-hair) solid var(--color-rule);
+  }
+
+  .spec__key code {
+    color: var(--color-accent);
+    font-size: var(--text-xs);
+  }
+
+  .spec__val {
+    margin: 0;
+    font-size: var(--text-sm);
+    color: var(--color-ink-2);
+  }
+
+  /* ---- API table ---- */
+  .api__base {
+    margin-bottom: var(--space-lg);
+  }
+
+  .api {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--text-xs);
+  }
+
+  .api th {
+    text-align: left;
+    font-size: var(--text-2xs);
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    color: var(--color-ink-4);
+    font-weight: 500;
+    padding-block: var(--space-xs);
+    border-bottom: var(--rule-hair) solid var(--color-rule-strong);
+  }
+
+  .api td {
+    padding-block: var(--space-sm);
+    border-bottom: var(--rule-hair) solid var(--color-rule);
+    vertical-align: baseline;
+  }
+
+  .api__method {
+    display: inline-block;
+    min-width: 4rem;
+    color: var(--color-ink-3);
+  }
+
+  .api__method[data-method='POST'],
+  .api__method[data-method='PATCH'] {
+    color: var(--color-accent);
+  }
+
+  .api__method[data-method='DELETE'] {
+    color: var(--color-danger);
+  }
+
+  .api__path {
+    color: var(--color-ink);
+  }
+
+  .api__note {
+    color: var(--color-ink-3);
+  }
+
+  @media (max-width: 60rem) {
+    .builder {
+      grid-template-columns: minmax(0, 1fr);
     }
 
-    pollIdInput?.addEventListener('input', updateSnippet);
-    formatSelect?.addEventListener('change', updateSnippet);
+    .spec__row {
+      grid-template-columns: minmax(0, 1fr);
+      gap: var(--space-2xs);
+    }
+  }
 
-    copyBtn?.addEventListener('click', () => {
-      if (codeOutput?.textContent) {
-        navigator.clipboard.writeText(codeOutput.textContent).then(() => {
-          copyBtn.textContent = '✓ Copied';
-          setTimeout(() => { copyBtn.textContent = 'Copy Code'; }, 2000);
-        });
+  @media (max-width: 40rem) {
+    .api thead {
+      display: none;
+    }
+
+    .api tr {
+      display: grid;
+      gap: var(--space-2xs);
+      padding-block: var(--space-sm);
+      border-bottom: var(--rule-hair) solid var(--color-rule);
+    }
+
+    .api td {
+      border: none;
+      padding-block: 0;
+    }
+  }
+</style>
+
+<script>
+  import { getApiUrl, getSiteUrl } from '../../lib/config';
+
+  function build(kind: string, id: string, api: string, site: string): string {
+    const badge = `${api}/api/v1/badges/${id}.svg`;
+    const poll = `${site}/polls?id=${id}`;
+    switch (kind) {
+      case 'badge-img':
+        return `![Poll](${badge})`;
+      case 'iframe':
+        return `<iframe src="${site}/embed?id=${id}"\n        width="100%" height="380"\n        style="border:0" loading="lazy"\n        title="Poll"></iframe>`;
+      case 'html-badge':
+        return `<a href="${poll}"><img src="${badge}" alt="Poll" /></a>`;
+      default:
+        return `[![Poll](${badge})](${poll})`;
+    }
+  }
+
+  function refresh() {
+    const input = document.querySelector<HTMLInputElement>('[data-poll-id]');
+    const kindSel = document.querySelector<HTMLSelectElement>('[data-kind]');
+    const out = document.querySelector<HTMLElement>('[data-out]');
+    const preview = document.querySelector<HTMLAnchorElement>('[data-preview]');
+    const badge = document.querySelector<HTMLImageElement>('[data-badge]');
+    const badgeError = document.querySelector<HTMLElement>('[data-badge-error]');
+    if (!input || !kindSel || !out) return;
+
+    const api = getApiUrl();
+    const site = getSiteUrl();
+    // Ids are alphanumeric with dashes and underscores; strip anything else so
+    // a pasted URL cannot smuggle markup into the snippet.
+    const id = input.value.trim().replace(/[^a-zA-Z0-9_-]/g, '') || 'demo-frameworks';
+
+    const snippet = build(kindSel.value, id, api, site);
+    out.dataset.resolved = snippet;
+    const code = out.querySelector('code');
+    if (code) code.textContent = snippet;
+
+    if (preview) preview.href = `${site}/polls?id=${id}`;
+
+    if (badge && badgeError) {
+      badgeError.hidden = true;
+      badge.onerror = () => {
+        badgeError.hidden = false;
+      };
+      badge.src = `${api}/api/v1/badges/${id}.svg`;
+    }
+  }
+
+  function init() {
+    const base = document.querySelector<HTMLElement>('[data-api-base]');
+    if (base) {
+      const code = base.querySelector('code');
+      if (code) code.textContent = `${getApiUrl()}/api/v1`;
+    }
+
+    document.querySelectorAll<HTMLElement>('.code pre').forEach((pre) => {
+      const code = pre.querySelector('code');
+      if (code && code.textContent?.includes('API/api/v1')) {
+        code.textContent = code.textContent.replaceAll('API', getApiUrl());
       }
     });
 
-    updateSnippet();
+    const input = document.querySelector<HTMLInputElement>('[data-poll-id]');
+    const kindSel = document.querySelector<HTMLSelectElement>('[data-kind]');
+    input?.addEventListener('input', refresh);
+    kindSel?.addEventListener('change', refresh);
+
+    const copy = document.querySelector<HTMLButtonElement>('[data-copy-out]');
+    if (copy) {
+      copy.onclick = async () => {
+        const out = document.querySelector<HTMLElement>('[data-out]');
+        const text = out?.dataset.resolved ?? '';
+        if (!text) return;
+        const label = copy.textContent;
+        try {
+          await navigator.clipboard.writeText(text);
+          copy.textContent = 'Copied';
+        } catch {
+          copy.textContent = 'Copy failed';
+        }
+        window.setTimeout(() => {
+          copy.textContent = label;
+        }, 1600);
+      };
+    }
+
+    refresh();
   }
 
-  setupDocsPlayground();
-  document.addEventListener('astro:page-load', setupDocsPlayground);
+  init();
+  document.addEventListener('astro:page-load', init);
 </script>
-

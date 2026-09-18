@@ -7,52 +7,87 @@ import '../styles/global.css';
 interface Props {
   title?: string;
   description?: string;
+  /** Bare pages (the embed iframe) skip the nav and footer. */
+  chrome?: boolean;
+  /** Keeps a page out of search results, for owner-scoped surfaces. */
+  noindex?: boolean;
 }
 
-const { 
-  title = "Polls Lab — Embeddable Polls & Public Leaderboards for Developers", 
-  description = "Embed lightning-fast polls, live SVG badges, and real-time leaderboards into GitHub READMEs, markdown docs, and static sites."
+const {
+  title = 'Polls Lab · embeddable polls and live README badges',
+  description =
+    'Create a poll, drop one line of markdown in your README, and get live results as an SVG badge or an interactive embed. Anonymous voting, no trackers, Apache 2.0.',
+  chrome = true,
+  noindex = false,
 } = Astro.props;
+
+const ogImage = new URL('/og-image.svg', Astro.url.origin).href;
 ---
 
 <!doctype html>
-<html lang="en" class="dark">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="generator" content={Astro.generator} />
+
     <title>{title}</title>
     <meta name="description" content={description} />
+    {noindex && <meta name="robots" content="noindex, nofollow" />}
+    {!noindex && <meta name="robots" content="index, follow" />}
+    <link rel="canonical" href={Astro.url.href} />
+
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={Astro.url.href} />
     <meta property="og:type" content="website" />
-    <meta property="og:locale" content="en_US" />
     <meta property="og:site_name" content="Polls Lab" />
-    <meta property="og:image" content={`${Astro.url.origin}/og-image.svg`} />
+    <meta property="og:image" content={ogImage} />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta name="theme-color" content="#0b0f19" />
-    <meta name="robots" content="index, follow" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
-    <meta name="twitter:image" content={`${Astro.url.origin}/og-image.svg`} />
+    <meta name="twitter:image" content={ogImage} />
+    <meta name="theme-color" content="#0a0f0d" />
+
     <ClientRouter />
   </head>
-  <body class="bg-[#0b0f19] text-[#f8fafc] min-h-screen antialiased selection:bg-blue-600 selection:text-white">
-    <a 
-      href="#main-content" 
-      class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 z-50 px-4 py-2 bg-blue-600 text-white font-medium rounded-lg text-sm shadow-lg"
-    >
-      Skip to content
-    </a>
-    <Navbar />
-    <main id="main-content" class="transition-opacity duration-200">
+  <body>
+    <a href="#main" class="skip">Skip to content</a>
+    {chrome && <Navbar />}
+    <main id="main" class:list={['main', { 'main--bare': !chrome }]}>
       <slot />
     </main>
-    <Footer />
+    {chrome && <Footer />}
+
+    <style>
+      .skip {
+        position: absolute;
+        left: -9999px;
+        top: 0;
+        z-index: 100;
+      }
+
+      .skip:focus {
+        left: var(--space-md);
+        top: var(--space-md);
+        padding: var(--space-xs) var(--space-md);
+        background: var(--color-accent);
+        color: var(--color-accent-ink);
+        border-radius: var(--radius-md);
+        font-size: var(--text-sm);
+      }
+
+      .main {
+        flex: 1;
+        width: 100%;
+      }
+
+      .main--bare {
+        display: flex;
+      }
+    </style>
   </body>
 </html>
-

@@ -1,0 +1,102 @@
+---
+/**
+ * Analytics resolver: /dashboard/analytics?id=<id>.
+ *
+ * The sibling /dashboard/[id]/analytics route is pre-rendered from a fixed id
+ * list, so it 404s for any poll created after the last build. This route works
+ * for every id, which is why the dashboard links here.
+ */
+import RootLayout from '../../../layouts/RootLayout.astro';
+import PollAnalytics from '../../../components/dashboard/PollAnalytics';
+---
+
+<RootLayout title="Poll analytics · Polls Lab" noindex>
+  <section class="shell an-page">
+    <nav class="crumbs" aria-label="Breadcrumb">
+      <a href="/dashboard">dashboard</a>
+      <span aria-hidden="true">/</span>
+      <span class="crumbs__here">analytics</span>
+    </nav>
+
+    <div data-mount>
+      <!-- Shown when no id is supplied; replaced by the component otherwise. -->
+      <div class="an-page__missing" data-missing>
+        <p class="an-page__msg">No poll selected.</p>
+        <p class="an-page__hint">Open analytics from the dashboard so a poll id is included.</p>
+        <a href="/dashboard" class="btn btn--primary">Back to dashboard</a>
+      </div>
+    </div>
+  </section>
+</RootLayout>
+
+<style>
+  .an-page {
+    padding-block: var(--space-2xl) var(--space-3xl);
+  }
+
+  .crumbs {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    font-size: var(--text-xs);
+    color: var(--color-ink-4);
+    margin-bottom: var(--space-lg);
+  }
+
+  .crumbs a {
+    color: var(--color-ink-3);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    min-height: 1.75rem;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .crumbs a:hover {
+    color: var(--color-accent);
+  }
+
+  .crumbs__here {
+    color: var(--color-ink-2);
+  }
+
+  .an-page__missing {
+    display: grid;
+    gap: var(--space-sm);
+    justify-items: start;
+    padding-block: var(--space-2xl);
+    border-top: var(--rule-hair) solid var(--color-rule);
+  }
+
+  .an-page__msg {
+    font-size: var(--text-base);
+    color: var(--color-ink);
+  }
+
+  .an-page__hint {
+    font-size: var(--text-xs);
+    color: var(--color-ink-3);
+  }
+</style>
+
+<script>
+  async function init() {
+    const id = new URLSearchParams(window.location.search).get('id');
+    const mount = document.querySelector<HTMLElement>('[data-mount]');
+    if (!mount) return;
+
+    if (!id) return; // The static "no poll selected" block stays visible.
+
+    const [{ default: PollAnalytics }, React, { createRoot }] = await Promise.all([
+      import('../../../components/dashboard/PollAnalytics'),
+      import('react'),
+      import('react-dom/client'),
+    ]);
+
+    mount.replaceChildren();
+    createRoot(mount).render(React.createElement(PollAnalytics, { pollId: id }));
+  }
+
+  init();
+  document.addEventListener('astro:page-load', init);
+</script>

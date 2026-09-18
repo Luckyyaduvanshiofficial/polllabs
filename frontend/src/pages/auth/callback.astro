@@ -1,49 +1,171 @@
 ---
+/**
+ * OAuth2 return leg. Exchanges the GitHub code with PocketBase for a real
+ * signed token. The previous version fabricated a token from the code prefix,
+ * which the hardened backend rejects outright.
+ */
 import RootLayout from '../../layouts/RootLayout.astro';
 ---
 
-<RootLayout title="Authenticating — Polls Lab">
-  <div class="min-h-[60vh] flex flex-col items-center justify-center text-center px-4 space-y-4">
-    <div class="w-10 h-10 rounded-full border-2 border-blue-500 border-t-transparent animate-spin"></div>
-    <div class="space-y-1">
-      <h2 class="text-xl font-bold text-white">Completing GitHub Sign-In</h2>
-      <p class="text-xs text-[#94a3b8]" id="auth-status-msg">
-        Verifying GitHub OAuth credentials with PocketBase...
+<RootLayout title="Signing in · Polls Lab" noindex>
+  <section class="shell cb">
+    <h1 class="cb__title">
+      <span class="cb__prompt" aria-hidden="true">&gt;</span> auth --github
+    </h1>
+
+    <div class="cb__body" data-state="working">
+      <p class="cb__line" data-status role="status" aria-live="polite">
+        Exchanging the authorization code with PocketBase
+        <span class="cb__caret" aria-hidden="true">&#9646;</span>
       </p>
+
+      <div class="cb__fail" data-fail hidden>
+        <p class="cb__error" data-error-text></p>
+        <details class="cb__hint">
+          <summary>What usually causes this</summary>
+          <ul>
+            <li>GitHub OAuth is not enabled under Settings, Auth providers in PocketBase.</li>
+            <li>
+              The GitHub OAuth app's callback URL does not match this site's
+              <code>/auth/callback</code>.
+            </li>
+            <li>The sign-in link was reused, or opened in a different browser.</li>
+          </ul>
+        </details>
+        <div class="cb__actions">
+          <a href="/" class="btn btn--ghost">Back to home</a>
+          <button type="button" class="btn btn--primary" data-retry>Try again</button>
+        </div>
+      </div>
     </div>
-  </div>
+  </section>
 </RootLayout>
 
-<script>
-  import { getPbUrl, getApiUrl } from '../../lib/config';
+<style>
+  .cb {
+    padding-block: var(--space-4xl);
+    max-width: 60ch;
+  }
 
-  async function handleAuthCallback() {
-    const statusMsg = document.getElementById('auth-status-msg');
-    const params = new URLSearchParams(window.location.search);
-    const code = params.get('code');
-    const state = params.get('state');
+  .cb__title {
+    font-size: var(--text-xl);
+    display: flex;
+    gap: 0.5ch;
+    margin-bottom: var(--space-lg);
+  }
 
-    try {
-      if (code) {
-        // OAuth code present: store temporary token or session
-        localStorage.setItem('polls-lab_auth_token', `github_${code.substring(0, 16)}`);
-      } else {
-        // Fallback or direct token in hash/param
-        const token = params.get('token') || 'dev-user-local';
-        localStorage.setItem('polls-lab_auth_token', token);
-      }
+  .cb__prompt {
+    color: var(--color-accent);
+  }
 
-      if (statusMsg) statusMsg.textContent = 'Authenticated! Redirecting to dashboard...';
-      setTimeout(() => {
-        window.location.href = '/dashboard';
-      }, 500);
-    } catch (err: any) {
-      if (statusMsg) statusMsg.textContent = 'Failed to complete authentication. Redirecting...';
-      setTimeout(() => {
-        window.location.href = '/';
-      }, 2000);
+  .cb__line {
+    font-size: var(--text-sm);
+    color: var(--color-ink-2);
+  }
+
+  .cb__caret {
+    display: inline-block;
+    width: 1ch;
+    color: var(--color-accent);
+    animation: cb-blink 1.05s steps(2) infinite;
+  }
+
+  @keyframes cb-blink {
+    50% {
+      opacity: 0;
     }
   }
 
-  handleAuthCallback();
+  @media (prefers-reduced-motion: reduce) {
+    .cb__caret {
+      animation: none;
+    }
+  }
+
+  .cb__body[data-state='failed'] .cb__line {
+    display: none;
+  }
+
+  .cb__fail {
+    display: grid;
+    gap: var(--space-md);
+  }
+
+  .cb__error {
+    padding: var(--space-sm) var(--space-md);
+    background: var(--color-danger-wash);
+    border-left: 2px solid var(--color-danger);
+    color: var(--color-ink);
+    font-size: var(--text-sm);
+  }
+
+  .cb__hint {
+    font-size: var(--text-xs);
+    color: var(--color-ink-3);
+  }
+
+  .cb__hint summary {
+    cursor: pointer;
+    min-height: 1.75rem;
+    display: flex;
+    align-items: center;
+  }
+
+  .cb__hint ul {
+    margin: var(--space-xs) 0 0;
+    padding-left: 1.25rem;
+    display: grid;
+    gap: var(--space-2xs);
+    line-height: 1.7;
+  }
+
+  .cb__hint code {
+    color: var(--color-accent);
+  }
+
+  .cb__actions {
+    display: flex;
+    gap: var(--space-xs);
+    flex-wrap: wrap;
+  }
+</style>
+
+<script>
+  import { completeSignIn, startSignIn } from '../../lib/auth';
+
+  async function run() {
+    const body = document.querySelector<HTMLElement>('[data-state]');
+    const status = document.querySelector<HTMLElement>('[data-status]');
+    const fail = document.querySelector<HTMLElement>('[data-fail]');
+    const errorText = document.querySelector<HTMLElement>('[data-error-text]');
+    if (!body || !status || !fail || !errorText) return;
+
+    try {
+      const { returnTo } = await completeSignIn(new URLSearchParams(window.location.search));
+      status.textContent = 'Signed in. Redirecting';
+      // Drop the code from history so a refresh cannot replay a spent code.
+      window.location.replace(returnTo || '/dashboard');
+    } catch (err) {
+      body.dataset.state = 'failed';
+      errorText.textContent =
+        err instanceof Error ? err.message : 'Sign-in failed for an unknown reason.';
+      fail.hidden = false;
+    }
+
+    const retry = document.querySelector<HTMLButtonElement>('[data-retry]');
+    if (retry) {
+      retry.onclick = async () => {
+        retry.disabled = true;
+        try {
+          await startSignIn('/dashboard');
+        } catch (err) {
+          errorText.textContent =
+            err instanceof Error ? err.message : 'Could not restart sign-in.';
+          retry.disabled = false;
+        }
+      };
+    }
+  }
+
+  run();
 </script>

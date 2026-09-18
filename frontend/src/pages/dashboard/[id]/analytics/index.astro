@@ -1,4 +1,8 @@
 ---
+/**
+ * Pre-rendered analytics page for known poll ids. Kept so existing links and
+ * bookmarks keep resolving; /dashboard/analytics?id=<id> handles every other id.
+ */
 import RootLayout from '../../../../layouts/RootLayout.astro';
 import PollAnalytics from '../../../../components/dashboard/PollAnalytics';
 
@@ -15,20 +19,46 @@ export function getStaticPaths() {
 const { id } = Astro.params;
 ---
 
-<RootLayout title={`Poll Analytics — Polls Lab`}>
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-    <!-- Breadcrumb Nav -->
-    <div class="mb-8 flex items-center justify-between">
-      <div class="flex items-center gap-2 text-xs text-[#94a3b8]">
-        <a href="/dashboard" class="hover:text-white transition flex items-center gap-1">
-          <span>← Back to Dashboard</span>
-        </a>
-        <span>/</span>
-        <span class="text-white font-medium">Poll Analytics</span>
-      </div>
-      <span class="text-xs font-mono text-[#64748b]">v1.0 Telemetry</span>
-    </div>
+<RootLayout title="Poll analytics · Polls Lab" noindex>
+  <section class="shell an-page">
+    <nav class="crumbs" aria-label="Breadcrumb">
+      <a href="/dashboard">dashboard</a>
+      <span aria-hidden="true">/</span>
+      <span class="crumbs__here">analytics</span>
+    </nav>
 
-    <PollAnalytics client:load pollId={id || 'demo-frameworks'} />
-  </div>
+    <PollAnalytics client:load pollId={id ?? ''} />
+  </section>
 </RootLayout>
+
+<style>
+  .an-page {
+    padding-block: var(--space-2xl) var(--space-3xl);
+  }
+
+  .crumbs {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    font-size: var(--text-xs);
+    color: var(--color-ink-4);
+    margin-bottom: var(--space-lg);
+  }
+
+  .crumbs a {
+    color: var(--color-ink-3);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    min-height: 1.75rem;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .crumbs a:hover {
+    color: var(--color-accent);
+  }
+
+  .crumbs__here {
+    color: var(--color-ink-2);
+  }
+</style>

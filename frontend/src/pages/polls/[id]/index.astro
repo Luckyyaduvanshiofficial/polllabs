@@ -1,6 +1,13 @@
 ---
+/**
+ * Standalone poll page, pre-rendered for known ids. This is the link a badge
+ * points at, so it carries the share chrome that /embed deliberately omits.
+ *
+ * Ids created after the last build are served by /polls?id=<id> instead.
+ */
 import RootLayout from '../../../layouts/RootLayout.astro';
-import { getMarkdownBadgeSnippet, getIframeSnippet, getPollUrl } from '../../../lib/embed';
+import PollWidget from '../../../components/embed/PollWidget.svelte';
+import { DEMO_FRAMEWORKS_POLL } from '../../../lib/demo-poll';
 
 export function getStaticPaths() {
   return [
@@ -14,109 +21,157 @@ export function getStaticPaths() {
 }
 
 const { id } = Astro.params;
-const currentId = id || 'demo';
-const badgeSnippet = getMarkdownBadgeSnippet('Poll', currentId);
-const iframeSnippet = getIframeSnippet(currentId);
+const pollId = id ?? '';
+const initialPoll = pollId === DEMO_FRAMEWORKS_POLL.id ? DEMO_FRAMEWORKS_POLL : null;
 ---
 
-<RootLayout title={`Vote in Poll — Polls Lab`}>
-  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-8">
-    <!-- Breadcrumbs -->
-    <div class="flex items-center justify-between text-xs text-[#94a3b8] pb-4 border-b border-[#1e293b]">
-      <a href="/leaderboard" class="hover:text-white transition flex items-center gap-1">
-        <span>← Back to Leaderboards</span>
-      </a>
-      <span class="font-mono text-[#64748b]">ID: {currentId}</span>
-    </div>
-
-    <!-- Center: Interactive Voting Widget (Strict Multi-Framework Isolation) -->
-    <div class="max-w-md mx-auto">
-      <div class="bg-[#111827] border border-[#1e293b] rounded-2xl p-2 shadow-xl overflow-hidden min-h-[360px] flex items-center justify-center">
-        <iframe
-          src={`/embed?id=${currentId}`}
-          title={`Poll ${currentId}`}
-          class="w-full h-[360px] border-0 rounded-xl"
-          loading="lazy"
-        ></iframe>
+<RootLayout
+  title={`Poll ${pollId} · Polls Lab`}
+  description="Vote on this poll. Anonymous, one vote per device, no account required."
+>
+  <section class="shell page">
+    <div class="page__grid">
+      <div class="page__main">
+        <PollWidget client:load pollId={pollId} initialPoll={initialPoll} />
       </div>
-    </div>
 
-    <!-- Bottom Actions: Embed Snippets & Sharing -->
-    <div class="max-w-md mx-auto p-6 rounded-2xl bg-[#111827] border border-[#1e293b] space-y-4 shadow-xl text-xs">
-      <h3 class="font-semibold text-white text-sm">Embed This Poll in Your Content</h3>
-      <p class="text-[#94a3b8]">
-        Drop this poll into your GitHub repository or documentation site:
-      </p>
+      <aside class="page__side" aria-labelledby="embed-title">
+        <h2 id="embed-title" class="page__side-title">Embed this poll</h2>
 
-      <div class="space-y-3">
-        <div>
-          <label class="block font-medium text-[#94a3b8] mb-1">GitHub README (SVG Badge)</label>
-          <div class="flex gap-2">
-            <input
-              id="poll-badge-input"
-              readOnly
-              value={badgeSnippet}
-              class="flex-1 px-2.5 py-1.5 bg-[#0b0f19] border border-[#1e293b] rounded-lg font-mono text-[11px] text-emerald-300"
-            />
-            <button
-              id="copy-badge-btn"
-              type="button"
-              class="px-3 py-1.5 rounded-lg bg-[#1e293b] hover:bg-[#334155] text-white font-medium transition"
-            >
-              Copy
-            </button>
+        <div class="snip">
+          <p class="field-label">Markdown badge</p>
+          <div class="code">
+            <pre data-snippet={`[![Poll](API/api/v1/badges/${pollId}.svg)](SITE/polls/${pollId})`}><code
+            ></code></pre>
           </div>
+          <button type="button" class="btn btn--quiet" data-copy>copy</button>
         </div>
 
-        <div>
-          <label class="block font-medium text-[#94a3b8] mb-1">Interactive Iframe (HTML)</label>
-          <div class="flex gap-2">
-            <input
-              id="poll-iframe-input"
-              readOnly
-              value={iframeSnippet}
-              class="flex-1 px-2.5 py-1.5 bg-[#0b0f19] border border-[#1e293b] rounded-lg font-mono text-[11px] text-cyan-300"
-            />
-            <button
-              id="copy-iframe-btn"
-              type="button"
-              class="px-3 py-1.5 rounded-lg bg-[#1e293b] hover:bg-[#334155] text-white font-medium transition"
-            >
-              Copy
-            </button>
+        <div class="snip">
+          <p class="field-label">Iframe</p>
+          <div class="code">
+            <pre
+              data-snippet={`<iframe src="SITE/embed?id=${pollId}" width="100%" height="380" style="border:0" loading="lazy"></iframe>`}><code
+            ></code></pre>
           </div>
+          <button type="button" class="btn btn--quiet" data-copy>copy</button>
         </div>
-      </div>
+
+        <p class="page__note">
+          The badge is a live image: it re-renders on every load, so a README shows current results
+          without a rebuild.
+        </p>
+      </aside>
     </div>
-  </div>
+  </section>
 </RootLayout>
 
+<style>
+  .page {
+    padding-block: var(--space-2xl) var(--space-3xl);
+  }
+
+  .page__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+    gap: var(--space-3xl);
+    align-items: start;
+  }
+
+  .page__main {
+    min-width: 0;
+  }
+
+  .page__side {
+    min-width: 0;
+    display: grid;
+    gap: var(--space-lg);
+    padding-left: var(--space-lg);
+    border-left: var(--rule-hair) solid var(--color-rule);
+  }
+
+  .page__side-title {
+    font-size: var(--text-sm);
+    color: var(--color-ink);
+  }
+
+  .snip {
+    display: grid;
+    gap: var(--space-xs);
+    justify-items: start;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .snip .code {
+    width: 100%;
+  }
+
+  .snip pre {
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+
+  .page__note {
+    font-size: var(--text-xs);
+    color: var(--color-ink-3);
+    line-height: 1.7;
+  }
+
+  @media (max-width: 60rem) {
+    .page__grid {
+      grid-template-columns: minmax(0, 1fr);
+      gap: var(--space-xl);
+    }
+
+    .page__side {
+      padding-left: 0;
+      border-left: none;
+      padding-top: var(--space-lg);
+      border-top: var(--rule-hair) solid var(--color-rule);
+    }
+  }
+</style>
+
 <script>
-  function setupPollPage() {
-    const copyBadgeBtn = document.getElementById('copy-badge-btn');
-    const badgeInput = document.getElementById('poll-badge-input') as HTMLInputElement | null;
-    const copyIframeBtn = document.getElementById('copy-iframe-btn');
-    const iframeInput = document.getElementById('poll-iframe-input') as HTMLInputElement | null;
+  import { getApiUrl, getSiteUrl } from '../../../lib/config';
 
-    copyBadgeBtn?.addEventListener('click', () => {
-      if (badgeInput) {
-        navigator.clipboard.writeText(badgeInput.value).then(() => {
-          copyBadgeBtn.textContent = '✓ Copied';
-          setTimeout(() => { copyBadgeBtn.textContent = 'Copy'; }, 2000);
-        });
-      }
-    });
-
-    copyIframeBtn?.addEventListener('click', () => {
-      if (iframeInput) {
-        navigator.clipboard.writeText(iframeInput.value).then(() => {
-          copyIframeBtn.textContent = '✓ Copied';
-          setTimeout(() => { copyIframeBtn.textContent = 'Copy'; }, 2000);
-        });
-      }
+  function resolve() {
+    const api = getApiUrl();
+    const site = getSiteUrl();
+    document.querySelectorAll<HTMLElement>('pre[data-snippet]').forEach((pre) => {
+      const resolved = (pre.dataset.snippet ?? '').replaceAll('API', api).replaceAll('SITE', site);
+      pre.dataset.resolved = resolved;
+      const code = pre.querySelector('code');
+      if (code) code.textContent = resolved;
     });
   }
 
-  setupPollPage();
-  document.addEventListener('astro:page-load', setupPollPage);
+  function wireCopy() {
+    document.querySelectorAll<HTMLButtonElement>('[data-copy]').forEach((btn) => {
+      btn.onclick = async () => {
+        const pre = btn.parentElement?.querySelector<HTMLElement>('pre[data-snippet]');
+        const text = pre?.dataset.resolved ?? '';
+        if (!text) return;
+        const label = btn.textContent;
+        try {
+          await navigator.clipboard.writeText(text);
+          btn.textContent = 'copied';
+        } catch {
+          btn.textContent = 'copy failed';
+        }
+        window.setTimeout(() => {
+          btn.textContent = label;
+        }, 1600);
+      };
+    });
+  }
+
+  function init() {
+    resolve();
+    wireCopy();
+  }
+
+  init();
+  document.addEventListener('astro:page-load', init);
 </script>

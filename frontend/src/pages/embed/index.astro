@@ -1,4 +1,11 @@
 ---
+/**
+ * Bare iframe target: /embed?id=<poll-id>.
+ *
+ * Deliberately no nav, footer or page chrome. The background stays transparent
+ * so the widget inherits the host page's surface, and the poll's own appearance
+ * settings drive its colours.
+ */
 import PollWidget from '../../components/embed/PollWidget.svelte';
 import '../../styles/global.css';
 ---
@@ -8,9 +15,20 @@ import '../../styles/global.css';
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Polls Lab Embed</title>
+    <meta name="robots" content="noindex" />
+    <title>Poll</title>
+    <style>
+      html,
+      body {
+        background: transparent;
+        min-height: 0;
+        display: block;
+        margin: 0;
+        padding: 0.5rem;
+      }
+    </style>
   </head>
-  <body class="bg-transparent m-0 p-2 flex items-center justify-center min-h-screen">
+  <body>
     <PollWidget client:load />
   </body>
 </html>

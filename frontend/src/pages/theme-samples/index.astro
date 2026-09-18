@@ -1,478 +1,217 @@
 ---
-// Hallmark theme sampler — SCRATCH preview, not production.
-// One poll, eight themes. Delete after the user picks a direction.
-// Does not import global.css or RootLayout — fully self-contained.
-const poll = {
-  question: "Which embed fits your README?",
+/**
+ * Poll theme reference. Renders the same poll under each of the five
+ * appearance themes the API actually supports, so a creator can see what
+ * `appearance.theme` does before choosing one.
+ *
+ * This replaces an earlier scratch sampler that previewed site design
+ * directions rather than product themes.
+ */
+import RootLayout from '../../layouts/RootLayout.astro';
+import PollWidget from '../../components/embed/PollWidget.svelte';
+import type { DemoPoll } from '../../lib/demo-poll';
+
+const basePoll: DemoPoll = {
+  id: 'theme-preview',
+  title: 'Which embed fits your README?',
+  description: 'A preview poll. Voting is disabled on this page.',
+  visibility: 'public',
+  result_display: 'show_counts',
+  owner: 'polls-lab',
+  total_votes: 255,
   options: [
-    { label: "SVG badge", votes: 128 },
-    { label: "iframe widget", votes: 86 },
-    { label: "PNG badge", votes: 41 },
+    { id: 'o1', text: 'SVG badge', vote_count: 128, percentage: 50.2 },
+    { id: 'o2', text: 'Interactive iframe', vote_count: 86, percentage: 33.7 },
+    { id: 'o3', text: 'PNG badge', vote_count: 41, percentage: 16.1 },
   ],
 };
-const total = poll.options.reduce((n, o) => n + o.votes, 0);
+
 const themes = [
-  { id: "t-newsprint", name: "01 · Newsprint editorial", axes: "light paper · roman serif · warm red accent" },
-  { id: "t-terminal", name: "02 · Brutalist terminal", axes: "dark paper · mono · phosphor green accent" },
-  { id: "t-ballot", name: "03 · Playful ballot-box", axes: "warm paper · rounded sans · orange accent" },
-  { id: "t-austere", name: "04 · Technical austere", axes: "near-white paper · grotesk sans · blue accent" },
-  { id: "t-midnight", name: "05 · Midnight atmospheric", axes: "dark indigo paper · bold sans · violet accent" },
-  { id: "t-riso", name: "06 · Riso print", axes: "cream paper · heavy sans · red + blue misregistration" },
-  { id: "t-sport", name: "07 · Sport condensed", axes: "white paper · uppercase condensed · volt accent" },
-  { id: "t-coral", name: "08 · Coral minimal", axes: "cool light paper · tight sans · coral accent" },
-];
+  {
+    id: 'minimal',
+    name: 'minimal',
+    note: 'The default. Neutral surface, single accent, list layout.',
+    layout: 'list',
+  },
+  {
+    id: 'whatsapp',
+    name: 'whatsapp',
+    note: 'Chat-bubble surface with a green accent, for messaging contexts.',
+    layout: 'list',
+  },
+  {
+    id: 'telegram',
+    name: 'telegram',
+    note: 'Light card with a blue accent and tighter rows.',
+    layout: 'list',
+  },
+  {
+    id: 'story',
+    name: 'story',
+    note: 'Sticker-style card sized for vertical screenshots.',
+    layout: 'list',
+  },
+  {
+    id: 'youtube-grid',
+    name: 'youtube-grid',
+    note: 'Tiled layout for options that carry images.',
+    layout: 'grid',
+  },
+] as const;
 ---
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Polls Lab · Theme sampler (pick one)</title>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link
-  href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,650&family=Plus+Jakarta+Sans:wght@500;700;800&family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap"
-  rel="stylesheet"
-/>
-<style is:global>
-/* Hallmark · pre-emit critique: P5 H4 E5 S4 R5 V5 · unscoped: sampler owns its tokens */
-*, *::before, *::after { box-sizing: border-box; }
-html, body { margin: 0; padding: 0; overflow-x: clip; }
-body {
-  background: oklch(30% 0.01 250);
-  color: oklch(95% 0.01 100);
-  font-family: "Inter", system-ui, sans-serif;
-  padding: 40px 16px 64px;
-}
-.sampler-head { max-width: 880px; margin: 0 auto 28px; }
-.sampler-head h1 { font-size: clamp(1.6rem, 4vw, 2.4rem); font-weight: 700; margin: 0 0 8px; font-style: normal; }
-.sampler-head p { margin: 0; opacity: 0.75; font-size: 1rem; }
-.sample { max-width: 880px; margin: 0 auto 24px; border-radius: 12px; overflow: hidden; }
-.sample-tag { padding: 12px 20px; font-family: "JetBrains Mono", monospace; font-size: 0.8rem; }
-.sample-tag strong { display: block; font-size: 0.95rem; }
-.sample-tag span { opacity: 0.7; }
 
-/* ————— Theme 01 · Newsprint ————— */
-.t-newsprint {
-  --paper: oklch(96% 0.012 100);
-  --ink: oklch(22% 0.02 60);
-  --ink-2: oklch(42% 0.03 70);
-  --rule: oklch(82% 0.025 95);
-  --accent: oklch(48% 0.16 30);
-  --font-display: "Newsreader", Georgia, serif;
-  --font-body: "Inter", system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", monospace;
-  background: var(--paper); color: var(--ink);
-}
-.t-newsprint .poll { font-family: var(--font-body); padding: 28px clamp(20px, 4vw, 44px); border-top: 3px double var(--ink); }
-.t-newsprint .kicker { font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-2); margin: 0 0 10px; }
-.t-newsprint h2 { font-family: var(--font-display); font-weight: 650; font-style: normal; font-size: clamp(1.5rem, 3.4vw, 2.1rem); line-height: 1.1; margin: 0 0 20px; overflow-wrap: anywhere; }
-.t-newsprint .opt { border-top: 1px solid var(--rule); padding: 12px 0; }
-.t-newsprint .opt-row { display: flex; justify-content: space-between; gap: 12px; font-size: 0.98rem; margin-bottom: 6px; }
-.t-newsprint .count { font-family: var(--font-mono); font-size: 0.85rem; color: var(--ink-2); white-space: nowrap; }
-.t-newsprint .bar { height: 8px; background: var(--rule); }
-.t-newsprint .bar i { display: block; height: 100%; background: var(--accent); }
-.t-newsprint .opt:first-of-type .bar i { background: var(--ink); }
-.t-newsprint .actions { display: flex; gap: 12px; align-items: center; margin-top: 20px; flex-wrap: wrap; }
-.t-newsprint .btn { font-family: var(--font-body); font-weight: 600; font-size: 0.92rem; background: var(--accent); color: oklch(98% 0.01 40); border: none; padding: 10px 22px; cursor: pointer; }
-.t-newsprint .btn:hover { background: oklch(42% 0.16 30); }
-.t-newsprint .btn:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
-.t-newsprint .btn:active { transform: translateY(1px); }
-.t-newsprint .meta { font-family: var(--font-mono); font-size: 0.75rem; color: var(--ink-2); }
+<RootLayout
+  title="Poll themes · Polls Lab"
+  description="The five built-in poll appearance themes, each rendered with the same poll so you can compare them."
+>
+  <section class="shell themes">
+    <header class="themes__head">
+      <h1 class="themes__title">Poll themes</h1>
+      <p class="themes__lede">
+        Every poll carries its own appearance. Pick a preset in the creator, then override the
+        background, accent, ink, corners, font and layout individually. The same poll is rendered
+        below under each preset.
+      </p>
+      <p class="themes__note">
+        Set these under <code>appearance.theme</code> when creating a poll through the API, or with
+        the theme picker in the creator.
+      </p>
+    </header>
 
-/* ————— Theme 02 · Brutalist terminal ————— */
-.t-terminal {
-  --paper: oklch(20% 0.012 120);
-  --ink: oklch(92% 0.02 120);
-  --dim: oklch(65% 0.03 120);
-  --accent: oklch(74% 0.2 145);
-  --font-mono: "JetBrains Mono", monospace;
-  background: var(--paper); color: var(--ink);
-  border: 2px solid var(--ink);
-}
-.t-terminal .poll { font-family: var(--font-mono); padding: 24px clamp(18px, 4vw, 36px); }
-.t-terminal .kicker { font-size: 0.72rem; color: var(--dim); margin: 0 0 12px; }
-.t-terminal .kicker::before { content: "> "; color: var(--accent); }
-.t-terminal h2 { font-weight: 700; font-style: normal; font-size: clamp(1.15rem, 3vw, 1.6rem); margin: 0 0 20px; overflow-wrap: anywhere; }
-.t-terminal .opt { border: 1px solid var(--ink); padding: 10px 12px; margin-bottom: 10px; }
-.t-terminal .opt-row { display: flex; justify-content: space-between; gap: 12px; font-size: 0.88rem; margin-bottom: 8px; }
-.t-terminal .count { color: var(--accent); white-space: nowrap; }
-.t-terminal .bar { height: 10px; border: 1px solid var(--dim); }
-.t-terminal .bar i { display: block; height: 100%; background: var(--accent); }
-.t-terminal .opt:not(:first-of-type) .bar i { background: var(--dim); }
-.t-terminal .actions { display: flex; gap: 12px; align-items: center; margin-top: 18px; flex-wrap: wrap; }
-.t-terminal .btn { font-family: var(--font-mono); font-weight: 700; font-size: 0.85rem; background: var(--accent); color: oklch(18% 0.01 120); border: none; padding: 10px 20px; cursor: pointer; }
-.t-terminal .btn:hover { background: oklch(80% 0.2 145); }
-.t-terminal .btn:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
-.t-terminal .btn:active { transform: translateY(1px); }
-.t-terminal .meta { font-size: 0.72rem; color: var(--dim); }
+    <div class="themes__list">
+      {
+        themes.map((theme) => (
+          <article class="sample" aria-labelledby={`theme-${theme.id}`}>
+            <header class="sample__head">
+              <h2 id={`theme-${theme.id}`} class="sample__name">
+                <code>{theme.id}</code>
+              </h2>
+              <p class="sample__note">{theme.note}</p>
+              <p class="sample__meta">layout: {theme.layout}</p>
+            </header>
 
-/* ————— Theme 03 · Playful ballot-box ————— */
-.t-ballot {
-  --paper: oklch(94% 0.035 85);
-  --ink: oklch(28% 0.045 60);
-  --ink-2: oklch(48% 0.04 65);
-  --card: oklch(99% 0.015 90);
-  --accent: oklch(60% 0.18 55);
-  --font-display: "Plus Jakarta Sans", system-ui, sans-serif;
-  --font-body: "Plus Jakarta Sans", system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", monospace;
-  background: var(--paper); color: var(--ink);
-}
-.t-ballot .poll { font-family: var(--font-body); padding: 28px clamp(20px, 4vw, 40px); }
-.t-ballot .kicker { display: inline-block; font-size: 0.75rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; background: var(--ink); color: var(--paper); border-radius: 999px; padding: 5px 14px; margin: 0 0 14px; }
-.t-ballot h2 { font-weight: 800; font-style: normal; font-size: clamp(1.4rem, 3.4vw, 2rem); line-height: 1.12; margin: 0 0 20px; overflow-wrap: anywhere; }
-.t-ballot .opt { background: var(--card); border: 2px solid var(--ink); border-radius: 16px; padding: 12px 16px; margin-bottom: 10px; }
-.t-ballot .opt-row { display: flex; justify-content: space-between; gap: 12px; font-weight: 700; font-size: 0.95rem; margin-bottom: 8px; }
-.t-ballot .count { font-family: var(--font-mono); font-size: 0.8rem; font-weight: 500; color: var(--ink-2); white-space: nowrap; }
-.t-ballot .bar { height: 10px; background: oklch(88% 0.03 85); border-radius: 999px; overflow: hidden; }
-.t-ballot .bar i { display: block; height: 100%; background: var(--accent); border-radius: 999px; }
-.t-ballot .actions { display: flex; gap: 12px; align-items: center; margin-top: 20px; flex-wrap: wrap; }
-.t-ballot .btn { font-family: var(--font-body); font-weight: 800; font-size: 0.92rem; background: var(--accent); color: oklch(100% 0 0); border: 2px solid var(--ink); border-radius: 999px; padding: 10px 26px; cursor: pointer; box-shadow: 3px 3px 0 var(--ink); }
-.t-ballot .btn:hover { transform: translate(-1px, -1px); box-shadow: 4px 4px 0 var(--ink); }
-.t-ballot .btn:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
-.t-ballot .btn:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
-.t-ballot .meta { font-family: var(--font-mono); font-size: 0.75rem; color: var(--ink-2); }
+            <div class="sample__frame">
+              <PollWidget
+                client:visible
+                pollId=""
+                initialPoll={{
+                  ...basePoll,
+                  id: `${basePoll.id}-${theme.id}`,
+                  appearance: {
+                    theme: theme.id,
+                    layout: theme.layout,
+                    radius: 'rounded',
+                    font: 'system',
+                    effect: 'none',
+                  },
+                }}
+              />
+            </div>
+          </article>
+        ))
+      }
+    </div>
 
-/* ————— Theme 04 · Technical austere ————— */
-.t-austere {
-  --paper: oklch(98% 0 0);
-  --ink: oklch(25% 0 0);
-  --ink-2: oklch(50% 0 0);
-  --rule: oklch(88% 0 0);
-  --accent: oklch(55% 0.12 250);
-  --font-display: "Inter", system-ui, sans-serif;
-  --font-body: "Inter", system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", monospace;
-  background: var(--paper); color: var(--ink);
-}
-.t-austere .poll { font-family: var(--font-body); padding: 24px clamp(20px, 4vw, 40px); }
-.t-austere .kicker { font-family: var(--font-mono); font-size: 0.72rem; color: var(--ink-2); margin: 0 0 8px; }
-.t-austere h2 { font-weight: 600; font-style: normal; font-size: clamp(1.2rem, 2.8vw, 1.6rem); letter-spacing: -0.01em; margin: 0 0 4px; overflow-wrap: anywhere; }
-.t-austere .sub { font-size: 0.88rem; color: var(--ink-2); margin: 0 0 18px; }
-.t-austere .opt { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; padding: 10px 0; border-top: 1px solid var(--rule); font-size: 0.92rem; }
-.t-austere .opt:last-of-type { border-bottom: 1px solid var(--rule); }
-.t-austere .pct { font-family: var(--font-mono); font-size: 0.8rem; color: var(--ink-2); white-space: nowrap; }
-.t-austere .bar { grid-column: 1 / -1; height: 3px; background: var(--rule); }
-.t-austere .bar i { display: block; height: 100%; background: var(--ink); }
-.t-austere .opt:first-of-type .bar i { background: var(--accent); }
-.t-austere .actions { display: flex; gap: 10px; align-items: center; margin-top: 18px; flex-wrap: wrap; }
-.t-austere .btn { font-family: var(--font-body); font-weight: 600; font-size: 0.86rem; background: var(--ink); color: var(--paper); border: 1px solid var(--ink); border-radius: 6px; padding: 8px 18px; cursor: pointer; }
-.t-austere .btn:hover { background: oklch(32% 0 0); }
-.t-austere .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.t-austere .btn:active { transform: translateY(1px); }
-.t-austere .btn-ghost { background: transparent; color: var(--ink); border-color: var(--rule); }
-.t-austere .btn-ghost:hover { border-color: var(--ink); background: transparent; }
-.t-austere .meta { font-family: var(--font-mono); font-size: 0.72rem; color: var(--ink-2); }
+    <footer class="themes__foot rule-top">
+      <p class="themes__foot-text">
+        Ready to pick one? The creator shows a live preview as you change the theme and colours.
+      </p>
+      <a href="/dashboard/create" class="btn btn--primary">Create a poll</a>
+    </footer>
+  </section>
+</RootLayout>
 
-/* ————— Theme 05 · Midnight atmospheric ————— */
-.t-midnight {
-  --paper: oklch(24% 0.05 275);
-  --ink: oklch(94% 0.015 280);
-  --dim: oklch(68% 0.05 280);
-  --accent: oklch(70% 0.17 305);
-  --font-display: "Plus Jakarta Sans", system-ui, sans-serif;
-  --font-body: "Inter", system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", monospace;
-  background: var(--paper); color: var(--ink);
-}
-.t-midnight .poll { font-family: var(--font-body); padding: 32px clamp(20px, 5vw, 52px); }
-.t-midnight .kicker { font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); margin: 0 0 14px; }
-.t-midnight h2 { font-family: var(--font-display); font-weight: 800; font-style: normal; font-size: clamp(1.9rem, 5vw, 3rem); line-height: 1.02; letter-spacing: -0.02em; margin: 0 0 24px; overflow-wrap: anywhere; }
-.t-midnight .opt { padding: 12px 0; border-top: 1px solid oklch(35% 0.05 275); }
-.t-midnight .opt-row { display: flex; justify-content: space-between; gap: 12px; font-size: 0.95rem; margin-bottom: 8px; }
-.t-midnight .count { font-family: var(--font-mono); font-size: 0.8rem; color: var(--dim); white-space: nowrap; }
-.t-midnight .bar { height: 6px; background: oklch(32% 0.05 275); border-radius: 999px; overflow: hidden; }
-.t-midnight .bar i { display: block; height: 100%; background: var(--accent); }
-.t-midnight .opt:first-of-type .bar i { background: var(--ink); }
-.t-midnight .actions { display: flex; gap: 12px; align-items: center; margin-top: 24px; flex-wrap: wrap; }
-.t-midnight .btn { font-family: var(--font-body); font-weight: 700; font-size: 0.9rem; background: var(--accent); color: oklch(20% 0.03 300); border: none; border-radius: 8px; padding: 11px 26px; cursor: pointer; }
-.t-midnight .btn:hover { background: oklch(76% 0.17 305); }
-.t-midnight .btn:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
-.t-midnight .btn:active { transform: translateY(1px); }
-.t-midnight .meta { font-family: var(--font-mono); font-size: 0.72rem; color: var(--dim); }
-
-/* ————— Theme 06 · Riso print ————— */
-.t-riso {
-  --paper: oklch(95% 0.025 95);
-  --ink: oklch(24% 0.03 25);
-  --red: oklch(55% 0.22 25);
-  --blue: oklch(55% 0.14 260);
-  --font-display: "Plus Jakarta Sans", system-ui, sans-serif;
-  --font-body: "Inter", system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", monospace;
-  background: var(--paper); color: var(--ink);
-}
-.t-riso .poll { font-family: var(--font-body); padding: 28px clamp(20px, 4vw, 40px); position: relative; }
-.t-riso .stamp { position: absolute; top: 18px; right: 18px; font-family: var(--font-mono); font-size: 0.68rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; background: var(--blue); color: oklch(98% 0.01 260); padding: 6px 12px; transform: rotate(6deg); }
-.t-riso .kicker { font-family: var(--font-mono); font-size: 0.72rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--red); margin: 0 0 10px; }
-.t-riso h2 { font-family: var(--font-display); font-weight: 800; font-style: normal; font-size: clamp(1.6rem, 4vw, 2.4rem); line-height: 1.05; margin: 0 0 22px; overflow-wrap: anywhere; text-shadow: 3px 3px 0 oklch(75% 0.12 260); }
-.t-riso .opt { border: 2px solid var(--ink); padding: 10px 14px; margin-bottom: 10px; background: oklch(99% 0.01 95); box-shadow: 4px 4px 0 var(--blue); }
-.t-riso .opt-row { display: flex; justify-content: space-between; gap: 12px; font-weight: 700; font-size: 0.92rem; margin-bottom: 8px; }
-.t-riso .count { font-family: var(--font-mono); font-size: 0.78rem; font-weight: 400; white-space: nowrap; }
-.t-riso .bar { height: 12px; background: oklch(88% 0.03 95); border: 1px solid var(--ink); }
-.t-riso .bar i { display: block; height: 100%; background: var(--red); }
-.t-riso .actions { display: flex; gap: 12px; align-items: center; margin-top: 20px; flex-wrap: wrap; }
-.t-riso .btn { font-family: var(--font-body); font-weight: 800; font-size: 0.9rem; background: var(--red); color: oklch(99% 0.01 40); border: 2px solid var(--ink); padding: 10px 24px; cursor: pointer; box-shadow: 4px 4px 0 var(--ink); }
-.t-riso .btn:hover { transform: translate(-1px, -1px); box-shadow: 5px 5px 0 var(--ink); }
-.t-riso .btn:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
-.t-riso .btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--ink); }
-.t-riso .meta { font-family: var(--font-mono); font-size: 0.72rem; }
-
-/* ————— Theme 07 · Sport condensed ————— */
-.t-sport {
-  --paper: oklch(98% 0 0);
-  --ink: oklch(16% 0 0);
-  --dim: oklch(52% 0 0);
-  --volt: oklch(86% 0.2 130);
-  --font-display: "Oswald", "Inter", sans-serif;
-  --font-body: "Inter", system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", monospace;
-  background: var(--paper); color: var(--ink);
-}
-.t-sport .poll { font-family: var(--font-body); padding: 26px clamp(20px, 4vw, 40px); border-top: 6px solid var(--ink); }
-.t-sport .kicker { font-family: var(--font-display); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase; color: var(--dim); margin: 0 0 8px; }
-.t-sport h2 { font-family: var(--font-display); font-weight: 700; font-style: normal; font-size: clamp(2rem, 6vw, 3.2rem); line-height: 0.98; text-transform: uppercase; margin: 0 0 20px; overflow-wrap: anywhere; }
-.t-sport .opt { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 2px 16px; padding: 12px 0; border-top: 2px solid var(--ink); }
-.t-sport .num { grid-row: span 2; font-family: var(--font-display); font-weight: 700; font-size: 1.9rem; line-height: 1; }
-.t-sport .opt:first-of-type .num { background: var(--volt); padding: 0 8px; }
-.t-sport .opt-row { display: flex; justify-content: space-between; gap: 12px; font-weight: 600; font-size: 0.95rem; }
-.t-sport .count { font-family: var(--font-mono); font-size: 0.78rem; color: var(--dim); white-space: nowrap; }
-.t-sport .bar { height: 8px; background: oklch(90% 0 0); margin-top: 6px; }
-.t-sport .bar i { display: block; height: 100%; background: var(--ink); }
-.t-sport .opt:first-of-type .bar i { background: oklch(60% 0.18 130); }
-.t-sport .actions { display: flex; gap: 12px; align-items: center; margin-top: 22px; flex-wrap: wrap; }
-.t-sport .btn { font-family: var(--font-display); font-weight: 600; font-size: 0.95rem; letter-spacing: 0.12em; text-transform: uppercase; background: var(--ink); color: var(--paper); border: none; padding: 12px 30px; cursor: pointer; }
-.t-sport .btn:hover { background: oklch(60% 0.18 130); color: var(--ink); }
-.t-sport .btn:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
-.t-sport .btn:active { transform: translateY(1px); }
-.t-sport .meta { font-family: var(--font-mono); font-size: 0.72rem; color: var(--dim); }
-
-/* ————— Theme 08 · Coral minimal ————— */
-.t-coral {
-  --paper: oklch(97% 0.008 220);
-  --ink: oklch(24% 0.03 250);
-  --ink-2: oklch(52% 0.03 250);
-  --card: oklch(100% 0 0);
-  --rule: oklch(90% 0.015 240);
-  --accent: oklch(65% 0.17 35);
-  --font-display: "Inter", system-ui, sans-serif;
-  --font-body: "Inter", system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", monospace;
-  background: var(--paper); color: var(--ink);
-}
-.t-coral .poll { font-family: var(--font-body); padding: 28px clamp(20px, 4vw, 40px); }
-.t-coral .kicker { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-2); margin: 0 0 8px; }
-.t-coral h2 { font-weight: 700; font-style: normal; font-size: clamp(1.35rem, 3vw, 1.8rem); letter-spacing: -0.02em; margin: 0 0 20px; overflow-wrap: anywhere; }
-.t-coral .opt { background: var(--card); border: 1px solid var(--rule); border-radius: 12px; padding: 12px 16px; margin-bottom: 8px; }
-.t-coral .opt:first-of-type { border-color: var(--accent); }
-.t-coral .opt-row { display: flex; justify-content: space-between; gap: 12px; font-weight: 600; font-size: 0.92rem; margin-bottom: 8px; }
-.t-coral .count { font-family: var(--font-mono); font-size: 0.78rem; font-weight: 400; color: var(--ink-2); white-space: nowrap; }
-.t-coral .bar { height: 6px; background: var(--rule); border-radius: 999px; overflow: hidden; }
-.t-coral .bar i { display: block; height: 100%; background: var(--accent); border-radius: 999px; }
-.t-coral .opt:not(:first-of-type) .bar i { background: oklch(70% 0.05 250); }
-.t-coral .actions { display: flex; gap: 10px; align-items: center; margin-top: 20px; flex-wrap: wrap; }
-.t-coral .btn { font-family: var(--font-body); font-weight: 600; font-size: 0.88rem; background: var(--ink); color: var(--paper); border: none; border-radius: 999px; padding: 10px 24px; cursor: pointer; }
-.t-coral .btn:hover { background: var(--accent); }
-.t-coral .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.t-coral .btn:active { transform: translateY(1px); }
-.t-coral .meta { font-size: 0.8rem; color: var(--ink-2); }
-
-/* ————— Section B · README-ready embeds (theme-agnostic) ————— */
-.embed-head { margin-top: 56px; }
-.embed-head code { font-family: "JetBrains Mono", monospace; font-size: 0.85em; }
-.embed-sample {
-  --e-bg: oklch(100% 0 0);
-  --e-ink: oklch(25% 0.02 250);
-  --e-muted: oklch(50% 0.02 250);
-  --e-line: oklch(88% 0.01 250);
-  --e-fill: oklch(30% 0.03 250);
-  --e-accent: oklch(55% 0.14 250);
-  max-width: 880px; margin: 0 auto 24px; border-radius: 12px; overflow: hidden;
-  background: var(--e-bg); color: var(--e-ink);
-  border: 1px solid var(--e-line);
-  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-}
-@media (prefers-color-scheme: dark) {
-  .embed-sample {
-    --e-bg: oklch(22% 0.02 250);
-    --e-ink: oklch(93% 0.01 250);
-    --e-muted: oklch(70% 0.02 250);
-    --e-line: oklch(33% 0.02 250);
-    --e-fill: oklch(90% 0.01 250);
-    --e-accent: oklch(75% 0.12 250);
+<style>
+  .themes {
+    padding-block: var(--space-2xl) var(--space-3xl);
   }
-}
-.embed-sample .sample-tag { border-bottom: 1px solid var(--e-line); }
-.embed-sample .e-body { padding: 22px clamp(18px, 4vw, 32px); }
-.embed-sample .e-q { font-weight: 650; font-style: normal; font-size: 1.05rem; margin: 0 0 16px; overflow-wrap: anywhere; }
-.embed-sample .e-meta { font-size: 0.8rem; color: var(--e-muted); margin: 14px 0 0; }
-.embed-sample a { color: inherit; }
-.e-badge .badges { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
-.e-badge .badge { display: inline-flex; font-size: 0.75rem; font-family: "JetBrains Mono", monospace; border-radius: 4px; overflow: hidden; }
-.e-badge .b-left { background: oklch(35% 0.02 250); color: oklch(97% 0 0); padding: 4px 8px; }
-.e-badge .b-right { background: var(--e-line); color: var(--e-ink); padding: 4px 8px; }
-.e-badge .snippet { display: block; font-family: "JetBrains Mono", monospace; font-size: 0.72rem; color: var(--e-muted); background: transparent; border: 1px dashed var(--e-line); border-radius: 8px; padding: 10px 12px; overflow-x: auto; white-space: nowrap; }
-.e-adaptive .e-row { margin-bottom: 12px; }
-.e-adaptive .e-row-top { display: flex; justify-content: space-between; gap: 12px; font-size: 0.9rem; margin-bottom: 6px; }
-.e-adaptive .e-count { font-family: "JetBrains Mono", monospace; font-size: 0.78rem; color: var(--e-muted); }
-.e-adaptive .e-bar { height: 8px; background: var(--e-line); border-radius: 999px; overflow: hidden; }
-.e-adaptive .e-bar i { display: block; height: 100%; background: var(--e-fill); }
-.e-adaptive .e-row:first-of-type .e-bar i { background: var(--e-accent); }
-.e-card .e-card { border: 1px solid currentColor; border-radius: 10px; padding: 18px clamp(14px, 3vw, 24px); }
-.e-card .e-votes { display: flex; gap: 8px; flex-wrap: wrap; }
-.e-card .e-btn { font: inherit; font-size: 0.85rem; font-weight: 600; background: transparent; color: inherit; border: 1px solid currentColor; border-radius: 999px; padding: 8px 16px; cursor: pointer; }
-.e-card .e-btn span { font-family: "JetBrains Mono", monospace; font-weight: 400; font-size: 0.75rem; opacity: 0.7; }
-.e-card .e-btn:hover { background: var(--e-ink); color: var(--e-bg); border-color: var(--e-ink); }
-.e-card .e-btn:focus-visible { outline: 2px solid var(--e-accent); outline-offset: 2px; }
-.e-card .e-btn:active { transform: translateY(1px); }
-.e-row-embed .e-line { font-size: 0.9rem; margin: 0; overflow-wrap: anywhere; }
-.e-row-embed .e-line a { text-decoration: underline; text-underline-offset: 2px; }
 
-/* ————— Sample 13 · Story poll sticker ————— */
-.e-story { --story-navy: oklch(24% 0.06 260); }
-.e-story .story-stage { background: linear-gradient(120deg, oklch(78% 0.13 235), oklch(58% 0.12 255) 45%, oklch(78% 0.15 75)); border-radius: 10px; padding: 36px 20px; display: flex; flex-direction: column; align-items: center; gap: 14px; }
-.e-story .sticker { width: min(300px, 100%); background: oklch(100% 0 0); color: oklch(25% 0.02 260); border-radius: 22px; overflow: hidden; box-shadow: 0 12px 32px oklch(20% 0.05 260 / 35%); font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
-.e-story .sticker-q { background: var(--story-navy); color: oklch(100% 0 0); font-weight: 800; font-style: normal; text-align: center; letter-spacing: 0.04em; font-size: 0.92rem; margin: 0; padding: 14px 16px; }
-.e-story .sticker-options { padding: 12px; display: grid; gap: 8px; }
-.e-story .story-opt { position: relative; overflow: hidden; border: none; border-radius: 12px; background: oklch(93% 0.01 250); padding: 12px 14px; font: inherit; font-size: 0.85rem; font-weight: 500; text-align: left; cursor: pointer; }
-.e-story .story-opt span { position: relative; z-index: 1; }
-.e-story .story-opt i { position: absolute; inset: 0; width: 0; background: oklch(80% 0.12 250); transition: width 300ms ease-out; }
-.e-story .story-opt em { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-style: normal; font-weight: 700; font-size: 0.8rem; z-index: 1; }
-.e-story .story-opt:hover { background: oklch(89% 0.015 250); }
-.e-story .story-opt:focus-visible { outline: 2px solid var(--story-navy); outline-offset: 2px; }
-.e-story .story-hint { font-size: 0.72rem; color: oklch(100% 0 0 / 85%); margin: 0; font-family: "JetBrains Mono", monospace; }
+  .themes__title {
+    font-size: var(--text-2xl);
+  }
 
-@media (max-width: 560px) {
-  body { padding: 24px 10px 48px; }
-  .sample-tag { padding: 10px 14px; }
-}
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { transition: none; animation: none; }
-}
+  .themes__lede {
+    margin-top: var(--space-xs);
+    font-size: var(--text-sm);
+    color: var(--color-ink-2);
+    max-width: 68ch;
+    line-height: 1.7;
+  }
+
+  .themes__note {
+    margin-top: var(--space-sm);
+    font-size: var(--text-xs);
+    color: var(--color-ink-3);
+  }
+
+  .themes__note code,
+  .sample__name code {
+    color: var(--color-accent);
+  }
+
+  .themes__list {
+    margin-top: var(--space-2xl);
+    display: grid;
+    gap: var(--space-2xl);
+  }
+
+  .sample {
+    display: grid;
+    grid-template-columns: minmax(0, 18rem) minmax(0, 1fr);
+    gap: var(--space-xl);
+    align-items: start;
+    padding-top: var(--space-lg);
+    border-top: var(--rule-hair) solid var(--color-rule);
+  }
+
+  .sample__name {
+    font-size: var(--text-base);
+  }
+
+  .sample__note {
+    margin-top: var(--space-xs);
+    font-size: var(--text-xs);
+    color: var(--color-ink-3);
+    line-height: 1.7;
+  }
+
+  .sample__meta {
+    margin-top: var(--space-xs);
+    font-size: var(--text-2xs);
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    color: var(--color-ink-4);
+  }
+
+  /* A neutral mid surface so light and dark themes both read honestly. */
+  .sample__frame {
+    min-width: 0;
+    padding: var(--space-md);
+    background: var(--color-paper-3);
+    border: var(--rule-hair) solid var(--color-rule);
+    border-radius: var(--radius-md);
+  }
+
+  .themes__foot {
+    margin-top: var(--space-3xl);
+    padding-top: var(--space-xl);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-md);
+    flex-wrap: wrap;
+  }
+
+  .themes__foot-text {
+    font-size: var(--text-sm);
+    color: var(--color-ink-2);
+    max-width: 52ch;
+  }
+
+  @media (max-width: 60rem) {
+    .sample {
+      grid-template-columns: minmax(0, 1fr);
+      gap: var(--space-md);
+    }
+  }
 </style>
-</head>
-<body>
-<div class="sampler-head">
-<h1>Pick a direction — eight themes + four README embeds</h1>
-<p>Section A re-skins one poll card in eight token sets. Section B shows four neutral embeds built to merge into any README or site. No gradients, all OKLCH. Main site untouched.</p>
-</div>
-
-{themes.map((t) => (
-<div class="sample" key={t.id}>
-<div class={`sample-tag ${t.id}`}>
-<strong>{t.name}</strong>
-<span>{t.axes}</span>
-</div>
-<div class={t.id}>
-<div class="poll">
-{t.id === "t-riso" && <span class="stamp">Live results</span>}
-<p class="kicker">Live poll · /polls/demo</p>
-<h2>{poll.question}</h2>
-{t.id === "t-austere" && <p class="sub">{total} votes · closes in 3 days</p>}
-{poll.options.map((o, i) => (
-<div class="opt" key={o.label}>
-{t.id === "t-sport" && <span class="num">0{i + 1}</span>}
-<div class="opt-row"><span>{o.label}</span><span class="count">{o.votes} votes</span></div>
-{t.id !== "t-austere"
-? <div class="bar"><i style={{ width: `${Math.round((o.votes / total) * 100)}%` }} /></div>
-: <span class="pct">{Math.round((o.votes / total) * 100)}%</span>}
-{t.id === "t-austere" && (
-<div class="bar"><i style={{ width: `${Math.round((o.votes / total) * 100)}%` }} /></div>
-)}
-</div>
-))}
-<div class="actions">
-<button class="btn" type="button">Vote</button>
-{t.id === "t-austere" && <button class="btn btn-ghost" type="button">Copy badge snippet</button>}
-<span class="meta">{total} votes · 2.1k views</span>
-</div>
-</div>
-</div>
-</div>
-))}
-
-<div class="sampler-head embed-head">
-<h1>README-ready embeds — merge into any theme</h1>
-<p>Transparent or adaptive surfaces, system fonts, <code>prefers-color-scheme</code> aware. Paste into any README, blog, or site.</p>
-</div>
-
-<div class="embed-sample e-badge">
-<div class="sample-tag"><strong>09 · Badge strip</strong><span>shields-style pills + markdown snippet</span></div>
-<div class="e-body">
-<p class="e-q">Which embed fits your README?</p>
-<div class="badges">
-<span class="badge"><span class="b-left">poll</span><span class="b-right">SVG badge · 128</span></span>
-<span class="badge"><span class="b-left">votes</span><span class="b-right">255 total</span></span>
-<span class="badge"><span class="b-left">leader</span><span class="b-right">SVG badge 50%</span></span>
-</div>
-<code class="snippet">[![poll](https://api.polls-lab.dev/badges/demo.svg)](https://polls-lab.dev/polls/demo)</code>
-</div>
-</div>
-
-<div class="embed-sample e-adaptive">
-<div class="sample-tag"><strong>10 · Adaptive result bars</strong><span>follows host light/dark automatically</span></div>
-<div class="e-body">
-<p class="e-q">Which embed fits your README?</p>
-{poll.options.map((o) => (
-<div class="e-row" key={o.label}>
-<div class="e-row-top"><span>{o.label}</span><span class="e-count">{Math.round((o.votes / total) * 100)}%</span></div>
-<div class="e-bar"><i style={{ width: `${Math.round((o.votes / total) * 100)}%` }} /></div>
-</div>
-))}
-<p class="e-meta">{total} votes · updates live</p>
-</div>
-</div>
-
-<div class="embed-sample e-card">
-<div class="sample-tag"><strong>11 · Neutral vote card</strong><span>inherits host font, currentColor borders</span></div>
-<div class="e-body">
-<div class="e-card">
-<p class="e-q">Which embed fits your README?</p>
-<div class="e-votes">
-<button class="e-btn" type="button">SVG badge <span>128</span></button>
-<button class="e-btn" type="button">iframe widget <span>86</span></button>
-<button class="e-btn" type="button">PNG badge <span>41</span></button>
-</div>
-<p class="e-meta">One vote per device · <a href="#">view results</a></p>
-</div>
-</div>
-</div>
-
-<div class="embed-sample e-row-embed">
-<div class="sample-tag"><strong>12 · One-line vote row</strong><span>single line for changelogs and docs footers</span></div>
-<div class="e-body">
-<p class="e-line"><strong>Poll:</strong> Which embed fits your README? — <a href="#">SVG badge (128)</a> · <a href="#">iframe (86)</a> · <a href="#">PNG (41)</a> — <a href="#">vote →</a></p>
-</div>
-</div>
-
-<div class="embed-sample e-story">
-<div class="sample-tag"><strong>13 · Story poll sticker</strong><span>instagram-story DNA: gradient stage + sticker card, tap to vote</span></div>
-<div class="e-body story-stage">
-<div class="sticker">
-<p class="sticker-q">WHICH IS YOUR FAVORITE:</p>
-<div class="sticker-options">
-<button class="story-opt" type="button" data-votes="46"><i></i><span>Chicken Wings</span></button>
-<button class="story-opt" type="button" data-votes="27"><i></i><span>Chicken Tikka Masala</span></button>
-<button class="story-opt" type="button" data-votes="18"><i></i><span>Chicken Taco</span></button>
-<button class="story-opt" type="button" data-votes="9"><i></i><span>Butter Chicken</span></button>
-</div>
-</div>
-<p class="story-hint">tap an option — demo only</p>
-</div>
-</div>
-<script is:inline>
-document.querySelectorAll('.e-story .story-opt').forEach((btn) => {
-  btn.addEventListener('click', () => {
-    const wrap = btn.closest('.e-story');
-    if (wrap.dataset.voted) return;
-    wrap.dataset.voted = '1';
-    wrap.querySelectorAll('.story-opt').forEach((b) => {
-      b.querySelector('i').style.width = b.dataset.votes + '%';
-      b.insertAdjacentHTML('beforeend', '<em>' + b.dataset.votes + '%</em>');
-    });
-  });
-});
-</script>
-</body>
-</html>

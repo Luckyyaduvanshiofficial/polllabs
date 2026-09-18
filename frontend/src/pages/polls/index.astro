@@ -1,119 +1,437 @@
 ---
+/**
+ * Public poll index (13 Index-First): the page is the list. Doubles as the
+ * runtime resolver for /polls?id=<id>, which is how a poll created after the
+ * last build stays reachable from a static site.
+ */
 import RootLayout from '../../layouts/RootLayout.astro';
 ---
 
-<RootLayout title="View Poll — Polls Lab">
-  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-8">
-    <!-- Breadcrumbs -->
-    <div class="flex items-center justify-between text-xs text-[#94a3b8] pb-4 border-b border-[#1e293b]">
-      <a href="/leaderboard" class="hover:text-white transition flex items-center gap-1">
-        <span>← Back to Leaderboards</span>
-      </a>
-      <span class="font-mono text-[#64748b]" id="poll-id-display">Loading...</span>
-    </div>
+<RootLayout
+  title="Polls · Polls Lab"
+  description="Browse public polls on Polls Lab. Vote anonymously, no account required."
+>
+  <!-- Single-poll view, shown when ?id= is present. -->
+  <section class="shell one" data-single hidden>
+    <a href="/polls" class="one__back">&larr; all polls</a>
+    <div data-single-mount></div>
+  </section>
 
-    <!-- Center: Interactive Voting Widget (Strict Multi-Framework Isolation) -->
-    <div class="max-w-md mx-auto">
-      <div class="bg-[#111827] border border-[#1e293b] rounded-2xl p-2 shadow-xl overflow-hidden min-h-[360px] flex items-center justify-center">
-        <iframe
-          id="poll-iframe"
-          src="/embed?id=demo-frameworks"
-          title="Interactive Poll"
-          class="w-full h-[360px] border-0 rounded-xl"
-          loading="lazy"
-        ></iframe>
-      </div>
-    </div>
-
-    <!-- Bottom Actions: Embed Snippets & Sharing -->
-    <div class="max-w-md mx-auto p-6 rounded-2xl bg-[#111827] border border-[#1e293b] space-y-4 shadow-xl text-xs">
-      <h3 class="font-semibold text-white text-sm">Embed This Poll in Your Content</h3>
-      <p class="text-[#94a3b8]">
-        Drop this poll into your GitHub repository or documentation site:
+  <!-- Index view. -->
+  <section class="shell list" data-list>
+    <header class="list__head">
+      <h1 class="list__title">Public polls</h1>
+      <p class="list__lede">
+        Anyone can vote once per device. Results follow whatever the poll's owner chose to show.
       </p>
+    </header>
 
-      <div class="space-y-3">
-        <div>
-          <label class="block font-medium text-[#94a3b8] mb-1">GitHub README (SVG Badge)</label>
-          <div class="flex gap-2">
-            <input
-              id="poll-badge-input"
-              readOnly
-              value="Loading..."
-              class="flex-1 px-2.5 py-1.5 bg-[#0b0f19] border border-[#1e293b] rounded-lg font-mono text-[11px] text-emerald-300"
-            />
-            <button
-              id="copy-badge-btn"
-              type="button"
-              class="px-3 py-1.5 rounded-lg bg-[#1e293b] hover:bg-[#334155] text-white font-medium transition"
-            >
-              Copy
-            </button>
-          </div>
-        </div>
-
-        <div>
-          <label class="block font-medium text-[#94a3b8] mb-1">Interactive Iframe (HTML)</label>
-          <div class="flex gap-2">
-            <input
-              id="poll-iframe-input"
-              readOnly
-              value="Loading..."
-              class="flex-1 px-2.5 py-1.5 bg-[#0b0f19] border border-[#1e293b] rounded-lg font-mono text-[11px] text-cyan-300"
-            />
-            <button
-              id="copy-iframe-btn"
-              type="button"
-              class="px-3 py-1.5 rounded-lg bg-[#1e293b] hover:bg-[#334155] text-white font-medium transition"
-            >
-              Copy
-            </button>
-          </div>
-        </div>
-      </div>
+    <div class="list__toolbar">
+      <label class="sr-only" for="sort">Sort polls</label>
+      <select id="sort" class="input list__sort" data-sort>
+        <option value="-created">newest first</option>
+        <option value="created">oldest first</option>
+        <option value="-total_votes">most votes</option>
+        <option value="title">title A to Z</option>
+      </select>
+      <p class="list__count" data-count aria-live="polite"></p>
     </div>
-  </div>
+
+    <!-- Loading -->
+    <div class="rows" data-loading>
+      {
+        [0, 1, 2, 3, 4].map(() => (
+          <div class="row">
+            <div class="skeleton" style="height:0.9rem;width:38%"></div>
+            <div class="skeleton" style="height:0.7rem;width:8rem;margin-left:auto"></div>
+          </div>
+        ))
+      }
+    </div>
+
+    <!-- Error -->
+    <div class="state state--error" data-error hidden>
+      <p class="state__msg" data-error-text></p>
+      <button type="button" class="btn btn--ghost" data-retry>Try again</button>
+    </div>
+
+    <!-- Empty -->
+    <div class="state" data-empty hidden>
+      <p class="state__msg">No public polls yet.</p>
+      <p class="state__hint">
+        The first one takes about a minute to make, and you can embed it immediately.
+      </p>
+      <a href="/dashboard/create" class="btn btn--primary">Create the first poll</a>
+    </div>
+
+    <!-- Results -->
+    <ul class="rows polls" data-results hidden></ul>
+
+    <nav class="pager" data-pager hidden aria-label="Pagination">
+      <button type="button" class="btn btn--ghost" data-prev>&larr; previous</button>
+      <span class="pager__at" data-page-label></span>
+      <button type="button" class="btn btn--ghost" data-next>next &rarr;</button>
+    </nav>
+  </section>
 </RootLayout>
 
-<script>
-  import { getMarkdownBadgeSnippet, getIframeSnippet } from '../../lib/embed';
-
-  function initDynamicPoll() {
-    const params = new URLSearchParams(window.location.search);
-    const pollId = params.get('id') || 'demo-frameworks';
-
-    const idDisplay = document.getElementById('poll-id-display');
-    const iframe = document.getElementById('poll-iframe') as HTMLIFrameElement | null;
-    const badgeInput = document.getElementById('poll-badge-input') as HTMLInputElement | null;
-    const iframeInput = document.getElementById('poll-iframe-input') as HTMLInputElement | null;
-
-    if (idDisplay) idDisplay.textContent = `ID: ${pollId}`;
-    if (iframe) iframe.src = `/embed?id=${encodeURIComponent(pollId)}`;
-    if (badgeInput) badgeInput.value = getMarkdownBadgeSnippet('Poll', pollId);
-    if (iframeInput) iframeInput.value = getIframeSnippet(pollId);
-
-    const copyBadgeBtn = document.getElementById('copy-badge-btn');
-    const copyIframeBtn = document.getElementById('copy-iframe-btn');
-
-    copyBadgeBtn?.addEventListener('click', () => {
-      if (badgeInput) {
-        navigator.clipboard.writeText(badgeInput.value).then(() => {
-          copyBadgeBtn.textContent = '✓ Copied';
-          setTimeout(() => { copyBadgeBtn.textContent = 'Copy'; }, 2000);
-        });
-      }
-    });
-
-    copyIframeBtn?.addEventListener('click', () => {
-      if (iframeInput) {
-        navigator.clipboard.writeText(iframeInput.value).then(() => {
-          copyIframeBtn.textContent = '✓ Copied';
-          setTimeout(() => { copyIframeBtn.textContent = 'Copy'; }, 2000);
-        });
-      }
-    });
+<style>
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
   }
 
-  initDynamicPoll();
-  document.addEventListener('astro:page-load', initDynamicPoll);
+  .one,
+  .list {
+    padding-block: var(--space-2xl) var(--space-3xl);
+  }
+
+  .one__back {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2rem;
+    font-size: var(--text-xs);
+    color: var(--color-ink-3);
+    margin-bottom: var(--space-md);
+  }
+
+  .one__back:hover {
+    color: var(--color-accent);
+  }
+
+  .list__title {
+    font-size: var(--text-2xl);
+  }
+
+  .list__lede {
+    margin-top: var(--space-xs);
+    font-size: var(--text-sm);
+    color: var(--color-ink-3);
+    max-width: 60ch;
+  }
+
+  .list__toolbar {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    margin-block: var(--space-xl) var(--space-md);
+  }
+
+  .list__sort {
+    width: auto;
+    min-width: 12rem;
+  }
+
+  .list__count {
+    font-size: var(--text-xs);
+    color: var(--color-ink-3);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .polls {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .poll {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: var(--space-xs) var(--space-md);
+    padding-block: var(--space-md);
+    border-bottom: var(--rule-hair) solid var(--color-rule);
+  }
+
+  .poll__link {
+    font-size: var(--text-base);
+    color: var(--color-ink);
+    text-decoration: underline;
+    text-decoration-color: transparent;
+    text-underline-offset: 3px;
+    transition: text-decoration-color var(--dur-fast) var(--ease-out);
+  }
+
+  .poll__link:hover {
+    color: var(--color-accent);
+    text-decoration-color: var(--color-accent);
+  }
+
+  .poll__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-md);
+    font-size: var(--text-2xs);
+    color: var(--color-ink-4);
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    grid-column: 1 / -1;
+  }
+
+  .poll__votes {
+    font-size: var(--text-sm);
+    color: var(--color-ink-2);
+    font-variant-numeric: tabular-nums;
+    align-self: start;
+    white-space: nowrap;
+  }
+
+  .poll__closed {
+    color: var(--color-warn);
+  }
+
+  .state {
+    padding-block: var(--space-2xl);
+    display: grid;
+    gap: var(--space-sm);
+    justify-items: start;
+    border-top: var(--rule-hair) solid var(--color-rule);
+  }
+
+  .state__msg {
+    font-size: var(--text-base);
+    color: var(--color-ink);
+  }
+
+  .state--error .state__msg {
+    color: var(--color-danger);
+  }
+
+  .state__hint {
+    font-size: var(--text-xs);
+    color: var(--color-ink-3);
+    max-width: 54ch;
+  }
+
+  .pager {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    margin-top: var(--space-lg);
+  }
+
+  .pager__at {
+    font-size: var(--text-xs);
+    color: var(--color-ink-3);
+    font-variant-numeric: tabular-nums;
+  }
+
+  @media (max-width: 40rem) {
+    .list__toolbar {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .list__sort {
+      width: 100%;
+    }
+  }
+</style>
+
+<script>
+  import { listPolls, type Poll } from '../../lib/api';
+
+  const PER_PAGE = 20;
+  let page = 1;
+  let sort = '-created';
+  let controller: AbortController | null = null;
+
+  function el<T extends HTMLElement>(selector: string): T | null {
+    return document.querySelector<T>(selector);
+  }
+
+  function relative(iso: string): string {
+    const then = new Date(iso).getTime();
+    if (Number.isNaN(then)) return '';
+    const days = Math.floor((Date.now() - then) / 86_400_000);
+    if (days <= 0) return 'today';
+    if (days === 1) return 'yesterday';
+    if (days < 30) return `${days}d ago`;
+    if (days < 365) return `${Math.floor(days / 30)}mo ago`;
+    return `${Math.floor(days / 365)}y ago`;
+  }
+
+  function isClosed(poll: Poll): boolean {
+    return Boolean(poll.close_at && new Date(poll.close_at).getTime() <= Date.now());
+  }
+
+  function renderRows(polls: Poll[]) {
+    const results = el<HTMLUListElement>('[data-results]');
+    if (!results) return;
+    results.replaceChildren();
+
+    for (const poll of polls) {
+      const li = document.createElement('li');
+      li.className = 'poll';
+
+      const link = document.createElement('a');
+      link.className = 'poll__link';
+      link.href = `/polls?id=${encodeURIComponent(poll.id)}`;
+      link.textContent = poll.title;
+      li.append(link);
+
+      const votes = document.createElement('span');
+      votes.className = 'poll__votes';
+      // total_votes is null when the owner masked results for this viewer.
+      votes.textContent =
+        typeof poll.total_votes === 'number' ? `${poll.total_votes} votes` : 'results hidden';
+      li.append(votes);
+
+      const meta = document.createElement('p');
+      meta.className = 'poll__meta';
+
+      const created = document.createElement('span');
+      created.textContent = relative(poll.created);
+      meta.append(created);
+
+      const opts = document.createElement('span');
+      opts.textContent = `${poll.options.length} options`;
+      meta.append(opts);
+
+      if (poll.max_selections > 1) {
+        const multi = document.createElement('span');
+        multi.textContent = `pick up to ${poll.max_selections}`;
+        meta.append(multi);
+      }
+      if (poll.is_quiz) {
+        const quiz = document.createElement('span');
+        quiz.textContent = 'quiz';
+        meta.append(quiz);
+      }
+      if (isClosed(poll)) {
+        const closed = document.createElement('span');
+        closed.className = 'poll__closed';
+        closed.textContent = 'closed';
+        meta.append(closed);
+      }
+
+      li.append(meta);
+      results.append(li);
+    }
+  }
+
+  function show(which: 'loading' | 'error' | 'empty' | 'results') {
+    const map = {
+      loading: '[data-loading]',
+      error: '[data-error]',
+      empty: '[data-empty]',
+      results: '[data-results]',
+    } as const;
+
+    for (const [key, selector] of Object.entries(map)) {
+      const node = el<HTMLElement>(selector);
+      if (node) node.hidden = key !== which;
+    }
+    const pager = el<HTMLElement>('[data-pager]');
+    if (pager) pager.hidden = which !== 'results';
+  }
+
+  async function load() {
+    controller?.abort();
+    controller = new AbortController();
+    show('loading');
+
+    const result = await listPolls({ page, perPage: PER_PAGE, sort }, controller.signal);
+
+    if (!result.ok) {
+      if (result.status === 0 && controller.signal.aborted) return;
+      const text = el<HTMLElement>('[data-error-text]');
+      if (text) text.textContent = result.error;
+      show('error');
+      return;
+    }
+
+    const { items, total_items, total_pages } = result.data;
+
+    const count = el<HTMLElement>('[data-count]');
+    if (count) {
+      count.textContent = total_items === 1 ? '1 poll' : `${total_items} polls`;
+    }
+
+    if (items.length === 0) {
+      show(page > 1 ? 'results' : 'empty');
+      if (page > 1) renderRows([]);
+      return;
+    }
+
+    renderRows(items);
+    show('results');
+
+    const label = el<HTMLElement>('[data-page-label]');
+    if (label) label.textContent = `page ${page} of ${Math.max(total_pages, 1)}`;
+
+    const prev = el<HTMLButtonElement>('[data-prev]');
+    const next = el<HTMLButtonElement>('[data-next]');
+    if (prev) prev.disabled = page <= 1;
+    if (next) next.disabled = page >= total_pages;
+  }
+
+  /**
+   * Renders a single poll inline when ?id= is present. Mounting the Svelte
+   * widget by hand keeps this page static while still resolving ids that did
+   * not exist at build time.
+   */
+  async function renderSingle(id: string) {
+    const single = el<HTMLElement>('[data-single]');
+    const list = el<HTMLElement>('[data-list]');
+    const mount = el<HTMLElement>('[data-single-mount]');
+    if (!single || !list || !mount) return;
+
+    single.hidden = false;
+    list.hidden = true;
+
+    const { default: PollWidget } = await import('../../components/embed/PollWidget.svelte');
+    const { mount: mountSvelte } = await import('svelte');
+    mountSvelte(PollWidget, { target: mount, props: { pollId: id } });
+  }
+
+  function init() {
+    const id = new URLSearchParams(window.location.search).get('id');
+    if (id) {
+      renderSingle(id);
+      return;
+    }
+
+    const sortSelect = el<HTMLSelectElement>('[data-sort]');
+    if (sortSelect) {
+      sortSelect.value = sort;
+      sortSelect.onchange = () => {
+        sort = sortSelect.value;
+        page = 1;
+        load();
+      };
+    }
+
+    const retry = el<HTMLButtonElement>('[data-retry]');
+    if (retry) retry.onclick = () => load();
+
+    const prev = el<HTMLButtonElement>('[data-prev]');
+    if (prev) {
+      prev.onclick = () => {
+        if (page > 1) {
+          page -= 1;
+          load();
+        }
+      };
+    }
+
+    const next = el<HTMLButtonElement>('[data-next]');
+    if (next) {
+      next.onclick = () => {
+        page += 1;
+        load();
+      };
+    }
+
+    load();
+  }
+
+  init();
+  document.addEventListener('astro:page-load', init);
 </script>

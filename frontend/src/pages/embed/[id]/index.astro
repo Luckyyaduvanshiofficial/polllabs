@@ -1,5 +1,10 @@
 ---
+/**
+ * Pre-rendered iframe target for known ids: /embed/<poll-id>.
+ * Ids created after the last build are served by /embed?id=<poll-id>.
+ */
 import PollWidget from '../../../components/embed/PollWidget.svelte';
+import { DEMO_FRAMEWORKS_POLL } from '../../../lib/demo-poll';
 import '../../../styles/global.css';
 
 export function getStaticPaths() {
@@ -14,6 +19,8 @@ export function getStaticPaths() {
 }
 
 const { id } = Astro.params;
+const pollId = id ?? '';
+const initialPoll = pollId === DEMO_FRAMEWORKS_POLL.id ? DEMO_FRAMEWORKS_POLL : null;
 ---
 
 <!doctype html>
@@ -21,9 +28,20 @@ const { id } = Astro.params;
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Poll Embed</title>
+    <meta name="robots" content="noindex" />
+    <title>Poll</title>
+    <style>
+      html,
+      body {
+        background: transparent;
+        min-height: 0;
+        display: block;
+        margin: 0;
+        padding: 0.5rem;
+      }
+    </style>
   </head>
-  <body class="bg-transparent m-0 p-2 flex items-center justify-center min-h-screen">
-    <PollWidget client:load pollId={id || ''} />
+  <body>
+    <PollWidget client:load pollId={pollId} initialPoll={initialPoll} />
   </body>
 </html>

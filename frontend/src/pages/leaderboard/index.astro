@@ -1,449 +1,474 @@
 ---
+/**
+ * Leaderboard. Three ranked tables sharing one tab strip, which keeps the page
+ * a single dense surface instead of three stacked card sections.
+ *
+ * The most-voted-options table only contains polls whose owners publish raw
+ * counts; the backend excludes masked polls, which is why totals here can be
+ * lower than the trending table's.
+ */
 import RootLayout from '../../layouts/RootLayout.astro';
 
-// Fallback sample community polls for static generation
-const defaultTrending = [
-  {
-    id: 'poll-state-manager',
-    title: 'Which state management library do you prefer in React?',
-    total_votes: 1248,
-    created: '2026-03-14T10:00:00Z',
-    options: [
-      { id: '1', text: 'Zustand', vote_count: 724, percentage: 58 },
-      { id: '2', text: 'Redux Toolkit', vote_count: 337, percentage: 27 },
-      { id: '3', text: 'Jotai', vote_count: 187, percentage: 15 },
-    ],
-  },
-  {
-    id: 'poll-backend-lang',
-    title: 'FastAPI vs Go for high-throughput microservices?',
-    total_votes: 932,
-    created: '2026-03-12T14:30:00Z',
-    options: [
-      { id: '1', text: 'FastAPI (Python async)', vote_count: 485, percentage: 52 },
-      { id: '2', text: 'Go (Standard library / Chi)', vote_count: 447, percentage: 48 },
-    ],
-  },
-  {
-    id: 'poll-astro-deploy',
-    title: 'Where do you deploy production Astro static sites?',
-    total_votes: 814,
-    created: '2026-03-10T09:15:00Z',
-    options: [
-      { id: '1', text: 'Cloudflare Pages', vote_count: 521, percentage: 64 },
-      { id: '2', text: 'Vercel', vote_count: 203, percentage: 25 },
-      { id: '3', text: 'Fly.io / Self-hosted VM', vote_count: 90, percentage: 11 },
-    ],
-  },
-  {
-    id: 'poll-db-primary',
-    title: 'Default database for indie projects and tools in 2026',
-    total_votes: 692,
-    created: '2026-03-08T18:00:00Z',
-    options: [
-      { id: '1', text: 'PocketBase / SQLite', vote_count: 401, percentage: 58 },
-      { id: '2', text: 'PostgreSQL (Supabase/Neon)', vote_count: 228, percentage: 33 },
-      { id: '3', text: 'MongoDB / DocumentDB', vote_count: 63, percentage: 9 },
-    ],
-  },
-];
-
-const defaultTop = [...defaultTrending].sort((a, b) => b.total_votes - a.total_votes);
-
-const defaultOptions = [
-  { text: 'Zustand', votes: 724, poll_id: 'poll-state-manager', poll_title: 'Which state management library do you prefer in React?' },
-  { text: 'Svelte 5 (Runes)', votes: 654, poll_id: 'demo-frameworks', poll_title: 'Which web framework is your team prioritizing in 2026?' },
-  { text: 'Cloudflare Pages', votes: 521, poll_id: 'poll-astro-deploy', poll_title: 'Where do you deploy production Astro static sites?' },
-  { text: 'FastAPI (Python async)', votes: 485, poll_id: 'poll-backend-lang', poll_title: 'FastAPI vs Go for high-throughput microservices?' },
-  { text: 'PocketBase / SQLite', votes: 401, poll_id: 'poll-db-primary', poll_title: 'Default database for indie projects and tools in 2026' },
+const tabs = [
+  { id: 'trending', label: 'trending', note: 'Public polls with vote activity in the last 7 days.' },
+  { id: 'top', label: 'all time', note: 'Public polls ranked by total votes.' },
+  { id: 'options', label: 'top answers', note: 'Individual options ranked across polls that publish counts.' },
 ];
 ---
 
-<RootLayout title="Public Leaderboards — Polls Lab">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-    <!-- Header -->
-    <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-8 border-b border-[#1e293b]">
-      <div>
-        <span class="text-xs font-mono text-emerald-400 uppercase tracking-wider">Public Intelligence</span>
-        <h1 class="text-3xl sm:text-4xl font-extrabold text-white mt-1">Community Leaderboard</h1>
-        <p class="text-sm text-[#94a3b8] mt-1 max-w-xl">
-          Real-time developer consensus across open-source polls. Transparent, unmanipulated, and verified via anti-abuse telemetry.
+<RootLayout
+  title="Leaderboard · Polls Lab"
+  description="Trending and all-time public polls on Polls Lab, plus the most-voted answers across the platform."
+>
+  <section class="shell board">
+    <header class="board__head">
+      <h1 class="board__title">Leaderboard</h1>
+      <p class="board__lede" data-tab-note>{tabs[0].note}</p>
+    </header>
+
+    <div class="tabs" role="tablist" aria-label="Leaderboard views">
+      {
+        tabs.map((tab, i) => (
+          <button
+            type="button"
+            role="tab"
+            id={`tab-${tab.id}`}
+            aria-controls={`panel-${tab.id}`}
+            aria-selected={i === 0 ? 'true' : 'false'}
+            tabindex={i === 0 ? 0 : -1}
+            class="tab"
+            data-tab={tab.id}
+            data-note={tab.note}
+          >
+            {tab.label}
+          </button>
+        ))
+      }
+    </div>
+
+    <div class="board__body">
+      <div class="rows" data-loading>
+        {
+          [0, 1, 2, 3, 4, 5].map(() => (
+            <div class="row">
+              <div class="skeleton" style="height:0.8rem;width:1.5rem"></div>
+              <div class="skeleton" style="height:0.9rem;width:42%"></div>
+              <div class="skeleton" style="height:0.7rem;width:5rem;margin-left:auto"></div>
+            </div>
+          ))
+        }
+      </div>
+
+      <div class="state state--error" data-error hidden>
+        <p class="state__msg" data-error-text></p>
+        <button type="button" class="btn btn--ghost" data-retry>Try again</button>
+      </div>
+
+      <div class="state" data-empty hidden>
+        <p class="state__msg" data-empty-text>Nothing ranked yet.</p>
+        <p class="state__hint">
+          Rankings need public polls with votes. Create one and share the badge to get it moving.
         </p>
+        <a href="/dashboard/create" class="btn btn--primary">Create a poll</a>
       </div>
 
-      <!-- Search Box -->
-      <div class="w-full md:w-72 relative">
-        <input
-          id="poll-search-input"
-          type="text"
-          placeholder="Filter polls by topic..."
-          class="w-full pl-9 pr-4 py-2 bg-[#111827] border border-[#1e293b] rounded-lg text-xs text-white placeholder-[#64748b] focus:border-blue-500 focus:outline-none transition"
-        />
-        <svg class="w-4 h-4 text-[#64748b] absolute left-3 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-        </svg>
-      </div>
+      {
+        tabs.map((tab, i) => (
+          <div
+            role="tabpanel"
+            id={`panel-${tab.id}`}
+            aria-labelledby={`tab-${tab.id}`}
+            data-panel={tab.id}
+            hidden={i !== 0}
+          >
+            <ol class="rank" data-rank={tab.id}></ol>
+          </div>
+        ))
+      }
     </div>
-
-    <!-- Leaderboard View Tabs -->
-    <div class="flex items-center gap-2 pt-6 pb-8 text-xs font-medium" id="leaderboard-tabs">
-      <button
-        type="button"
-        data-view="trending"
-        class="tab-btn px-4 py-2 rounded-lg bg-[#1e293b] text-white font-semibold flex items-center gap-2 transition"
-      >
-        <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-        </svg>
-        <span>Trending (Last 7 Days)</span>
-      </button>
-      <button
-        type="button"
-        data-view="top"
-        class="tab-btn px-4 py-2 rounded-lg text-[#94a3b8] hover:text-white hover:bg-[#1e293b]/60 flex items-center gap-2 transition"
-      >
-        <svg class="w-3.5 h-3.5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-        </svg>
-        <span>All-Time Top</span>
-      </button>
-      <button
-        type="button"
-        data-view="options"
-        class="tab-btn px-4 py-2 rounded-lg text-[#94a3b8] hover:text-white hover:bg-[#1e293b]/60 flex items-center gap-2 transition"
-      >
-        <svg class="w-3.5 h-3.5 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-        </svg>
-        <span>Most-Voted Options</span>
-      </button>
-    </div>
-
-    <!-- Polls Grid: Trending -->
-    <div id="view-trending" class="view-panel grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {defaultTrending.map((poll, idx) => (
-        <div class="poll-card p-5 rounded-2xl bg-[#111827] border border-[#1e293b] hover:border-[#334155] transition flex flex-col justify-between space-y-4 shadow-sm" data-title={poll.title.toLowerCase()}>
-          <div class="space-y-2">
-            <div class="flex items-center justify-between text-xs font-mono">
-              <span class="px-2 py-0.5 rounded bg-emerald-950/60 border border-emerald-800/40 text-emerald-400">
-                Trending #{idx + 1}
-              </span>
-              <span class="text-[#64748b]">{poll.total_votes.toLocaleString()} votes</span>
-            </div>
-            <h3 class="text-base font-semibold text-white leading-snug">
-              <a href={`/polls/${poll.id}`} class="hover:text-blue-400 transition">
-                {poll.title}
-              </a>
-            </h3>
-          </div>
-
-          <!-- Options Distribution -->
-          <div class="space-y-2 pt-2 border-t border-[#1e293b]">
-            {poll.options.map((opt) => (
-              <div class="space-y-1 text-xs">
-                <div class="flex justify-between font-medium">
-                  <span class="text-[#94a3b8] truncate">{opt.text}</span>
-                  <span class="text-white font-mono">{opt.percentage}%</span>
-                </div>
-                <div class="w-full bg-[#1e293b] h-1.5 rounded-full overflow-hidden">
-                  <div class="bg-blue-500 h-full rounded-full" style={`width: ${opt.percentage}%`}></div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <!-- Action Footer -->
-          <div class="flex items-center justify-between pt-2 text-xs border-t border-[#1e293b]">
-            <a
-              href={`/polls/${poll.id}`}
-              class="text-blue-400 hover:text-blue-300 font-medium flex items-center gap-1"
-            >
-              <span>Vote live</span>
-              <span>→</span>
-            </a>
-            <button
-              type="button"
-              data-id={poll.id}
-              data-title={poll.title}
-              class="embed-btn text-[#94a3b8] hover:text-white flex items-center gap-1 transition"
-            >
-              <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-              </svg>
-              <span>Get Embed</span>
-            </button>
-          </div>
-        </div>
-      ))}
-    </div>
-
-    <!-- Polls Grid: Top All-Time -->
-    <div id="view-top" class="view-panel hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {defaultTop.map((poll, idx) => (
-        <div class="poll-card p-5 rounded-2xl bg-[#111827] border border-[#1e293b] hover:border-[#334155] transition flex flex-col justify-between space-y-4 shadow-sm" data-title={poll.title.toLowerCase()}>
-          <div class="space-y-2">
-            <div class="flex items-center justify-between text-xs font-mono">
-              <span class="px-2 py-0.5 rounded bg-blue-950/60 border border-blue-800/40 text-blue-400">
-                Rank #{idx + 1}
-              </span>
-              <span class="text-[#64748b]">{poll.total_votes.toLocaleString()} votes</span>
-            </div>
-            <h3 class="text-base font-semibold text-white leading-snug">
-              <a href={`/polls/${poll.id}`} class="hover:text-blue-400 transition">
-                {poll.title}
-              </a>
-            </h3>
-          </div>
-
-          <div class="space-y-2 pt-2 border-t border-[#1e293b]">
-            {poll.options.map((opt) => (
-              <div class="space-y-1 text-xs">
-                <div class="flex justify-between font-medium">
-                  <span class="text-[#94a3b8] truncate">{opt.text}</span>
-                  <span class="text-white font-mono">{opt.percentage}%</span>
-                </div>
-                <div class="w-full bg-[#1e293b] h-1.5 rounded-full overflow-hidden">
-                  <div class="bg-indigo-500 h-full rounded-full" style={`width: ${opt.percentage}%`}></div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div class="flex items-center justify-between pt-2 text-xs border-t border-[#1e293b]">
-            <a href={`/polls/${poll.id}`} class="text-blue-400 hover:text-blue-300 font-medium">
-              Vote live →
-            </a>
-            <button
-              type="button"
-              data-id={poll.id}
-              data-title={poll.title}
-              class="embed-btn text-[#94a3b8] hover:text-white"
-            >
-              Get Embed
-            </button>
-          </div>
-        </div>
-      ))}
-    </div>
-
-    <!-- Options Ranking View -->
-    <div id="view-options" class="view-panel hidden max-w-4xl mx-auto space-y-3">
-      {defaultOptions.map((opt, idx) => (
-        <div class="p-4 rounded-xl bg-[#111827] border border-[#1e293b] flex items-center justify-between gap-4">
-          <div class="flex items-center gap-4">
-            <span class="w-7 h-7 rounded-lg bg-[#1e293b] text-[#94a3b8] font-mono text-xs flex items-center justify-center font-bold">
-              #{idx + 1}
-            </span>
-            <div>
-              <div class="font-semibold text-white text-sm">{opt.text}</div>
-              <div class="text-xs text-[#64748b]">from: <a href={`/polls/${opt.poll_id}`} class="hover:text-blue-400">{opt.poll_title}</a></div>
-            </div>
-          </div>
-          <div class="text-right">
-            <span class="font-mono text-emerald-400 font-bold text-sm">{opt.votes.toLocaleString()}</span>
-            <span class="text-xs text-[#64748b] block">votes</span>
-          </div>
-        </div>
-      ))}
-    </div>
-  </div>
-
-  <!-- Quick Embed Code Modal Dialog -->
-  <dialog id="embed-dialog" class="bg-[#0b0f19] text-[#f8fafc] p-6 rounded-2xl border border-[#1e293b] max-w-md w-full shadow-2xl backdrop:bg-black/70">
-    <div class="flex items-center justify-between mb-4">
-      <h3 class="text-base font-bold text-white">Embed Code Generator</h3>
-      <button id="close-dialog-btn" type="button" class="text-[#94a3b8] hover:text-white text-sm">✕</button>
-    </div>
-    <div class="space-y-4 text-xs">
-      <div>
-        <label class="block font-medium text-[#94a3b8] mb-1">GitHub README (SVG Badge)</label>
-        <pre class="bg-[#111827] p-2.5 rounded-lg text-emerald-300 font-mono text-[11px] overflow-x-auto select-all"><code id="modal-badge-code"></code></pre>
-      </div>
-      <div>
-        <label class="block font-medium text-[#94a3b8] mb-1">Website / Blog (Interactive Iframe)</label>
-        <pre class="bg-[#111827] p-2.5 rounded-lg text-cyan-300 font-mono text-[11px] overflow-x-auto select-all"><code id="modal-iframe-code"></code></pre>
-      </div>
-      <button
-        id="modal-copy-btn"
-        type="button"
-        class="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white font-medium rounded-lg transition"
-      >
-        Copy Iframe Code
-      </button>
-    </div>
-  </dialog>
+  </section>
 </RootLayout>
 
-<script>
-  import { getApiUrl } from '../../lib/config';
-  import { getMarkdownBadgeSnippet, getIframeSnippet } from '../../lib/embed';
-
-  function setupLeaderboard() {
-    const tabs = document.querySelectorAll('#leaderboard-tabs .tab-btn');
-    const search = document.getElementById('poll-search-input') as HTMLInputElement | null;
-    const dialog = document.getElementById('embed-dialog') as HTMLDialogElement | null;
-    const closeDialog = document.getElementById('close-dialog-btn');
-    const badgeCode = document.getElementById('modal-badge-code');
-    const iframeCode = document.getElementById('modal-iframe-code');
-    const copyBtn = document.getElementById('modal-copy-btn');
-
-    // Tab switcher
-    tabs.forEach((tab) => {
-      tab.addEventListener('click', () => {
-        const view = tab.getAttribute('data-view');
-        if (!view) return;
-
-        tabs.forEach((t) => {
-          t.classList.remove('bg-[#1e293b]', 'text-white', 'font-semibold');
-          t.classList.add('text-[#94a3b8]');
-        });
-        tab.classList.add('bg-[#1e293b]', 'text-white', 'font-semibold');
-        tab.classList.remove('text-[#94a3b8]');
-
-        document.querySelectorAll('.view-panel').forEach((panel) => panel.classList.add('hidden'));
-        document.getElementById(`view-${view}`)?.classList.remove('hidden');
-      });
-    });
-
-    // Search filter
-    search?.addEventListener('input', (e) => {
-      const q = (e.target as HTMLInputElement).value.toLowerCase().trim();
-      document.querySelectorAll('.poll-card').forEach((card) => {
-        const title = card.getAttribute('data-title') || '';
-        if (title.includes(q)) {
-          card.classList.remove('hidden');
-        } else {
-          card.classList.add('hidden');
-        }
-      });
-    });
-
-    // Embed dialog trigger
-    function attachEmbedListeners() {
-      document.querySelectorAll('.embed-btn').forEach((btn) => {
-        btn.addEventListener('click', () => {
-          const id = btn.getAttribute('data-id') || 'demo';
-          const title = btn.getAttribute('data-title') || 'Poll';
-          if (badgeCode) badgeCode.textContent = getMarkdownBadgeSnippet(title, id);
-          if (iframeCode) iframeCode.textContent = getIframeSnippet(id, 340);
-          dialog?.showModal();
-        });
-      });
-    }
-
-    attachEmbedListeners();
-
-    closeDialog?.addEventListener('click', () => dialog?.close());
-    dialog?.addEventListener('click', (e) => {
-      if (e.target === dialog) dialog.close();
-    });
-
-    copyBtn?.addEventListener('click', () => {
-      if (iframeCode?.textContent) {
-        navigator.clipboard.writeText(iframeCode.textContent).then(() => {
-          copyBtn.textContent = '✓ Copied Iframe Code!';
-          setTimeout(() => {
-            copyBtn.textContent = 'Copy Iframe Code';
-          }, 2000);
-        });
-      }
-    });
-
-    // Live API Polling & Dynamic Enrichment (PRD §3.1, §4.3)
-    async function loadLiveLeaderboard() {
-      const apiBase = getApiUrl();
-      try {
-        const [trendingRes, topRes] = await Promise.all([
-          fetch(`${apiBase}/api/v1/leaderboard/trending?limit=12`),
-          fetch(`${apiBase}/api/v1/leaderboard/top?limit=12`),
-        ]);
-
-        if (trendingRes.ok) {
-          const data = await trendingRes.json();
-          if (data.leaderboard && data.leaderboard.length > 0) {
-            renderPollList('view-trending', data.leaderboard, 'Rank');
-          }
-        }
-
-        if (topRes.ok) {
-          const data = await topRes.json();
-          if (data.leaderboard && data.leaderboard.length > 0) {
-            renderPollList('view-top', data.leaderboard, 'Top');
-          }
-        }
-      } catch (err) {
-        // Fallback gracefully to SSG pre-rendered snapshot
-      }
-    }
-
-    function renderPollList(containerId: string, polls: any[], rankPrefix: string) {
-      const container = document.getElementById(containerId);
-      if (!container) return;
-
-      container.innerHTML = polls.map((poll, idx) => {
-        const totalVotes = poll.total_votes || 0;
-        const optionsHtml = (poll.options || []).map((opt: any) => {
-          const count = opt.vote_count || 0;
-          const pct = totalVotes > 0 ? Math.round((count / totalVotes) * 100) : 0;
-          return `
-            <div class="space-y-1 text-xs">
-              <div class="flex justify-between font-medium">
-                <span class="text-[#94a3b8] truncate">${opt.text}</span>
-                <span class="text-white font-mono">${pct}%</span>
-              </div>
-              <div class="w-full bg-[#1e293b] h-1.5 rounded-full overflow-hidden">
-                <div class="bg-blue-500 h-full rounded-full" style="width: ${pct}%"></div>
-              </div>
-            </div>
-          `;
-        }).join('');
-
-        return `
-          <div class="poll-card p-5 rounded-2xl bg-[#111827] border border-[#1e293b] hover:border-[#334155] transition flex flex-col justify-between space-y-4 shadow-sm" data-title="${poll.title.toLowerCase()}">
-            <div class="space-y-2">
-              <div class="flex items-center justify-between text-xs font-mono">
-                <span class="px-2 py-0.5 rounded bg-emerald-950/60 border border-emerald-800/40 text-emerald-400">
-                  ${rankPrefix} #${idx + 1}
-                </span>
-                <span class="text-[#64748b]">${totalVotes.toLocaleString()} votes</span>
-              </div>
-              <h3 class="text-base font-semibold text-white leading-snug">
-                <a href="/polls/${poll.id}" class="hover:text-blue-400 transition">
-                  ${poll.title}
-                </a>
-              </h3>
-            </div>
-            <div class="space-y-2 pt-2 border-t border-[#1e293b]">
-              ${optionsHtml}
-            </div>
-            <div class="flex items-center justify-between pt-2 text-xs border-t border-[#1e293b]">
-              <a href="/polls/${poll.id}" class="text-blue-400 hover:text-blue-300 font-medium flex items-center gap-1">
-                <span>Vote live</span>
-                <span>→</span>
-              </a>
-              <button
-                type="button"
-                data-id="${poll.id}"
-                data-title="${poll.title}"
-                class="embed-btn text-[#94a3b8] hover:text-white flex items-center gap-1 transition"
-              >
-                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-                </svg>
-                <span>Get Embed</span>
-              </button>
-            </div>
-          </div>
-        `;
-      }).join('');
-
-      attachEmbedListeners();
-    }
-
-    loadLiveLeaderboard();
+<style>
+  .board {
+    padding-block: var(--space-2xl) var(--space-3xl);
   }
 
-  setupLeaderboard();
-  document.addEventListener('astro:page-load', setupLeaderboard);
-</script>
+  .board__title {
+    font-size: var(--text-2xl);
+  }
 
+  .board__lede {
+    margin-top: var(--space-xs);
+    font-size: var(--text-sm);
+    color: var(--color-ink-3);
+    max-width: 62ch;
+    min-height: 1.5rem;
+  }
+
+  .tabs {
+    display: flex;
+    gap: var(--space-2xs);
+    margin-block: var(--space-xl) 0;
+    border-bottom: var(--rule-hair) solid var(--color-rule);
+  }
+
+  .tab {
+    appearance: none;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--color-ink-3);
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    padding: var(--space-xs) var(--space-sm);
+    min-height: 2.5rem;
+    cursor: pointer;
+    transition:
+      color var(--dur-fast) var(--ease-out),
+      border-color var(--dur-fast) var(--ease-out);
+  }
+
+  .tab:hover {
+    color: var(--color-ink);
+  }
+
+  .tab[aria-selected='true'] {
+    color: var(--color-accent);
+    border-bottom-color: var(--color-accent);
+  }
+
+  .board__body {
+    margin-top: var(--space-lg);
+  }
+
+  .rank {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border-top: var(--rule-hair) solid var(--color-rule);
+  }
+
+  .rank__item {
+    display: grid;
+    grid-template-columns: 2.5rem 1fr auto;
+    gap: var(--space-md);
+    align-items: baseline;
+    padding-block: var(--space-md);
+    border-bottom: var(--rule-hair) solid var(--color-rule);
+  }
+
+  .rank__n {
+    font-size: var(--text-xs);
+    color: var(--color-ink-4);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .rank__item:nth-child(-n + 3) .rank__n {
+    color: var(--color-accent);
+  }
+
+  .rank__main {
+    min-width: 0;
+  }
+
+  .rank__link {
+    font-size: var(--text-base);
+    color: var(--color-ink);
+    text-decoration: underline;
+    text-decoration-color: transparent;
+    text-underline-offset: 3px;
+    transition: text-decoration-color var(--dur-fast) var(--ease-out);
+  }
+
+  .rank__link:hover {
+    color: var(--color-accent);
+    text-decoration-color: var(--color-accent);
+  }
+
+  .rank__sub {
+    margin-top: var(--space-2xs);
+    font-size: var(--text-2xs);
+    color: var(--color-ink-4);
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+  }
+
+  .rank__bar {
+    margin-top: var(--space-xs);
+    max-width: 22rem;
+  }
+
+  .rank__value {
+    font-size: var(--text-sm);
+    color: var(--color-ink-2);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .state {
+    padding-block: var(--space-2xl);
+    display: grid;
+    gap: var(--space-sm);
+    justify-items: start;
+  }
+
+  .state__msg {
+    font-size: var(--text-base);
+    color: var(--color-ink);
+  }
+
+  .state--error .state__msg {
+    color: var(--color-danger);
+  }
+
+  .state__hint {
+    font-size: var(--text-xs);
+    color: var(--color-ink-3);
+    max-width: 54ch;
+  }
+
+  @media (max-width: 40rem) {
+    .rank__item {
+      grid-template-columns: 1.75rem 1fr;
+    }
+
+    .rank__value {
+      grid-column: 2;
+    }
+
+    .tabs {
+      overflow-x: auto;
+    }
+  }
+</style>
+
+<script>
+  import {
+    getTrending,
+    getTop,
+    getMostVotedOptions,
+    type Poll,
+    type MostVotedOption,
+  } from '../../lib/api';
+
+  type TabId = 'trending' | 'top' | 'options';
+
+  let active: TabId = 'trending';
+  const loaded = new Set<TabId>();
+  let controller: AbortController | null = null;
+
+  function el<T extends HTMLElement>(sel: string): T | null {
+    return document.querySelector<T>(sel);
+  }
+
+  function setState(which: 'loading' | 'error' | 'empty' | 'data') {
+    const loading = el<HTMLElement>('[data-loading]');
+    const error = el<HTMLElement>('[data-error]');
+    const empty = el<HTMLElement>('[data-empty]');
+    if (loading) loading.hidden = which !== 'loading';
+    if (error) error.hidden = which !== 'error';
+    if (empty) empty.hidden = which !== 'empty';
+
+    document.querySelectorAll<HTMLElement>('[data-panel]').forEach((panel) => {
+      panel.hidden = which !== 'data' || panel.dataset.panel !== active;
+    });
+  }
+
+  function pollRow(poll: Poll, index: number, max: number): HTMLLIElement {
+    const li = document.createElement('li');
+    li.className = 'rank__item';
+
+    const n = document.createElement('span');
+    n.className = 'rank__n';
+    n.textContent = String(index + 1).padStart(2, '0');
+    li.append(n);
+
+    const main = document.createElement('div');
+    main.className = 'rank__main';
+
+    const link = document.createElement('a');
+    link.className = 'rank__link';
+    link.href = `/polls?id=${encodeURIComponent(poll.id)}`;
+    link.textContent = poll.title;
+    main.append(link);
+
+    const sub = document.createElement('p');
+    sub.className = 'rank__sub';
+    const bits = [`${poll.options.length} options`];
+    if (poll.max_selections > 1) bits.push('multi-select');
+    if (poll.is_quiz) bits.push('quiz');
+    sub.textContent = bits.join('  /  ');
+    main.append(sub);
+
+    const votes = poll.total_votes ?? 0;
+    if (max > 0 && typeof poll.total_votes === 'number') {
+      const meter = document.createElement('div');
+      meter.className = 'meter rank__bar';
+      const fill = document.createElement('div');
+      fill.className = index === 0 ? 'meter__fill meter__fill--lead' : 'meter__fill';
+      fill.style.width = `${Math.max((votes / max) * 100, 2)}%`;
+      meter.append(fill);
+      main.append(meter);
+    }
+
+    li.append(main);
+
+    const value = document.createElement('span');
+    value.className = 'rank__value';
+    value.textContent =
+      typeof poll.total_votes === 'number' ? `${poll.total_votes} votes` : 'hidden';
+    li.append(value);
+
+    return li;
+  }
+
+  function optionRow(item: MostVotedOption, index: number, max: number): HTMLLIElement {
+    const li = document.createElement('li');
+    li.className = 'rank__item';
+
+    const n = document.createElement('span');
+    n.className = 'rank__n';
+    n.textContent = String(index + 1).padStart(2, '0');
+    li.append(n);
+
+    const main = document.createElement('div');
+    main.className = 'rank__main';
+
+    const label = document.createElement('p');
+    label.className = 'rank__link';
+    label.textContent = item.option_text;
+    main.append(label);
+
+    const sub = document.createElement('p');
+    sub.className = 'rank__sub';
+    const link = document.createElement('a');
+    link.href = `/polls?id=${encodeURIComponent(item.poll_id)}`;
+    link.textContent = item.poll_title;
+    link.style.textDecoration = 'underline';
+    sub.append(document.createTextNode('in  '));
+    sub.append(link);
+    main.append(sub);
+
+    if (max > 0) {
+      const meter = document.createElement('div');
+      meter.className = 'meter rank__bar';
+      const fill = document.createElement('div');
+      fill.className = index === 0 ? 'meter__fill meter__fill--lead' : 'meter__fill';
+      fill.style.width = `${Math.max((item.vote_count / max) * 100, 2)}%`;
+      meter.append(fill);
+      main.append(meter);
+    }
+
+    li.append(main);
+
+    const value = document.createElement('span');
+    value.className = 'rank__value';
+    value.textContent = `${item.vote_count} votes`;
+    li.append(value);
+
+    return li;
+  }
+
+  async function load(tab: TabId, force = false) {
+    if (loaded.has(tab) && !force) {
+      setState('data');
+      return;
+    }
+
+    controller?.abort();
+    controller = new AbortController();
+    setState('loading');
+
+    const signal = controller.signal;
+    const result =
+      tab === 'trending'
+        ? await getTrending(20, signal)
+        : tab === 'top'
+          ? await getTop(20, signal)
+          : await getMostVotedOptions(20, signal);
+
+    if (!result.ok) {
+      if (signal.aborted) return;
+      const text = el<HTMLElement>('[data-error-text]');
+      if (text) text.textContent = result.error;
+      setState('error');
+      return;
+    }
+
+    const list = el<HTMLOListElement>(`[data-rank="${tab}"]`);
+    if (!list) return;
+    list.replaceChildren();
+
+    if (tab === 'options') {
+      const items = (result.data as { items: MostVotedOption[] }).items;
+      if (items.length === 0) {
+        const msg = el<HTMLElement>('[data-empty-text]');
+        if (msg) msg.textContent = 'No polls currently publish per-option counts.';
+        setState('empty');
+        return;
+      }
+      const max = Math.max(...items.map((i) => i.vote_count));
+      items.forEach((item, i) => list.append(optionRow(item, i, max)));
+    } else {
+      const polls = (result.data as { leaderboard: Poll[] }).leaderboard;
+      if (polls.length === 0) {
+        const msg = el<HTMLElement>('[data-empty-text]');
+        if (msg) {
+          msg.textContent =
+            tab === 'trending' ? 'No polls have seen votes this week.' : 'No ranked polls yet.';
+        }
+        setState('empty');
+        return;
+      }
+      const max = Math.max(...polls.map((p) => p.total_votes ?? 0));
+      polls.forEach((poll, i) => list.append(pollRow(poll, i, max)));
+    }
+
+    loaded.add(tab);
+    setState('data');
+  }
+
+  function selectTab(tab: TabId) {
+    active = tab;
+
+    document.querySelectorAll<HTMLButtonElement>('[data-tab]').forEach((btn) => {
+      const on = btn.dataset.tab === tab;
+      btn.setAttribute('aria-selected', String(on));
+      btn.tabIndex = on ? 0 : -1;
+      if (on) {
+        const note = el<HTMLElement>('[data-tab-note]');
+        if (note) note.textContent = btn.dataset.note ?? '';
+      }
+    });
+
+    load(tab);
+  }
+
+  function init() {
+    const buttons = Array.from(document.querySelectorAll<HTMLButtonElement>('[data-tab]'));
+
+    buttons.forEach((btn, index) => {
+      btn.onclick = () => selectTab(btn.dataset.tab as TabId);
+
+      // Arrow-key tab navigation, per WAI-ARIA tabs pattern.
+      btn.onkeydown = (event) => {
+        const delta = event.key === 'ArrowRight' ? 1 : event.key === 'ArrowLeft' ? -1 : 0;
+        if (!delta) return;
+        event.preventDefault();
+        const next = buttons[(index + delta + buttons.length) % buttons.length];
+        next.focus();
+        selectTab(next.dataset.tab as TabId);
+      };
+    });
+
+    const retry = el<HTMLButtonElement>('[data-retry]');
+    if (retry) retry.onclick = () => load(active, true);
+
+    loaded.clear();
+    selectTab('trending');
+  }
+
+  init();
+  document.addEventListener('astro:page-load', init);
+</script>

@@ -1,60 +1,143 @@
 ---
-const currentYear = new Date().getFullYear();
+/**
+ * Ft4 Dense typographic colophon. A single mono block of credits and status
+ * rather than four columns of links, which suits a tool whose surface area is
+ * small and whose audience reads mono comfortably.
+ *
+ * The API links resolve at runtime through getApiUrl() rather than being
+ * hardcoded to localhost, so a deployed build points at the deployed API.
+ */
+import { getApiUrl } from '../../lib/config';
+
+const year = new Date().getFullYear();
+const apiUrl = getApiUrl();
+const repo = 'https://github.com/Luckyyaduvanshiofficial/polls-lab';
 ---
 
-<footer class="mt-auto border-t border-white/[0.04] py-16 text-[#94a3b8] text-sm">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-10 mb-12">
-      <!-- Brand -->
-      <div class="md:col-span-2 space-y-4">
-        <div class="flex items-center gap-2.5">
-          <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center font-mono font-bold text-[10px] text-white">
-            PL
-          </div>
-          <span class="font-bold text-base text-white tracking-tight">Polls Lab</span>
-          <span class="text-[10px] px-2 py-0.5 rounded-full bg-white/[0.06] text-emerald-400 font-mono">Apache 2.0</span>
-        </div>
-        <p class="text-xs text-[#64748b] max-w-sm leading-relaxed">
-          Open-source embeddable polls, Shields-compatible README badges, and transparent public leaderboards for developer communities.
-        </p>
-        <div class="flex items-center gap-3 text-xs font-mono text-[#64748b]">
-          <span>FastAPI</span>
-          <span class="text-[#334155]">/</span>
-          <span>PocketBase</span>
-          <span class="text-[#334155]">/</span>
-          <span>Svelte 5</span>
-          <span class="text-[#334155]">/</span>
-          <span>Astro</span>
-        </div>
-      </div>
+<footer class="foot rule-top">
+  <div class="shell foot__inner">
+    <p class="foot__colophon">
+      <span class="foot__mark">polls-lab</span> builds embeddable polls, live SVG badges and public
+      leaderboards. Astro, Svelte 5 and Tailwind on the front; FastAPI and PocketBase behind.
+      Apache 2.0 licensed. Anonymous voting, hashed IPs, no third-party trackers.
+      &copy; {year}.
+    </p>
 
-      <!-- Resources -->
-      <div class="space-y-3">
-        <h4 class="text-[11px] font-semibold uppercase tracking-wider text-[#64748b]">Resources</h4>
-        <ul class="space-y-2 text-xs">
-          <li><a href="/docs" class="hover:text-white transition">Documentation</a></li>
-          <li><a href="/leaderboard" class="hover:text-white transition">Leaderboards</a></li>
-          <li><a href="/dashboard/create" class="hover:text-white transition">Create a Poll</a></li>
-          <li><a href="https://github.com/Luckyyaduvanshiofficial/polls-lab/blob/main/docs/self-hosting.md" target="_blank" rel="noopener noreferrer" class="hover:text-white transition">Self-Hosting</a></li>
-        </ul>
-      </div>
-
-      <!-- System -->
-      <div class="space-y-3">
-        <h4 class="text-[11px] font-semibold uppercase tracking-wider text-[#64748b]">System</h4>
-        <ul class="space-y-2 text-xs">
-          <li><a href="https://github.com/Luckyyaduvanshiofficial/polls-lab" target="_blank" rel="noopener noreferrer" class="hover:text-white transition">GitHub</a></li>
-          <li><a href="http://localhost:8000/docs" target="_blank" rel="noopener noreferrer" class="hover:text-white transition">OpenAPI Spec</a></li>
-          <li><a href="http://localhost:8000/api/v1/health" target="_blank" rel="noopener noreferrer" class="hover:text-white transition flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> API Status</a></li>
-          <li><a href="https://github.com/Luckyyaduvanshiofficial/polls-lab/blob/main/LICENSE" target="_blank" rel="noopener noreferrer" class="hover:text-white transition">License</a></li>
-        </ul>
-      </div>
-    </div>
-
-    <!-- Bottom -->
-    <div class="pt-8 border-t border-white/[0.04] flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-[#475569]">
-      <p>&copy; {currentYear} Polls Lab. Free and open-source.</p>
-      <p className="font-mono">Zero tracking / Sub-5KB embed / Privacy-first</p>
-    </div>
+    <nav class="foot__links" aria-label="Resources">
+      <a href="/docs">docs</a>
+      <a href="/leaderboard">leaderboard</a>
+      <a href="/theme-samples">themes</a>
+      <a href={repo} target="_blank" rel="noopener noreferrer">source</a>
+      <a href={`${repo}/blob/main/docs/self-hosting.md`} target="_blank" rel="noopener noreferrer">
+        self-hosting
+      </a>
+      <a href={`${apiUrl}/docs`} target="_blank" rel="noopener noreferrer">openapi</a>
+      <a
+        href={`${apiUrl}/api/v1/health`}
+        target="_blank"
+        rel="noopener noreferrer"
+        class="foot__status"
+        data-health-link
+      >
+        <span class="foot__dot" data-health-dot aria-hidden="true"></span>
+        <span data-health-text>api status</span>
+      </a>
+    </nav>
   </div>
 </footer>
+
+<style>
+  .foot {
+    margin-top: auto;
+    padding-block: var(--space-xl);
+  }
+
+  .foot__inner {
+    display: grid;
+    gap: var(--space-md);
+  }
+
+  .foot__colophon {
+    font-size: var(--text-xs);
+    line-height: 1.75;
+    color: var(--color-ink-3);
+    max-width: 78ch;
+  }
+
+  .foot__mark {
+    color: var(--color-ink);
+    font-weight: 600;
+  }
+
+  .foot__links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-md);
+    font-size: var(--text-xs);
+  }
+
+  .foot__links a {
+    color: var(--color-ink-3);
+    text-decoration: underline;
+    text-decoration-color: var(--color-rule-strong);
+    text-underline-offset: 3px;
+    min-height: 1.75rem;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .foot__links a:hover {
+    color: var(--color-accent);
+    text-decoration-color: var(--color-accent);
+  }
+
+  .foot__status {
+    gap: 0.5ch;
+  }
+
+  /* This dot carries real state (a live health probe), which is the only case
+   * where a status dot earns its place. */
+  .foot__dot {
+    width: 6px;
+    height: 6px;
+    border-radius: var(--radius-pill);
+    background: var(--color-ink-4);
+    flex-shrink: 0;
+  }
+
+  .foot__dot[data-state='up'] {
+    background: var(--color-accent);
+  }
+
+  .foot__dot[data-state='down'] {
+    background: var(--color-danger);
+  }
+
+  @media (max-width: 40rem) {
+    .foot__links {
+      gap: var(--space-sm) var(--space-md);
+    }
+  }
+</style>
+
+<script>
+  import { getHealth } from '../../lib/api';
+
+  async function probeHealth() {
+    const dot = document.querySelector<HTMLElement>('[data-health-dot]');
+    const text = document.querySelector<HTMLElement>('[data-health-text]');
+    if (!dot || !text) return;
+
+    const result = await getHealth();
+    if (result.ok) {
+      dot.dataset.state = 'up';
+      text.textContent = 'api reachable';
+    } else {
+      dot.dataset.state = 'down';
+      text.textContent = 'api unreachable';
+    }
+  }
+
+  probeHealth();
+  document.addEventListener('astro:page-load', probeHealth);
+</script>

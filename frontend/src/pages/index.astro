@@ -1,729 +1,423 @@
 ---
+/**
+ * Landing page. Workbench macrostructure (05): the working product is the
+ * argument, so the fold pairs the one line a developer actually copies with a
+ * live widget voting against the real API.
+ *
+ * Sections use four different layout families: split fold, tabular spec sheet,
+ * step sequence, and a typographic close. No repeated card triplets.
+ */
 import RootLayout from '../layouts/RootLayout.astro';
-import { getApiUrl } from '../lib/config';
-import { getMarkdownBadgeSnippet, getIframeSnippet, getBadgeUrl } from '../lib/embed';
-import { DEMO_FRAMEWORKS_POLL as demoPoll } from '../lib/demo-poll';
+import PollWidget from '../components/embed/PollWidget.svelte';
+import { DEMO_FRAMEWORKS_POLL } from '../lib/demo-poll';
 
-const badgeSvgUrl = getBadgeUrl(demoPoll.id, 'svg');
-const markdownBadgeSnippet = getMarkdownBadgeSnippet(demoPoll.title, demoPoll.id, 'svg');
-const iframeSnippet = getIframeSnippet(demoPoll.id, 340);
+const demoId = DEMO_FRAMEWORKS_POLL.id;
 
-const topPollsSnapshot = [
+// Shown as the copyable snippet. Placeholders resolve client-side to the
+// deployed origins so what a visitor copies is what actually works.
+const surfaces = [
   {
-    id: 'poll-state-mgr0',
-    title: 'Which state management library do you prefer in React?',
-    votes: 1248,
-    topOption: 'Zustand',
-    percentage: 58,
-    created: '2 days ago',
+    surface: 'README badge',
+    detail: 'GitHub renders the SVG and links it to the poll page.',
+    lang: 'markdown',
+    snippet: `[![Poll](API/api/v1/badges/${demoId}.svg)](SITE/polls/${demoId})`,
   },
   {
-    id: 'poll-back-lang0',
-    title: 'FastAPI vs Go for new microservices?',
-    votes: 932,
-    topOption: 'FastAPI',
-    percentage: 52,
-    created: '4 days ago',
+    surface: 'Interactive embed',
+    detail: 'An iframe that accepts votes inline, roughly 5 KB gzipped.',
+    lang: 'html',
+    snippet: `<iframe src="SITE/embed?id=${demoId}"\n        width="100%" height="380"\n        style="border:0" loading="lazy"></iframe>`,
   },
   {
-    id: 'poll-astro-depl',
-    title: 'Where do you deploy static Astro websites?',
-    votes: 814,
-    topOption: 'Cloudflare Pages',
-    percentage: 64,
-    created: '1 week ago',
+    surface: 'Plain image',
+    detail: 'For Markdown that strips iframes, such as Hugo or Dev.to.',
+    lang: 'markdown',
+    snippet: `![Poll](API/api/v1/badges/${demoId}.png)`,
   },
 ];
 
-const techStack = ['Svelte 5', 'React 19', 'Astro', 'FastAPI', 'PocketBase', 'TypeScript', 'Tailwind', 'Cloudflare'];
+const guarantees = [
+  { key: 'Voting', value: 'Anonymous', note: 'No account needed to vote.' },
+  { key: 'Duplicate control', value: 'Device token', note: 'httpOnly cookie, issued server-side.' },
+  { key: 'IP handling', value: 'Salted SHA-256', note: 'Raw addresses are never stored.' },
+  { key: 'Trackers', value: 'None', note: 'No analytics scripts on embeds.' },
+  { key: 'Result masking', value: 'Server-side', note: 'Hidden counts never reach the client.' },
+  { key: 'Licence', value: 'Apache 2.0', note: 'Self-host the whole stack.' },
+];
+
+const steps = [
+  {
+    verb: 'Create',
+    body: 'Sign in with GitHub, write a question and up to ten options. Pick single-choice, multi-select or quiz mode.',
+  },
+  {
+    verb: 'Embed',
+    body: 'Copy one line for a badge or an iframe. The snippet carries your poll id and needs no build step.',
+  },
+  {
+    verb: 'Read',
+    body: 'Watch votes land in the dashboard, broken down by option, referrer and day. Export CSV or JSON.',
+  },
+];
 ---
 
-<RootLayout title="Polls Lab — Embeddable Polls & Public Leaderboards for Developers">
-  <main class="overflow-x-hidden w-full max-w-full grain-overlay">
-
-    <!-- ============================================ -->
-    <!-- HERO: Cinematic Center                        -->
-    <!-- ============================================ -->
-    <section class="relative min-h-screen flex flex-col items-center justify-center px-4 pt-24 pb-32 overflow-hidden">
-      <!-- Ambient Background -->
-      <div class="absolute inset-0 pointer-events-none">
-        <div class="absolute top-[-20%] left-1/2 -translate-x-1/2 w-[1200px] h-[800px] bg-blue-600/[0.07] rounded-full blur-[160px]"></div>
-        <div class="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-indigo-500/[0.05] rounded-full blur-[120px]"></div>
-        <div class="absolute top-[30%] left-[-5%] w-[400px] h-[400px] bg-cyan-500/[0.04] rounded-full blur-[100px]"></div>
+<RootLayout>
+  <!-- Fold: the snippet a developer copies, beside the widget it produces. -->
+  <section class="fold shell">
+    <div class="fold__text">
+      <h1 class="fold__title">Polls that live in your README.</h1>
+      <p class="fold__lede">
+        One line of markdown renders a live SVG badge. One iframe accepts votes inline. Both stay in
+        sync with the same poll.
+      </p>
+      <div class="fold__actions">
+        <a href="/dashboard/create" class="btn btn--primary">Create a poll</a>
+        <a href="/docs" class="btn btn--ghost">Read the docs</a>
       </div>
+    </div>
 
-      <div class="relative z-10 w-full max-w-6xl mx-auto text-center">
-        <!-- Hero H1 — max-w-6xl guarantees 2 lines at clamp size -->
-        <h1 class="hero-title font-bold tracking-[-0.03em] text-white leading-[0.95]"
-            style="font-size: clamp(2.75rem, 5vw, 5rem);">
-          Polls that live<br />where developers read
-        </h1>
-
-        <p class="hero-subtitle mt-6 text-[#94a3b8] max-w-2xl mx-auto leading-relaxed"
-           style="font-size: clamp(1rem, 1.5vw, 1.25rem);">
-          Drop interactive voting into any README, blog, or dashboard.
-          Sub-5KB embed. Zero tracking. Open source.
-        </p>
-
-        <!-- CTAs -->
-        <div class="hero-ctas mt-10 flex flex-wrap justify-center items-center gap-4">
-          <a
-            href="/dashboard/create"
-            class="btn-interactive px-7 py-3.5 rounded-full bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm shadow-[0_0_30px_rgba(59,130,246,0.35)] hover:shadow-[0_0_40px_rgba(59,130,246,0.5)] transition-all duration-300"
-          >
-            Create a Free Poll
-          </a>
-          <a
-            href="/leaderboard"
-            class="btn-interactive px-7 py-3.5 rounded-full border border-white/10 hover:border-white/20 bg-white/[0.03] hover:bg-white/[0.06] text-white font-medium text-sm backdrop-blur-sm transition-all duration-300"
-          >
-            Explore Leaderboards
-          </a>
-        </div>
-
-        <!-- Live Embed Preview -->
-        <div class="hero-embed mt-16 max-w-2xl mx-auto">
-          <div class="relative rounded-2xl border border-white/[0.06] bg-[#111827]/60 backdrop-blur-sm p-2 shadow-[0_20px_60px_rgba(0,0,0,0.5)]">
-            <div class="absolute -inset-px rounded-2xl bg-gradient-to-b from-blue-500/10 via-transparent to-transparent pointer-events-none"></div>
-            <iframe
-              src={`/embed?id=${demoPoll.id}`}
-              title="Demo Poll: Which web framework is your team prioritizing in 2026?"
-              class="w-full h-[340px] border-0 rounded-xl relative z-10"
-              loading="lazy"
-            ></iframe>
-          </div>
-        </div>
+    <div class="fold__proof">
+      <p class="field-label fold__proof-label">Live poll, real votes</p>
+      <div class="fold__widget">
+        <PollWidget client:load pollId={demoId} />
       </div>
-    </section>
+    </div>
+  </section>
 
-    <!-- ============================================ -->
-    <!-- INFINITE MARQUEE: Tech Stack                  -->
-    <!-- ============================================ -->
-    <section class="py-12 border-y border-white/[0.04] overflow-hidden">
-      <div class="marquee-track">
-        {[...techStack, ...techStack, ...techStack, ...techStack].map((tech) => (
-          <span class="inline-flex items-center px-6 py-2 text-sm font-medium text-[#64748b] whitespace-nowrap select-none">
-            <span class="w-1.5 h-1.5 rounded-full bg-blue-500/40 mr-3"></span>
-            {tech}
-          </span>
-        ))}
-      </div>
-    </section>
+  <!-- Surfaces: three copyable snippets, tabbed rather than stacked as cards. -->
+  <section class="surfaces shell rule-top" aria-labelledby="surfaces-title">
+    <h2 id="surfaces-title" class="section-title">Three ways to embed one poll</h2>
 
-    <!-- ============================================ -->
-    <!-- BENTO GRID: Engineering Pillars               -->
-    <!-- grid-flow-dense, 4 cards, zero empty cells    -->
-    <!-- ============================================ -->
-    <section class="py-32 md:py-48">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <!-- Section heading -->
-        <div class="max-w-3xl mb-16">
-          <h2 class="bento-title text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-white leading-[1.1]">
-            Built for surfaces<br />where every kilobyte matters
-          </h2>
-          <p class="bento-subtitle mt-4 text-[#94a3b8] text-lg max-w-xl">
-            Other survey widgets pull in 200KB+ of tracking bloat. Polls Lab is surgical.
-          </p>
-        </div>
-
-        <!-- Gapless Bento Grid: 3-col, grid-flow-dense
-             Card 1: col-span-2 row-span-1 (wide)
-             Card 2: col-span-1 row-span-2 (tall image)
-             Card 3: col-span-1 row-span-1 (compact)
-             Card 4: col-span-1 row-span-1 (compact)
-             Total: 6 cells filled, zero gaps -->
-        <div class="grid grid-cols-1 md:grid-cols-3 auto-rows-[minmax(180px,auto)] gap-4" style="grid-auto-flow: dense;">
-
-          <!-- Card 1: Wide feature (col-span-2) -->
-          <div class="bento-card group relative col-span-1 md:col-span-2 rounded-2xl border border-white/[0.06] bg-[#111827]/50 backdrop-blur-sm overflow-hidden p-8 flex flex-col justify-between hover:border-blue-500/20 transition-colors duration-500">
-            <div class="absolute inset-0 bg-gradient-to-br from-blue-500/[0.04] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
-            <div class="relative z-10">
-              <span class="text-xs font-mono text-blue-400 tracking-wider">EMBED RUNTIME</span>
-              <h3 class="mt-3 text-2xl sm:text-3xl font-bold text-white leading-tight">
-                4.9KB that<br />outperforms 200KB
-              </h3>
+    <div class="surfaces__grid">
+      {
+        surfaces.map((item) => (
+          <article class="surface">
+            <header class="surface__head">
+              <h3 class="surface__name">{item.surface}</h3>
+              <p class="surface__detail">{item.detail}</p>
+            </header>
+            <div class="code surface__code">
+              <pre data-snippet={item.snippet}><code>{item.snippet}</code></pre>
             </div>
-            <p class="relative z-10 mt-4 text-sm text-[#94a3b8] leading-relaxed max-w-md">
-              Svelte 5 compiles to a surgical bundle smaller than most favicons.
-              Your documentation pages keep perfect Core Web Vitals scores.
-            </p>
-            <div class="relative z-10 mt-6 flex items-center gap-4">
-              <span class="text-3xl font-mono font-bold text-blue-400">4.9</span>
-              <span class="text-xs text-[#64748b] leading-tight">KB gzipped<br />embed footprint</span>
-            </div>
-          </div>
-
-          <!-- Card 2: Tall image (row-span-2) -->
-          <div class="bento-card group relative row-span-1 md:row-span-2 rounded-2xl border border-white/[0.06] overflow-hidden hover:border-white/[0.12] transition-colors duration-500">
-            <img
-              src="https://picsum.photos/seed/polls-lab-engineering/800/900"
-              alt="Engineering architecture"
-              class="absolute inset-0 w-full h-full object-cover grayscale opacity-60 mix-blend-luminosity group-hover:grayscale-0 group-hover:opacity-80 group-hover:scale-105 transition-all duration-700"
-              loading="lazy"
-            />
-            <div class="absolute inset-0 bg-gradient-to-t from-[#0b0f19] via-[#0b0f19]/40 to-transparent"></div>
-            <div class="absolute bottom-0 left-0 right-0 p-6 z-10">
-              <span class="text-xs font-mono text-emerald-400 tracking-wider">ABUSE MITIGATION</span>
-              <h3 class="mt-2 text-lg font-bold text-white leading-snug">
-                Multi-signal<br />vote integrity
-              </h3>
-              <p class="mt-2 text-xs text-[#94a3b8] leading-relaxed">
-                Cryptographic device tokens + sliding-window IP hashing. Avoids false blocks behind shared NAT gateways.
-              </p>
-            </div>
-          </div>
-
-          <!-- Card 3: Compact stat -->
-          <div class="bento-card group relative rounded-2xl border border-white/[0.06] bg-[#111827]/50 backdrop-blur-sm overflow-hidden p-6 hover:border-emerald-500/20 transition-colors duration-500">
-            <div class="absolute inset-0 bg-gradient-to-br from-emerald-500/[0.04] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
-            <div class="relative z-10">
-              <span class="text-xs font-mono text-emerald-400 tracking-wider">PRIVACY</span>
-              <div class="mt-4 text-4xl font-mono font-bold text-emerald-400">0</div>
-              <p class="mt-2 text-sm text-[#94a3b8]">
-                Third-party tracking cookies. Your visitors stay private.
-              </p>
-            </div>
-          </div>
-
-          <!-- Card 4: Compact stat -->
-          <div class="bento-card group relative rounded-2xl border border-white/[0.06] bg-[#111827]/50 backdrop-blur-sm overflow-hidden p-6 hover:border-purple-500/20 transition-colors duration-500">
-            <div class="absolute inset-0 bg-gradient-to-br from-purple-500/[0.04] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
-            <div class="relative z-10">
-              <span class="text-xs font-mono text-purple-400 tracking-wider">BADGES</span>
-              <div class="mt-4 text-4xl font-mono font-bold text-purple-400">0 JS</div>
-              <p class="mt-2 text-sm text-[#94a3b8]">
-                Dynamic SVG badges for GitHub READMEs. No scripts. Just votes.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ============================================ -->
-    <!-- GSAP SCROLL SECTION: Pinned Title + Stacking  -->
-    <!-- ============================================ -->
-    <section class="scroll-features relative py-32 md:py-48">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-start">
-
-          <!-- Left: Sticky Title -->
-          <div class="lg:col-span-5 lg:sticky lg:top-32">
-            <h2 class="scrub-title text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-white leading-[1.1]">
-              Every feature<br />deserves a<br />standard
-            </h2>
-            <p class="scrub-body mt-6 text-[#94a3b8] text-base leading-relaxed max-w-md">
-              Polls Lab was built to replace the patchwork of embedded surveys,
-              community polls, and badge generators that fragment developer workflows.
-            </p>
-          </div>
-
-          <!-- Right: Stacking Feature Cards -->
-          <div class="lg:col-span-7 space-y-6">
-            <div class="stack-card rounded-2xl border border-white/[0.06] bg-[#111827]/70 backdrop-blur-sm p-8 hover:border-blue-500/20 transition-colors duration-500">
-              <div class="flex items-center gap-3 mb-4">
-                <div class="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center">
-                  <svg class="w-5 h-5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5a17.92 17.92 0 01-8.716-2.247m0 0A9 9 0 013 12c0-1.605.42-3.113 1.157-4.418" />
-                  </svg>
-                </div>
-                <h3 class="text-lg font-semibold text-white">Zero-JS Markdown Badges</h3>
-              </div>
-              <p class="text-sm text-[#94a3b8] leading-relaxed">
-                GitHub strips iframes and script tags for security. Polls Lab generates
-                dynamic Shields.io-compatible SVG badges with live vote shares directly
-                in markdown. Clickable linkbacks drive traffic back to your poll.
-              </p>
-            </div>
-
-            <div class="stack-card rounded-2xl border border-white/[0.06] bg-[#111827]/70 backdrop-blur-sm p-8 hover:border-emerald-500/20 transition-colors duration-500">
-              <div class="flex items-center gap-3 mb-4">
-                <div class="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center">
-                  <svg class="w-5 h-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
-                  </svg>
-                </div>
-                <h3 class="text-lg font-semibold text-white">Multi-Signal Abuse Protection</h3>
-              </div>
-              <p class="text-sm text-[#94a3b8] leading-relaxed">
-                Cryptographic device tokens combined with sliding-window IP hash rate
-                limiting. Prevents ballot stuffing while avoiding false positives when
-                entire offices vote from behind the same NAT gateway.
-              </p>
-            </div>
-
-            <div class="stack-card rounded-2xl border border-white/[0.06] bg-[#111827]/70 backdrop-blur-sm p-8 hover:border-purple-500/20 transition-colors duration-500">
-              <div class="flex items-center gap-3 mb-4">
-                <div class="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center">
-                  <svg class="w-5 h-5 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M9.53 16.122a3 3 0 00-5.78 1.128 2.25 2.25 0 01-2.4 2.245 4.5 4.5 0 008.4-2.245c0-.399-.078-.78-.22-1.128zm0 0a15.998 15.998 0 003.388-1.62m-5.043-.025a15.994 15.994 0 011.622-3.395m3.42 3.42a15.995 15.995 0 004.764-4.648l3.876-5.814a1.151 1.151 0 00-1.597-1.597L14.146 6.32a15.996 15.996 0 00-4.649 4.763m3.42 3.42a6.776 6.776 0 00-3.42-3.42" />
-                  </svg>
-                </div>
-                <h3 class="text-lg font-semibold text-white">Themes & Customization</h3>
-              </div>
-              <p class="text-sm text-[#94a3b8] leading-relaxed">
-                Five curated theme packs — Minimal, WhatsApp, Telegram, Story, YouTube Grid.
-                Custom colors, corner radius, typography, and layout. Match your brand
-                without touching a line of CSS.
-              </p>
-            </div>
-
-            <div class="stack-card rounded-2xl border border-white/[0.06] bg-[#111827]/70 backdrop-blur-sm p-8 hover:border-cyan-500/20 transition-colors duration-500">
-              <div class="flex items-center gap-3 mb-4">
-                <div class="w-10 h-10 rounded-xl bg-cyan-500/10 flex items-center justify-center">
-                  <svg class="w-5 h-5 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3m0 0l.5 1.5m-.5-1.5h-9.5m0 0l-.5 1.5" />
-                  </svg>
-                </div>
-                <h3 class="text-lg font-semibold text-white">Multi-Mode Voting</h3>
-              </div>
-              <p class="text-sm text-[#94a3b8] leading-relaxed">
-                Single choice, multi-select, quiz mode with correct answers, and visible
-                voter badges. Confetti celebrations on vote. Every interaction
-                feels alive.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ============================================ -->
-    <!-- EMBED CODE SANDBOX                            -->
-    <!-- ============================================ -->
-    <section class="py-32 md:py-48 bg-[#080c14]">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-          <!-- Left: Code -->
-          <div class="space-y-6">
-            <h2 class="text-3xl sm:text-4xl font-bold tracking-tight text-white leading-tight">
-              Copy. Paste.<br />Live anywhere.
-            </h2>
-            <p class="text-[#94a3b8] text-base max-w-md leading-relaxed">
-              One line of markdown for GitHub READMEs. One iframe for blogs,
-              dashboards, and documentation sites.
-            </p>
-
-            <!-- Tabs -->
-            <div class="flex items-center gap-2 text-xs font-medium" id="embed-tabs">
-              <button
-                type="button"
-                data-tab="badge"
-                class="tab-btn px-4 py-2 rounded-full bg-white/10 text-white font-semibold flex items-center gap-1.5 transition"
-              >
-                <span>SVG Badge</span>
-              </button>
-              <button
-                type="button"
-                data-tab="iframe"
-                class="tab-btn px-4 py-2 rounded-full text-[#94a3b8] hover:text-white hover:bg-white/[0.05] transition"
-              >
-                <span>Iframe Embed</span>
-              </button>
-            </div>
-
-            <!-- Code Display -->
-            <div class="space-y-3">
-              <div id="tab-content-badge" class="tab-pane space-y-3">
-                <div class="flex items-center gap-3">
-                  <a href={badgeSvgUrl} target="_blank" class="hover:opacity-90 transition">
-                    <img
-                      src={badgeSvgUrl}
-                      alt="Polls Lab Badge"
-                      class="h-5"
-                      onerror="this.parentElement.innerHTML='<span class=\'text-xs font-mono bg-white/5 text-emerald-400 px-3 py-1 rounded-full\'>poll: Svelte 5 46% (1420)</span>'"
-                    />
-                  </a>
-                </div>
-                <pre class="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4 text-xs font-mono text-emerald-300 overflow-x-auto select-all"><code id="code-badge">{markdownBadgeSnippet}</code></pre>
-              </div>
-
-              <div id="tab-content-iframe" class="tab-pane hidden space-y-3">
-                <p class="text-xs text-[#94a3b8]">
-                  Embed into WordPress, Astro, Next.js, Hugo, or raw HTML:
-                </p>
-                <pre class="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4 text-xs font-mono text-cyan-300 overflow-x-auto select-all"><code id="code-iframe">{iframeSnippet}</code></pre>
-              </div>
-            </div>
-
-            <button
-              id="copy-snippet-btn"
-              type="button"
-              class="btn-interactive w-full py-3 px-5 rounded-xl bg-white/[0.05] hover:bg-white/[0.08] border border-white/[0.06] text-white font-medium text-sm flex items-center justify-center gap-2 transition"
-            >
-              <svg id="copy-icon" class="w-4 h-4 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-              </svg>
-              <span id="copy-text">Copy Embed Code</span>
+            <button type="button" class="btn btn--quiet surface__copy" data-copy>
+              copy {item.lang}
             </button>
+          </article>
+        ))
+      }
+    </div>
+  </section>
+
+  <!-- Guarantees: F3 tabular spec sheet. Real properties, no invented metrics. -->
+  <section class="specs shell rule-top" aria-labelledby="specs-title">
+    <h2 id="specs-title" class="section-title">What the platform guarantees</h2>
+    <dl class="specs__list">
+      {
+        guarantees.map((row) => (
+          <div class="specs__row">
+            <dt class="specs__key">{row.key}</dt>
+            <dd class="specs__value">{row.value}</dd>
+            <dd class="specs__note">{row.note}</dd>
           </div>
+        ))
+      }
+    </dl>
+  </section>
 
-          <!-- Right: Live Widget -->
-          <div class="relative">
-            <div class="absolute -inset-4 bg-blue-500/[0.04] rounded-3xl blur-2xl pointer-events-none"></div>
-            <div class="relative bg-[#111827]/80 backdrop-blur-sm border border-white/[0.06] rounded-2xl p-3 shadow-2xl">
-              <iframe
-                src={`/embed?id=${demoPoll.id}`}
-                title="Demo Poll embed preview"
-                class="w-full h-[360px] border-0 rounded-xl"
-                loading="lazy"
-              ></iframe>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
+  <!-- Flow: F4 step sequence, verbs as labels rather than "Step 1". -->
+  <section class="flow shell rule-top" aria-labelledby="flow-title">
+    <h2 id="flow-title" class="section-title">From question to results</h2>
+    <ol class="flow__list">
+      {
+        steps.map((step) => (
+          <li class="flow__step">
+            <h3 class="flow__verb">{step.verb}</h3>
+            <p class="flow__body">{step.body}</p>
+          </li>
+        ))
+      }
+    </ol>
+  </section>
 
-    <!-- ============================================ -->
-    <!-- TRENDING POLLS: Horizontal Accordions          -->
-    <!-- ============================================ -->
-    <section class="py-32 md:py-48">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex items-end justify-between mb-12">
-          <h2 class="text-3xl sm:text-4xl font-bold tracking-tight text-white leading-tight">
-            Trending now
-          </h2>
-          <a href="/leaderboard" class="text-sm text-blue-400 hover:text-blue-300 font-medium flex items-center gap-1.5 transition">
-            View all
-            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-            </svg>
-          </a>
-        </div>
-
-        <!-- Horizontal Accordion -->
-        <div class="flex gap-3 h-[320px] md:h-[380px]">
-          {topPollsSnapshot.map((poll, i) => (
-            <div
-              class:list={[
-                'accordion-slice relative rounded-2xl border border-white/[0.06] overflow-hidden',
-                i === 0 && 'active',
-              ]}
-              data-index={i}
-            >
-              <img
-                src={`https://picsum.photos/seed/${poll.id}/600/800`}
-                alt=""
-                class="absolute inset-0 w-full h-full object-cover grayscale opacity-40 group-hover:grayscale-0 transition-all duration-700"
-                loading="lazy"
-              />
-              <div class="absolute inset-0 bg-gradient-to-t from-[#0b0f19] via-[#0b0f19]/60 to-transparent"></div>
-
-              <!-- Collapsed state: vertical text -->
-              <div class="accordion-collapsed absolute inset-0 flex items-end justify-center pb-6 z-10">
-                <span class="[writing-mode:vertical-rl] text-xs font-mono text-[#64748b] tracking-widest uppercase">
-                  {poll.created}
-                </span>
-              </div>
-
-              <!-- Expanded state: full content -->
-              <div class="accordion-expanded absolute inset-0 p-6 flex flex-col justify-end z-10 opacity-0 md:group-hover:opacity-100 transition-opacity duration-500">
-                <div class="space-y-3">
-                  <div class="flex items-center gap-2 text-xs font-mono">
-                    <span class="text-emerald-400">{poll.votes.toLocaleString()} votes</span>
-                    <span class="text-[#64748b]">/</span>
-                    <span class="text-[#64748b]">{poll.created}</span>
-                  </div>
-                  <h3 class="text-lg sm:text-xl font-bold text-white leading-snug">
-                    <a href={`/polls/${poll.id}`} class="hover:text-blue-400 transition">
-                      {poll.title}
-                    </a>
-                  </h3>
-                  <div class="space-y-2">
-                    <div class="flex justify-between text-xs font-medium">
-                      <span class="text-[#94a3b8]">Leading: <strong class="text-white">{poll.topOption}</strong></span>
-                      <span class="text-emerald-400 font-mono">{poll.percentage}%</span>
-                    </div>
-                    <div class="w-full bg-white/[0.06] h-1.5 rounded-full overflow-hidden">
-                      <div class="bg-blue-500 h-full rounded-full" style={`width: ${poll.percentage}%`}></div>
-                    </div>
-                  </div>
-                  <a
-                    href={`/polls/${poll.id}`}
-                    class="inline-flex items-center gap-1.5 text-xs text-blue-400 hover:text-blue-300 font-medium transition mt-1"
-                  >
-                    Vote in this poll
-                    <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-                    </svg>
-                  </a>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-
-    <!-- ============================================ -->
-    <!-- CTA: Massive Call to Action                    -->
-    <!-- ============================================ -->
-    <section class="relative py-32 md:py-48 overflow-hidden">
-      <div class="absolute inset-0 pointer-events-none">
-        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[600px] bg-blue-600/[0.08] rounded-full blur-[150px]"></div>
-      </div>
-
-      <div class="relative z-10 max-w-4xl mx-auto px-4 text-center space-y-8">
-        <h2 class="cta-title text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-white leading-[1.05]"
-            style="font-size: clamp(2.5rem, 5vw, 4.5rem);">
-          Start collecting<br />community signals
-        </h2>
-        <p class="cta-body text-lg text-[#94a3b8] max-w-xl mx-auto leading-relaxed">
-          Create a poll in seconds. No signup required to vote.
-          Self-host with a single binary.
-        </p>
-        <div class="cta-buttons flex flex-wrap justify-center gap-4 pt-2">
-          <a
-            href="/dashboard/create"
-            class="btn-interactive px-8 py-4 rounded-full bg-blue-600 hover:bg-blue-500 text-white font-semibold text-base shadow-[0_0_40px_rgba(59,130,246,0.35)] hover:shadow-[0_0_50px_rgba(59,130,246,0.5)] transition-all duration-300"
-          >
-            Create Free Poll
-          </a>
-          <a
-            href="/docs"
-            class="btn-interactive px-8 py-4 rounded-full border border-white/10 hover:border-white/20 bg-white/[0.03] hover:bg-white/[0.06] text-white font-medium text-base backdrop-blur-sm transition-all duration-300"
-          >
-            Read the Docs
-          </a>
-        </div>
-      </div>
-    </section>
-
-  </main>
+  <!-- Close: Ft5-adjacent statement, typographic CTA. -->
+  <section class="close shell rule-top">
+    <p class="close__line">
+      Everything above runs on a stack you can host yourself: FastAPI, PocketBase and a static Astro
+      front end.
+    </p>
+    <div class="close__actions">
+      <a href="/dashboard/create" class="btn btn--primary">Create a poll</a>
+      <a
+        href="https://github.com/Luckyyaduvanshiofficial/polls-lab/blob/main/docs/self-hosting.md"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="btn btn--ghost"
+      >
+        Self-hosting guide
+      </a>
+    </div>
+  </section>
 </RootLayout>
 
-<script>
-  function setupEmbedGenerator() {
-    const tabs = document.querySelectorAll('#embed-tabs .tab-btn');
-    const badgePane = document.getElementById('tab-content-badge');
-    const iframePane = document.getElementById('tab-content-iframe');
-    const copyBtn = document.getElementById('copy-snippet-btn');
-    const copyText = document.getElementById('copy-text');
-    let currentTab = 'badge';
+<style>
+  .section-title {
+    font-size: var(--text-lg);
+    color: var(--color-ink);
+    margin-bottom: var(--space-lg);
+  }
 
-    tabs.forEach((tab) => {
-      tab.addEventListener('click', () => {
-        const target = tab.getAttribute('data-tab');
-        if (!target) return;
-        currentTab = target;
+  /* ---- Fold ---- */
+  .fold {
+    display: grid;
+    grid-template-columns: 1.05fr 0.95fr;
+    gap: var(--space-3xl);
+    align-items: center;
+    padding-block: var(--space-4xl) var(--space-3xl);
+  }
 
-        tabs.forEach((t) => {
-          t.classList.remove('bg-white/10', 'text-white', 'font-semibold');
-          t.classList.add('text-[#94a3b8]');
-        });
-        tab.classList.add('bg-white/10', 'text-white', 'font-semibold');
-        tab.classList.remove('text-[#94a3b8]');
+  .fold__title {
+    font-size: var(--text-display);
+    max-width: 22ch;
+  }
 
-        if (target === 'badge') {
-          badgePane?.classList.remove('hidden');
-          iframePane?.classList.add('hidden');
-        } else {
-          iframePane?.classList.remove('hidden');
-          badgePane?.classList.add('hidden');
-        }
-      });
-    });
+  .fold__lede {
+    margin-top: var(--space-md);
+    max-width: 46ch;
+    color: var(--color-ink-2);
+    font-size: var(--text-base);
+  }
 
-    if (copyBtn && copyText) {
-      copyBtn.onclick = () => {
-        const codeElement = currentTab === 'badge' ? document.getElementById('code-badge') : document.getElementById('code-iframe');
-        const textToCopy = codeElement?.textContent || '';
-        navigator.clipboard.writeText(textToCopy).then(() => {
-          const originalText = copyText.textContent;
-          copyText.textContent = 'Copied to clipboard';
-          copyBtn.classList.add('bg-emerald-600/20', 'border-emerald-500/30');
-          setTimeout(() => {
-            copyText.textContent = originalText;
-            copyBtn.classList.remove('bg-emerald-600/20', 'border-emerald-500/30');
-          }, 2000);
-        });
-      };
+  .fold__actions {
+    display: flex;
+    gap: var(--space-xs);
+    margin-top: var(--space-lg);
+    flex-wrap: wrap;
+  }
+
+  .fold__proof {
+    min-width: 0;
+  }
+
+  .fold__proof-label {
+    margin-bottom: var(--space-xs);
+  }
+
+  .fold__widget {
+    border: var(--rule-hair) solid var(--color-rule);
+    border-radius: var(--radius-md);
+    background: var(--color-paper-inset);
+    padding: var(--space-sm);
+    min-width: 0;
+  }
+
+  /* ---- Surfaces ---- */
+  .surfaces,
+  .specs,
+  .flow,
+  .close {
+    padding-block: var(--space-3xl);
+  }
+
+  .surfaces__grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-lg);
+  }
+
+  .surface {
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    gap: var(--space-sm);
+    min-width: 0;
+  }
+
+  .surface__name {
+    font-size: var(--text-sm);
+    color: var(--color-accent);
+  }
+
+  .surface__detail {
+    margin-top: var(--space-2xs);
+    font-size: var(--text-xs);
+    color: var(--color-ink-3);
+    line-height: 1.6;
+  }
+
+  .surface__code pre {
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+
+  .surface__copy {
+    justify-self: start;
+  }
+
+  /* ---- Specs ---- */
+  .specs__list {
+    margin: 0;
+    border-top: var(--rule-hair) solid var(--color-rule);
+  }
+
+  .specs__row {
+    display: grid;
+    grid-template-columns: 12rem 12rem 1fr;
+    gap: var(--space-md);
+    align-items: baseline;
+    padding-block: var(--space-sm);
+    border-bottom: var(--rule-hair) solid var(--color-rule);
+  }
+
+  .specs__key {
+    font-size: var(--text-xs);
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    color: var(--color-ink-3);
+  }
+
+  .specs__value {
+    margin: 0;
+    font-size: var(--text-sm);
+    color: var(--color-ink);
+    font-weight: 500;
+  }
+
+  .specs__note {
+    margin: 0;
+    font-size: var(--text-xs);
+    color: var(--color-ink-3);
+  }
+
+  /* ---- Flow ---- */
+  .flow__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-xl);
+  }
+
+  .flow__step {
+    padding-top: var(--space-sm);
+    border-top: 2px solid var(--color-accent-dim);
+    min-width: 0;
+  }
+
+  .flow__verb {
+    font-size: var(--text-base);
+    color: var(--color-ink);
+  }
+
+  .flow__body {
+    margin-top: var(--space-xs);
+    font-size: var(--text-xs);
+    color: var(--color-ink-3);
+    line-height: 1.7;
+  }
+
+  /* ---- Close ---- */
+  .close__line {
+    font-size: var(--text-xl);
+    color: var(--color-ink);
+    max-width: 48ch;
+    line-height: 1.35;
+    letter-spacing: var(--tracking-tight);
+  }
+
+  .close__actions {
+    display: flex;
+    gap: var(--space-xs);
+    margin-top: var(--space-lg);
+    flex-wrap: wrap;
+  }
+
+  /* ---- Responsive ---- */
+  @media (max-width: 60rem) {
+    .fold {
+      grid-template-columns: minmax(0, 1fr);
+      gap: var(--space-xl);
+      padding-block: var(--space-2xl);
+    }
+
+    .surfaces__grid,
+    .flow__list {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .specs__row {
+      grid-template-columns: 10rem 1fr;
+    }
+
+    .specs__note {
+      grid-column: 1 / -1;
     }
   }
 
-  function setupAccordions() {
-    const slices = document.querySelectorAll('.accordion-slice');
-    slices.forEach((slice) => {
-      slice.addEventListener('mouseenter', () => {
-        slices.forEach((s) => s.classList.remove('active'));
-        slice.classList.add('active');
-      });
+  @media (max-width: 40rem) {
+    .fold__title {
+      font-size: var(--text-display-s);
+    }
+
+    .specs__row {
+      grid-template-columns: minmax(0, 1fr);
+      gap: var(--space-2xs);
+    }
+  }
+</style>
+
+<script>
+  import { getApiUrl, getSiteUrl } from '../lib/config';
+
+  /**
+   * Snippets ship with API/SITE placeholders so the static build stays origin
+   * agnostic; they resolve here to whatever origin is actually serving.
+   */
+  function resolveSnippets() {
+    const api = getApiUrl();
+    const site = getSiteUrl();
+
+    document.querySelectorAll<HTMLElement>('pre[data-snippet]').forEach((pre) => {
+      const raw = pre.dataset.snippet ?? '';
+      const resolved = raw.replaceAll('API', api).replaceAll('SITE', site);
+      pre.dataset.resolved = resolved;
+      const code = pre.querySelector('code');
+      if (code) code.textContent = resolved;
     });
   }
 
-  function initGSAP() {
-    if (typeof window === 'undefined') return;
+  function wireCopy() {
+    document.querySelectorAll<HTMLButtonElement>('[data-copy]').forEach((btn) => {
+      btn.onclick = async () => {
+        const pre = btn.parentElement?.querySelector<HTMLElement>('pre[data-snippet]');
+        const text = pre?.dataset.resolved ?? pre?.textContent ?? '';
+        if (!text) return;
 
-    import('gsap').then(({ gsap }) => {
-      import('gsap/ScrollTrigger').then(({ ScrollTrigger }) => {
-        gsap.registerPlugin(ScrollTrigger);
-
-        const mm = gsap.matchMedia();
-
-        mm.add(
-          {
-            isDesktop: '(min-width: 768px)',
-            reduceMotion: '(prefers-reduced-motion: reduce)',
-          },
-          (context) => {
-            const { isDesktop, reduceMotion } = context.conditions;
-            if (reduceMotion) return;
-
-            // Hero entrance
-            gsap.from('.hero-title', {
-              y: 60,
-              autoAlpha: 0,
-              duration: 1.2,
-              ease: 'power3.out',
-              delay: 0.2,
-            });
-            gsap.from('.hero-subtitle', {
-              y: 40,
-              autoAlpha: 0,
-              duration: 1,
-              ease: 'power3.out',
-              delay: 0.5,
-            });
-            gsap.from('.hero-ctas', {
-              y: 30,
-              autoAlpha: 0,
-              duration: 0.8,
-              ease: 'power3.out',
-              delay: 0.7,
-            });
-            gsap.from('.hero-embed', {
-              y: 50,
-              autoAlpha: 0,
-              scale: 0.95,
-              duration: 1.2,
-              ease: 'power3.out',
-              delay: 0.9,
-            });
-
-            // Bento cards stagger
-            gsap.from('.bento-card', {
-              y: 60,
-              autoAlpha: 0,
-              duration: 0.8,
-              ease: 'power2.out',
-              stagger: 0.15,
-              scrollTrigger: {
-                trigger: '.bento-card',
-                start: 'top 85%',
-                once: true,
-              },
-            });
-
-            // Section titles
-            gsap.from('.bento-title', {
-              y: 40,
-              autoAlpha: 0,
-              duration: 1,
-              ease: 'power3.out',
-              scrollTrigger: {
-                trigger: '.bento-title',
-                start: 'top 85%',
-                once: true,
-              },
-            });
-
-            // Scroll features — scrub text reveal
-            if (isDesktop) {
-              gsap.fromTo('.scrub-title', {
-                opacity: 0.1,
-              }, {
-                opacity: 1,
-                duration: 1,
-                scrollTrigger: {
-                  trigger: '.scroll-features',
-                  start: 'top 70%',
-                  end: 'center center',
-                  scrub: 1,
-                },
-              });
-
-              gsap.fromTo('.scrub-body', {
-                opacity: 0.1,
-              }, {
-                opacity: 1,
-                duration: 1,
-                scrollTrigger: {
-                  trigger: '.scroll-features',
-                  start: 'top 60%',
-                  end: 'center 40%',
-                  scrub: 1,
-                },
-              });
-
-              // Stack cards — each one sticks and previous fades
-              const stackCards = gsap.utils.toArray('.stack-card');
-              stackCards.forEach((card, i) => {
-                gsap.from(card, {
-                  y: 80,
-                  autoAlpha: 0,
-                  duration: 0.6,
-                  ease: 'power2.out',
-                  scrollTrigger: {
-                    trigger: card,
-                    start: 'top 90%',
-                    once: true,
-                  },
-                });
-              });
-            }
-
-            // CTA section
-            gsap.from('.cta-title', {
-              y: 50,
-              autoAlpha: 0,
-              duration: 1,
-              ease: 'power3.out',
-              scrollTrigger: {
-                trigger: '.cta-title',
-                start: 'top 80%',
-                once: true,
-              },
-            });
-            gsap.from('.cta-body', {
-              y: 30,
-              autoAlpha: 0,
-              duration: 0.8,
-              ease: 'power3.out',
-              delay: 0.2,
-              scrollTrigger: {
-                trigger: '.cta-body',
-                start: 'top 85%',
-                once: true,
-              },
-            });
-            gsap.from('.cta-buttons', {
-              y: 20,
-              autoAlpha: 0,
-              duration: 0.6,
-              ease: 'power3.out',
-              delay: 0.4,
-              scrollTrigger: {
-                trigger: '.cta-buttons',
-                start: 'top 90%',
-                once: true,
-              },
-            });
-
-            return () => {
-              ScrollTrigger.getAll().forEach((t) => t.kill());
-            };
+        const original = btn.textContent;
+        try {
+          await navigator.clipboard.writeText(text);
+          btn.textContent = 'copied';
+        } catch {
+          btn.textContent = 'press ctrl+c';
+          const range = document.createRange();
+          if (pre) {
+            range.selectNodeContents(pre);
+            const selection = window.getSelection();
+            selection?.removeAllRanges();
+            selection?.addRange(range);
           }
-        );
-      });
+        }
+        window.setTimeout(() => {
+          btn.textContent = original;
+        }, 1600);
+      };
     });
   }
 
-  setupEmbedGenerator();
-  setupAccordions();
-  initGSAP();
-  document.addEventListener('astro:page-load', () => {
-    setupEmbedGenerator();
-    setupAccordions();
-    initGSAP();
-  });
+  function init() {
+    resolveSnippets();
+    wireCopy();
+  }
+
+  init();
+  document.addEventListener('astro:page-load', init);
 </script>

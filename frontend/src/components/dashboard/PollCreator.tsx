@@ -1,6 +1,8 @@
-import React, { useState, useTransition } from 'react';
-import { getApiUrl, getSiteUrl } from '../../lib/config';
+import React, { useEffect, useState, useTransition } from 'react';
+import { getSiteUrl } from '../../lib/config';
 import { getMarkdownBadgeSnippet, getIframeSnippet, copyToClipboard } from '../../lib/embed';
+import { createPoll, uploadPollImage } from '../../lib/api';
+import { isSignedIn, startSignIn } from '../../lib/auth';
 
 interface PollOptionItem {
   id: string;
@@ -130,25 +132,13 @@ export default function PollCreator() {
     setUploadingIdx(index);
     setErrorMessage(null);
     try {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('polls-lab_auth_token') || 'dev-user-local' : 'dev-user-local';
-      const form = new FormData();
-      form.append('file', file);
-      const res = await fetch(`${getApiUrl()}/api/v1/polls/images`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'x-dev-user-id': token,
-        },
-        body: form,
-      });
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.detail || `Upload failed (${res.status})`);
+      const result = await uploadPollImage(file);
+      if (!result.ok) {
+        throw new Error(result.error);
       }
-      const data = await res.json();
-      handleOptionChange(index, 'icon_or_image', data.url);
+      handleOptionChange(index, 'icon_or_image', result.data.url);
     } catch (err: any) {
-      setErrorMessage(err.message || 'Image upload failed. Use JPEG, PNG, GIF, or WebP under 2MB.');
+      setErrorMessage(err.message || 'Image upload failed. Use JPEG, PNG, GIF or WebP under 2MB.');
     } finally {
       setUploadingIdx(null);
     }
@@ -176,15 +166,7 @@ export default function PollCreator() {
 
     startTransition(async () => {
       try {
-        const token = typeof window !== 'undefined' ? localStorage.getItem('polls-lab_auth_token') || 'dev-user-local' : 'dev-user-local';
-        const res = await fetch(`${getApiUrl()}/api/v1/polls`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-            'x-dev-user-id': token,
-          },
-          body: JSON.stringify({
+        const result = await createPoll({
             title: title.trim(),
             description: description.trim() || undefined,
             options: validOptions,
@@ -196,16 +178,13 @@ export default function PollCreator() {
             correct_options: isQuiz && correctOptions.length > 0 ? correctOptions : undefined,
             show_voters: showVoters || undefined,
             appearance: buildAppearance(),
-          }),
         });
 
-        if (!res.ok) {
-          const errData = await res.json().catch(() => ({}));
-          throw new Error(errData.detail || `Server returned error (${res.status})`);
+        if (!result.ok) {
+          throw new Error(result.error);
         }
 
-        const data = await res.json();
-        setCreatedPoll({ id: data.id, title: data.title });
+        setCreatedPoll({ id: result.data.id, title: result.data.title });
       } catch (err: any) {
         setErrorMessage(err.message || 'Failed to publish poll. Please try again.');
       }
@@ -837,7 +816,7 @@ export default function PollCreator() {
 
             <div className="pt-1">
               <label className="block font-medium text-[#94a3b8] mb-1">
-                Live preview — real widget with your {preset.name} theme
+                Live preview: the real widget with your {preset.name} theme
               </label>
               <iframe
                 src={`${getSiteUrl()}/embed?id=${createdPoll.id}`}

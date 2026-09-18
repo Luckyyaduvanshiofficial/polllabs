@@ -1,23 +1,125 @@
 ---
+/**
+ * Poll creator shell. The form itself is React (state-heavy, live preview);
+ * this page supplies the breadcrumb and the signed-out gate so an anonymous
+ * visitor is told what to do rather than meeting a form that cannot submit.
+ */
 import RootLayout from '../../../layouts/RootLayout.astro';
 import PollCreator from '../../../components/dashboard/PollCreator';
 ---
 
-<RootLayout title="Create a Poll — Polls Lab Studio">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-    <!-- Breadcrumb & Nav -->
-    <div class="mb-8 flex items-center justify-between">
-      <div class="flex items-center gap-2 text-xs text-[#94a3b8]">
-        <a href="/dashboard" class="hover:text-white transition flex items-center gap-1">
-          <span>← Back to Dashboard</span>
-        </a>
-        <span>/</span>
-        <span class="text-white font-medium">New Poll Studio</span>
-      </div>
-      <span class="text-xs font-mono text-[#64748b]">v1.0 API</span>
+<RootLayout title="New poll · Polls Lab" noindex>
+  <section class="shell create">
+    <nav class="crumbs" aria-label="Breadcrumb">
+      <a href="/dashboard">dashboard</a>
+      <span aria-hidden="true">/</span>
+      <span class="crumbs__here">new poll</span>
+    </nav>
+
+    <div class="create__gate" data-signedout hidden>
+      <p class="create__msg">Sign in to create a poll.</p>
+      <p class="create__hint">
+        Creating a poll ties it to your GitHub account so you can edit it and read its analytics
+        later. Voting on one never needs an account.
+      </p>
+      <button type="button" class="btn btn--primary" data-signin-cta>Sign in with GitHub</button>
+      <p class="create__err" data-signin-error hidden></p>
     </div>
 
-    <PollCreator client:load />
-  </div>
+    <div data-authed hidden>
+      <PollCreator client:load />
+    </div>
+  </section>
 </RootLayout>
 
+<style>
+  .create {
+    padding-block: var(--space-2xl) var(--space-3xl);
+  }
+
+  .crumbs {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    font-size: var(--text-xs);
+    color: var(--color-ink-4);
+    margin-bottom: var(--space-lg);
+  }
+
+  .crumbs a {
+    color: var(--color-ink-3);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    min-height: 1.75rem;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .crumbs a:hover {
+    color: var(--color-accent);
+  }
+
+  .crumbs__here {
+    color: var(--color-ink-2);
+  }
+
+  .create__gate {
+    display: grid;
+    gap: var(--space-sm);
+    justify-items: start;
+    padding-block: var(--space-2xl);
+    border-top: var(--rule-hair) solid var(--color-rule);
+  }
+
+  .create__msg {
+    font-size: var(--text-base);
+    color: var(--color-ink);
+  }
+
+  .create__hint {
+    font-size: var(--text-xs);
+    color: var(--color-ink-3);
+    max-width: 58ch;
+    line-height: 1.7;
+  }
+
+  .create__err {
+    font-size: var(--text-xs);
+    color: var(--color-danger);
+  }
+</style>
+
+<script>
+  import { isSignedIn, startSignIn } from '../../../lib/auth';
+
+  function init() {
+    const gate = document.querySelector<HTMLElement>('[data-signedout]');
+    const authed = document.querySelector<HTMLElement>('[data-authed]');
+    const signedIn = isSignedIn();
+
+    if (gate) gate.hidden = signedIn;
+    if (authed) authed.hidden = !signedIn;
+
+    if (signedIn) return;
+
+    const cta = document.querySelector<HTMLButtonElement>('[data-signin-cta]');
+    const err = document.querySelector<HTMLElement>('[data-signin-error]');
+    if (cta) {
+      cta.onclick = async () => {
+        cta.disabled = true;
+        try {
+          await startSignIn('/dashboard/create');
+        } catch (e) {
+          if (err) {
+            err.textContent = e instanceof Error ? e.message : 'Could not start sign-in.';
+            err.hidden = false;
+          }
+          cta.disabled = false;
+        }
+      };
+    }
+  }
+
+  init();
+  document.addEventListener('astro:page-load', init);
+</script>
