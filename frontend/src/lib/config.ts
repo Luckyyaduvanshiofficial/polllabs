@@ -39,6 +39,45 @@ export function getApiBase(): string {
   return `${getApiUrl()}/api/v1`;
 }
 
+/**
+ * Detects the failure mode that produces a bare "Failed to fetch" in the
+ * browser: a static build deployed to a real domain while PUBLIC_API_URL and
+ * PUBLIC_PB_URL still hold their localhost defaults. Those are inlined at build
+ * time, so a deploy that forgets the build args silently ships a site whose
+ * every request goes to the viewer's own machine.
+ *
+ * Returns the misconfigured variable names, or an empty array when fine.
+ */
+export function findMisconfiguredOrigins(): string[] {
+  if (typeof window === 'undefined') return [];
+
+  const host = window.location.hostname;
+  const servedLocally =
+    host === 'localhost' || host === '127.0.0.1' || host === '0.0.0.0' || host.endsWith('.local');
+  if (servedLocally) return [];
+
+  const pointsAtLocalhost = (url: string) =>
+    url.includes('localhost') || url.includes('127.0.0.1');
+
+  const broken: string[] = [];
+  if (pointsAtLocalhost(getApiUrl())) broken.push('PUBLIC_API_URL');
+  if (pointsAtLocalhost(getPbUrl())) broken.push('PUBLIC_PB_URL');
+  return broken;
+}
+
+/** Logs the misconfiguration once, with the fix, so it is visible in devtools. */
+export function warnIfMisconfigured(): void {
+  const broken = findMisconfiguredOrigins();
+  if (broken.length === 0) return;
+
+  console.error(
+    `[polls-lab] ${broken.join(' and ')} still ` +
+      `${broken.length > 1 ? 'point' : 'points'} at localhost in this build, so requests go to ` +
+      `the viewer's own machine and fail. These are build-time values: set them as build args ` +
+      `and rebuild the frontend image.`
+  );
+}
+
 export const STORAGE_KEYS = {
   /** PocketBase auth token. Signed by PocketBase; the backend verifies it. */
   token: 'polls-lab_auth_token',
