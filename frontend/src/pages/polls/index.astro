@@ -97,42 +97,42 @@ import RootLayout from '../../layouts/RootLayout.astro';
     display: inline-flex;
     align-items: center;
     min-height: 2rem;
-    font-size: var(--text-xs);
+    font-size: var(--text-sm);
     color: var(--color-ink-3);
-    margin-bottom: var(--space-md);
+    margin-bottom: var(--space-lg);
   }
 
   .one__back:hover {
-    color: var(--color-accent);
+    color: var(--color-accent-strong);
   }
 
   .list__title {
-    font-size: var(--text-2xl);
+    font-size: var(--text-3xl);
   }
 
   .list__lede {
-    margin-top: var(--space-xs);
-    font-size: var(--text-sm);
+    margin-top: var(--space-sm);
+    font-size: var(--text-base);
     color: var(--color-ink-3);
-    max-width: 60ch;
+    max-width: 56ch;
+    line-height: var(--leading-body);
   }
 
   .list__toolbar {
     display: flex;
     align-items: center;
-    gap: var(--space-md);
-    margin-block: var(--space-xl) var(--space-md);
+    gap: var(--space-lg);
+    margin-block: var(--space-2xl) var(--space-md);
   }
 
   .list__sort {
     width: auto;
-    min-width: 12rem;
+    min-width: 13rem;
   }
 
   .list__count {
-    font-size: var(--text-xs);
+    font-size: var(--text-sm);
     color: var(--color-ink-3);
-    font-variant-numeric: tabular-nums;
   }
 
   .polls {
@@ -144,40 +144,41 @@ import RootLayout from '../../layouts/RootLayout.astro';
   .poll {
     display: grid;
     grid-template-columns: 1fr auto;
-    gap: var(--space-xs) var(--space-md);
-    padding-block: var(--space-md);
+    gap: var(--space-xs) var(--space-lg);
+    padding-block: var(--space-lg);
     border-bottom: var(--rule-hair) solid var(--color-rule);
+    transition: background-color var(--dur-fast) var(--ease-out);
+  }
+
+  .poll:hover {
+    background: var(--color-paper-2);
   }
 
   .poll__link {
-    font-size: var(--text-base);
+    font-size: var(--text-lg);
+    font-weight: 500;
+    letter-spacing: var(--tracking-snug);
     color: var(--color-ink);
-    text-decoration: underline;
-    text-decoration-color: transparent;
-    text-underline-offset: 3px;
-    transition: text-decoration-color var(--dur-fast) var(--ease-out);
   }
 
-  .poll__link:hover {
-    color: var(--color-accent);
-    text-decoration-color: var(--color-accent);
+  .poll:hover .poll__link {
+    color: var(--color-accent-strong);
   }
 
   .poll__meta {
     display: flex;
     flex-wrap: wrap;
     gap: var(--space-md);
-    font-size: var(--text-2xs);
+    font-size: var(--text-sm);
     color: var(--color-ink-4);
-    letter-spacing: var(--tracking-label);
-    text-transform: uppercase;
     grid-column: 1 / -1;
   }
 
   .poll__votes {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
     font-size: var(--text-sm);
     color: var(--color-ink-2);
-    font-variant-numeric: tabular-nums;
     align-self: start;
     white-space: nowrap;
   }
@@ -187,16 +188,17 @@ import RootLayout from '../../layouts/RootLayout.astro';
   }
 
   .state {
-    padding-block: var(--space-2xl);
+    padding-block: var(--space-3xl);
     display: grid;
-    gap: var(--space-sm);
+    gap: var(--space-md);
     justify-items: start;
     border-top: var(--rule-hair) solid var(--color-rule);
   }
 
   .state__msg {
-    font-size: var(--text-base);
+    font-size: var(--text-lg);
     color: var(--color-ink);
+    font-weight: 500;
   }
 
   .state--error .state__msg {
@@ -204,28 +206,29 @@ import RootLayout from '../../layouts/RootLayout.astro';
   }
 
   .state__hint {
-    font-size: var(--text-xs);
+    font-size: var(--text-sm);
     color: var(--color-ink-3);
-    max-width: 54ch;
+    max-width: 52ch;
+    line-height: var(--leading-body);
   }
 
   .pager {
     display: flex;
     align-items: center;
-    gap: var(--space-md);
-    margin-top: var(--space-lg);
+    gap: var(--space-lg);
+    margin-top: var(--space-xl);
   }
 
   .pager__at {
-    font-size: var(--text-xs);
+    font-size: var(--text-sm);
     color: var(--color-ink-3);
-    font-variant-numeric: tabular-nums;
   }
 
   @media (max-width: 40rem) {
     .list__toolbar {
       flex-direction: column;
       align-items: stretch;
+      gap: var(--space-sm);
     }
 
     .list__sort {

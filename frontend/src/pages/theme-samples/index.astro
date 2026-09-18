@@ -127,26 +127,28 @@ const themes = [
   }
 
   .themes__title {
-    font-size: var(--text-2xl);
+    font-size: var(--text-3xl);
   }
 
   .themes__lede {
-    margin-top: var(--space-xs);
-    font-size: var(--text-sm);
-    color: var(--color-ink-2);
-    max-width: 68ch;
-    line-height: 1.7;
+    margin-top: var(--space-sm);
+    font-size: var(--text-base);
+    color: var(--color-ink-3);
+    max-width: 62ch;
+    line-height: var(--leading-body);
   }
 
   .themes__note {
-    margin-top: var(--space-sm);
-    font-size: var(--text-xs);
-    color: var(--color-ink-3);
+    margin-top: var(--space-md);
+    font-size: var(--text-sm);
+    color: var(--color-ink-4);
   }
 
   .themes__note code,
   .sample__name code {
-    color: var(--color-accent);
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+    color: var(--color-accent-strong);
   }
 
   .themes__list {
@@ -157,39 +159,38 @@ const themes = [
 
   .sample {
     display: grid;
-    grid-template-columns: minmax(0, 18rem) minmax(0, 1fr);
-    gap: var(--space-xl);
+    grid-template-columns: minmax(0, 17rem) minmax(0, 1fr);
+    gap: var(--space-2xl);
     align-items: start;
-    padding-top: var(--space-lg);
+    padding-top: var(--space-xl);
     border-top: var(--rule-hair) solid var(--color-rule);
   }
 
   .sample__name {
-    font-size: var(--text-base);
+    font-size: var(--text-lg);
   }
 
   .sample__note {
-    margin-top: var(--space-xs);
-    font-size: var(--text-xs);
+    margin-top: var(--space-sm);
+    font-size: var(--text-sm);
     color: var(--color-ink-3);
-    line-height: 1.7;
+    line-height: var(--leading-body);
   }
 
   .sample__meta {
-    margin-top: var(--space-xs);
-    font-size: var(--text-2xs);
-    letter-spacing: var(--tracking-label);
-    text-transform: uppercase;
+    margin-top: var(--space-sm);
+    font-size: var(--text-sm);
     color: var(--color-ink-4);
   }
 
-  /* A neutral mid surface so light and dark themes both read honestly. */
+  /* A neutral mid-grey frame so light and dark poll themes both read honestly
+   * against it rather than blending into the page. */
   .sample__frame {
     min-width: 0;
-    padding: var(--space-md);
+    padding: var(--space-lg);
     background: var(--color-paper-3);
     border: var(--rule-hair) solid var(--color-rule);
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-lg);
   }
 
   .themes__foot {
@@ -198,20 +199,20 @@ const themes = [
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: var(--space-md);
+    gap: var(--space-lg);
     flex-wrap: wrap;
   }
 
   .themes__foot-text {
-    font-size: var(--text-sm);
+    font-size: var(--text-base);
     color: var(--color-ink-2);
-    max-width: 52ch;
+    max-width: 48ch;
   }
 
   @media (max-width: 60rem) {
     .sample {
       grid-template-columns: minmax(0, 1fr);
-      gap: var(--space-md);
+      gap: var(--space-lg);
     }
   }
 </style>

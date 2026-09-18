@@ -202,22 +202,22 @@ export default function PollCreator() {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
       {/* Left: Creator Form */}
-      <div className="lg:col-span-7 bg-[#111827] border border-[#1e293b] rounded-2xl p-6 sm:p-8 shadow-xl space-y-6">
+      <div className="lg:col-span-7 bg-paper-2 border border-rule rounded-2xl p-6 sm:p-8 shadow-xl space-y-6">
         <div>
-          <span className="text-xs font-mono text-blue-400 uppercase tracking-wider">Studio</span>
-          <h2 className="text-2xl font-bold text-white mt-1">Configure Your Poll</h2>
-          <p className="text-xs text-[#94a3b8] mt-1">
+          <span className="text-xs font-mono text-accent uppercase tracking-wider">Studio</span>
+          <h2 className="text-2xl font-bold text-ink mt-1">Configure Your Poll</h2>
+          <p className="text-xs text-ink-3 mt-1">
             Build single-choice polls with live preview and instant embed generation.
           </p>
         </div>
 
         {errorMessage && (
-          <div className="p-3.5 rounded-lg bg-red-950/40 border border-red-800/60 text-red-300 text-xs flex items-center justify-between">
+          <div className="p-3.5 rounded-lg bg-danger-soft border border-danger text-danger text-xs flex items-center justify-between">
             <span>{errorMessage}</span>
             <button
               type="button"
               onClick={() => setErrorMessage(null)}
-              className="text-red-400 hover:text-red-200 ml-2 font-bold"
+              className="text-danger hover:text-danger ml-2 font-bold"
             >
               ✕
             </button>
@@ -228,10 +228,10 @@ export default function PollCreator() {
           {/* Question / Title */}
           <div>
             <div className="flex justify-between items-center mb-1.5">
-              <label htmlFor="poll-title" className="text-xs font-medium text-white">
+              <label htmlFor="poll-title" className="text-xs font-medium text-ink">
                 Poll Question / Headline <span className="text-rose-400">*</span>
               </label>
-              <span className="text-[11px] font-mono text-[#64748b]">
+              <span className="text-[11px] font-mono text-ink-4">
                 {title.length}/150
               </span>
             </div>
@@ -243,14 +243,14 @@ export default function PollCreator() {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g. Which web framework is your team adopting in 2026?"
-              className="w-full px-3.5 py-2.5 bg-[#0b0f19] border border-[#1e293b] focus:border-blue-500 rounded-xl text-sm text-white placeholder-[#64748b] focus:outline-hidden transition"
+              className="w-full px-3.5 py-2.5 bg-paper-inset border border-rule focus:border-accent rounded-xl text-sm text-ink placeholder-[#64748b] focus:outline-hidden transition"
             />
           </div>
 
           {/* Description (Optional) */}
           <div>
-            <label htmlFor="poll-description" className="block text-xs font-medium text-white mb-1.5">
-              Context or Description <span className="text-[#64748b] font-normal">(optional)</span>
+            <label htmlFor="poll-description" className="block text-xs font-medium text-ink mb-1.5">
+              Context or Description <span className="text-ink-4 font-normal">(optional)</span>
             </label>
             <textarea
               id="poll-description"
@@ -259,17 +259,17 @@ export default function PollCreator() {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Provide background context or guidelines for voters..."
-              className="w-full px-3.5 py-2.5 bg-[#0b0f19] border border-[#1e293b] focus:border-blue-500 rounded-xl text-sm text-white placeholder-[#64748b] focus:outline-hidden transition resize-none"
+              className="w-full px-3.5 py-2.5 bg-paper-inset border border-rule focus:border-accent rounded-xl text-sm text-ink placeholder-[#64748b] focus:outline-hidden transition resize-none"
             />
           </div>
 
           {/* Options List */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-medium text-white">
+              <label className="text-xs font-medium text-ink">
                 Poll Options <span className="text-rose-400">*</span> (min 2, max 10)
               </label>
-              <span className="text-[11px] font-mono text-[#64748b]">
+              <span className="text-[11px] font-mono text-ink-4">
                 {options.length}/10 options
               </span>
             </div>
@@ -277,7 +277,7 @@ export default function PollCreator() {
             <div className="space-y-2.5">
               {options.map((opt, idx) => (
                 <div key={opt.id} className="flex gap-2 items-center">
-                  <span className="w-6 h-6 rounded-md bg-[#0b0f19] border border-[#1e293b] text-[#94a3b8] font-mono text-xs flex items-center justify-center flex-shrink-0">
+                  <span className="w-6 h-6 rounded-md bg-paper-inset border border-rule text-ink-3 font-mono text-xs flex items-center justify-center flex-shrink-0">
                     {idx + 1}
                   </span>
                   {/* Emoji, Image URL, or Upload */}
@@ -286,11 +286,11 @@ export default function PollCreator() {
                     placeholder="Emoji or Icon URL"
                     value={opt.icon_or_image}
                     onChange={(e) => handleOptionChange(idx, 'icon_or_image', e.target.value)}
-                    className="w-28 px-2.5 py-2 bg-[#0b0f19] border border-[#1e293b] rounded-lg text-xs text-white placeholder-[#64748b] focus:border-blue-500 focus:outline-hidden transition flex-shrink-0"
+                    className="w-28 px-2.5 py-2 bg-paper-inset border border-rule rounded-lg text-xs text-ink placeholder-[#64748b] focus:border-accent focus:outline-hidden transition flex-shrink-0"
                     title="Enter single emoji (e.g. ⚡), image URL (https://...), or upload a thumbnail"
                   />
                   <label
-                    className="p-2 text-[#64748b] hover:text-blue-400 hover:bg-blue-950/20 rounded-lg transition cursor-pointer flex-shrink-0"
+                    className="p-2 text-ink-4 hover:text-accent hover:bg-blue-950/20 rounded-lg transition cursor-pointer flex-shrink-0"
                     title="Upload thumbnail image (JPEG/PNG/GIF/WebP, max 2MB)"
                   >
                     {uploadingIdx === idx ? '…' : '🖼'}
@@ -312,14 +312,14 @@ export default function PollCreator() {
                     placeholder={`Option ${idx + 1} text`}
                     value={opt.text}
                     onChange={(e) => handleOptionChange(idx, 'text', e.target.value)}
-                    className="flex-1 px-3 py-2 bg-[#0b0f19] border border-[#1e293b] rounded-lg text-xs text-white placeholder-[#64748b] focus:border-blue-500 focus:outline-hidden transition"
+                    className="flex-1 px-3 py-2 bg-paper-inset border border-rule rounded-lg text-xs text-ink placeholder-[#64748b] focus:border-accent focus:outline-hidden transition"
                   />
                   {/* Remove Button */}
                   {options.length > 2 && (
                     <button
                       type="button"
                       onClick={() => handleRemoveOption(idx)}
-                      className="p-2 text-[#64748b] hover:text-rose-400 hover:bg-rose-950/20 rounded-lg transition"
+                      className="p-2 text-ink-4 hover:text-rose-400 hover:bg-rose-950/20 rounded-lg transition"
                       title="Remove option"
                     >
                       ✕
@@ -333,7 +333,7 @@ export default function PollCreator() {
               <button
                 type="button"
                 onClick={handleAddOption}
-                className="btn-interactive text-xs font-semibold text-blue-400 hover:text-blue-300 flex items-center gap-1 mt-2"
+                className="btn-interactive text-xs font-semibold text-accent hover:text-accent flex items-center gap-1 mt-2"
               >
                 <span>+ Add another option</span>
               </button>
@@ -341,21 +341,21 @@ export default function PollCreator() {
           </div>
 
           {/* Settings Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-[#1e293b]">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-rule">
             <div>
-              <label htmlFor="poll-visibility" className="block text-xs font-medium text-white mb-1.5">
+              <label htmlFor="poll-visibility" className="block text-xs font-medium text-ink mb-1.5">
                 Visibility
               </label>
               <select
                 id="poll-visibility"
                 value={visibility}
                 onChange={(e) => setVisibility(e.target.value as any)}
-                className="w-full px-3 py-2 bg-[#0b0f19] border border-[#1e293b] rounded-xl text-xs text-white focus:border-blue-500 focus:outline-hidden"
+                className="w-full px-3 py-2 bg-paper-inset border border-rule rounded-xl text-xs text-ink focus:border-accent focus:outline-hidden"
               >
                 <option value="public">Public (Discoverable & on Leaderboards)</option>
                 <option value="private">Private (Unlisted, direct link & embed only)</option>
               </select>
-              <p className="text-[10px] text-[#64748b] mt-1">
+              <p className="text-[10px] text-ink-4 mt-1">
                 {visibility === 'public'
                   ? 'Eligible for trending and community leaderboards.'
                   : 'Hidden from search and feeds; accessible only where embedded.'}
@@ -363,20 +363,20 @@ export default function PollCreator() {
             </div>
 
             <div>
-              <label htmlFor="poll-results" className="block text-xs font-medium text-white mb-1.5">
+              <label htmlFor="poll-results" className="block text-xs font-medium text-ink mb-1.5">
                 Result Display
               </label>
               <select
                 id="poll-results"
                 value={resultDisplay}
                 onChange={(e) => setResultDisplay(e.target.value as any)}
-                className="w-full px-3 py-2 bg-[#0b0f19] border border-[#1e293b] rounded-xl text-xs text-white focus:border-blue-500 focus:outline-hidden"
+                className="w-full px-3 py-2 bg-paper-inset border border-rule rounded-xl text-xs text-ink focus:border-accent focus:outline-hidden"
               >
                 <option value="show_counts">Show raw counts & percentages</option>
                 <option value="show_percentage">Show percentages only (counts masked)</option>
                 <option value="hidden_until_close">Hidden until poll deadline closes</option>
               </select>
-              <p className="text-[10px] text-[#64748b] mt-1">
+              <p className="text-[10px] text-ink-4 mt-1">
                 {resultDisplay === 'show_counts'
                   ? 'Voters see full vote numbers and percentages.'
                   : resultDisplay === 'show_percentage'
@@ -387,10 +387,10 @@ export default function PollCreator() {
           </div>
 
           {/* Phase 5: Behavior toggles */}
-          <div className="pt-4 border-t border-[#1e293b] space-y-4">
+          <div className="pt-4 border-t border-rule space-y-4">
             <div>
-              <span className="text-xs font-medium text-white">Poll Behaviors</span>
-              <p className="text-[10px] text-[#64748b] mt-0.5">
+              <span className="text-xs font-medium text-ink">Poll Behaviors</span>
+              <p className="text-[10px] text-ink-4 mt-0.5">
                 Control how voters interact with this poll.
               </p>
             </div>
@@ -398,7 +398,7 @@ export default function PollCreator() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {/* Multi-select */}
               <div>
-                <label className="block text-[11px] font-medium text-white mb-1.5">
+                <label className="block text-[11px] font-medium text-ink mb-1.5">
                   Max selections
                 </label>
                 <select
@@ -408,7 +408,7 @@ export default function PollCreator() {
                     setMaxSelections(val);
                     if (val === 1) setCorrectOptions([]);
                   }}
-                  className="w-full px-2.5 py-2 bg-[#0b0f19] border border-[#1e293b] rounded-lg text-xs text-white focus:border-blue-500 focus:outline-hidden"
+                  className="w-full px-2.5 py-2 bg-paper-inset border border-rule rounded-lg text-xs text-ink focus:border-accent focus:outline-hidden"
                 >
                   <option value={1}>Single choice</option>
                   <option value={2}>Up to 2</option>
@@ -416,7 +416,7 @@ export default function PollCreator() {
                   <option value={4}>Up to 4</option>
                   <option value={5}>Up to 5</option>
                 </select>
-                <p className="text-[10px] text-[#64748b] mt-1">
+                <p className="text-[10px] text-ink-4 mt-1">
                   {maxSelections === 1
                     ? 'Each voter picks exactly one option.'
                     : `Each voter can pick up to ${maxSelections} options.`}
@@ -425,40 +425,40 @@ export default function PollCreator() {
 
               {/* Quiz mode */}
               <div>
-                <span className="block text-[11px] font-medium text-white mb-1.5">Quiz mode</span>
+                <span className="block text-[11px] font-medium text-ink mb-1.5">Quiz mode</span>
                 <button
                   type="button"
                   onClick={() => { setIsQuiz(!isQuiz); if (isQuiz) setCorrectOptions([]); }}
                   aria-pressed={isQuiz}
                   className={`w-full px-2.5 py-2 rounded-lg text-xs font-medium border transition ${
                     isQuiz
-                      ? 'bg-blue-600 border-blue-600 text-white'
-                      : 'bg-[#0b0f19] border-[#1e293b] text-[#94a3b8] hover:text-white'
+                      ? 'bg-accent border-accent text-accent-ink'
+                      : 'bg-paper-inset border-rule text-ink-3 hover:text-ink'
                   }`}
                 >
                   {isQuiz ? 'Quiz on' : 'Quiz off'}
                 </button>
-                <p className="text-[10px] text-[#64748b] mt-1">
+                <p className="text-[10px] text-ink-4 mt-1">
                   Reveal correct answers immediately after voting.
                 </p>
               </div>
 
               {/* Show voters */}
               <div>
-                <span className="block text-[11px] font-medium text-white mb-1.5">Visible voters</span>
+                <span className="block text-[11px] font-medium text-ink mb-1.5">Visible voters</span>
                 <button
                   type="button"
                   onClick={() => setShowVoters(!showVoters)}
                   aria-pressed={showVoters}
                   className={`w-full px-2.5 py-2 rounded-lg text-xs font-medium border transition ${
                     showVoters
-                      ? 'bg-blue-600 border-blue-600 text-white'
-                      : 'bg-[#0b0f19] border-[#1e293b] text-[#94a3b8] hover:text-white'
+                      ? 'bg-accent border-accent text-accent-ink'
+                      : 'bg-paper-inset border-rule text-ink-3 hover:text-ink'
                   }`}
                 >
                   {showVoters ? 'Voters visible' : 'Voters hidden'}
                 </button>
-                <p className="text-[10px] text-[#64748b] mt-1">
+                <p className="text-[10px] text-ink-4 mt-1">
                   Show anonymized voter IDs next to each option.
                 </p>
               </div>
@@ -466,29 +466,29 @@ export default function PollCreator() {
 
             {/* Quiz: mark correct answers */}
             {isQuiz && (
-              <div className="p-3 rounded-lg bg-blue-950/30 border border-blue-800/40 space-y-2">
-                <span className="text-[11px] font-medium text-blue-300">
+              <div className="p-3 rounded-lg bg-accent-soft border border-accent space-y-2">
+                <span className="text-[11px] font-medium text-accent">
                   Mark the correct answer{maxSelections > 1 ? 's' : ''}
                 </span>
                 <div className="space-y-1.5">
                   {options.map((opt, idx) => (
                     <label
                       key={opt.id}
-                      className="flex items-center gap-2 px-2.5 py-1.5 rounded-md bg-[#0b0f19] border border-[#1e293b] hover:border-blue-500/50 cursor-pointer transition text-xs"
+                      className="flex items-center gap-2 px-2.5 py-1.5 rounded-md bg-paper-inset border border-rule hover:border-accent cursor-pointer transition text-xs"
                     >
                       <input
                         type="checkbox"
                         checked={correctOptions.includes(opt.id)}
                         onChange={() => toggleCorrectOption(opt.id)}
-                        className="w-3.5 h-3.5 rounded border-[#334155] bg-[#0b0f19] text-blue-500 focus:ring-blue-500 focus:ring-offset-0 cursor-pointer"
+                        className="w-3.5 h-3.5 rounded border-rule-strong bg-paper-inset text-accent focus:ring-accent focus:ring-offset-0 cursor-pointer"
                       />
-                      <span className="text-white flex-1 truncate">
+                      <span className="text-ink flex-1 truncate">
                         {opt.text || `Option ${idx + 1}`}
                       </span>
                     </label>
                   ))}
                 </div>
-                <p className="text-[10px] text-blue-400/70">
+                <p className="text-[10px] text-accent">
                   Voters will see ✓/✕ immediately after voting.
                 </p>
               </div>
@@ -496,10 +496,10 @@ export default function PollCreator() {
           </div>
 
           {/* Appearance: theme presets + customizer */}
-          <div className="pt-4 border-t border-[#1e293b] space-y-4">
+          <div className="pt-4 border-t border-rule space-y-4">
             <div>
-              <span className="text-xs font-medium text-white">Poll Theme</span>
-              <p className="text-[10px] text-[#64748b] mt-0.5">
+              <span className="text-xs font-medium text-ink">Poll Theme</span>
+              <p className="text-[10px] text-ink-4 mt-0.5">
                 Presets restyle the embed widget. Custom colors below override the preset.
               </p>
             </div>
@@ -513,8 +513,8 @@ export default function PollCreator() {
                   aria-pressed={theme === p.id}
                   className={`rounded-xl border p-2.5 text-left transition ${
                     theme === p.id
-                      ? 'border-blue-500 bg-blue-950/30'
-                      : 'border-[#1e293b] bg-[#0b0f19] hover:border-[#334155]'
+                      ? 'border-accent bg-accent-soft'
+                      : 'border-rule bg-paper-inset hover:border-rule-strong'
                   }`}
                 >
                   <span className="flex gap-1 mb-1.5">
@@ -526,8 +526,8 @@ export default function PollCreator() {
                       />
                     ))}
                   </span>
-                  <span className="block text-xs font-semibold text-white">{p.name}</span>
-                  <span className="block text-[10px] text-[#64748b]">{p.blurb}</span>
+                  <span className="block text-xs font-semibold text-ink">{p.name}</span>
+                  <span className="block text-[10px] text-ink-4">{p.blurb}</span>
                 </button>
               ))}
             </div>
@@ -539,8 +539,8 @@ export default function PollCreator() {
                 { label: 'Text ink', value: ink, set: setInk, fallback: preset.swatches[2] },
               ].map((f) => (
                 <div key={f.label}>
-                  <label className="block text-[11px] font-medium text-white mb-1.5">
-                    {f.label} <span className="text-[#64748b] font-normal">(optional)</span>
+                  <label className="block text-[11px] font-medium text-ink mb-1.5">
+                    {f.label} <span className="text-ink-4 font-normal">(optional)</span>
                   </label>
                   <div className="flex gap-2 items-center">
                     <input
@@ -556,7 +556,7 @@ export default function PollCreator() {
                       onChange={(e) => f.set(e.target.value)}
                       placeholder={f.fallback}
                       maxLength={7}
-                      className="flex-1 min-w-0 px-2.5 py-2 bg-[#0b0f19] border border-[#1e293b] rounded-lg text-xs font-mono text-white placeholder-[#64748b] focus:border-blue-500 focus:outline-hidden transition"
+                      className="flex-1 min-w-0 px-2.5 py-2 bg-paper-inset border border-rule rounded-lg text-xs font-mono text-ink placeholder-[#64748b] focus:border-accent focus:outline-hidden transition"
                     />
                   </div>
                 </div>
@@ -565,8 +565,8 @@ export default function PollCreator() {
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div>
-                <span className="block text-[11px] font-medium text-white mb-1.5">Corners</span>
-                <div className="flex rounded-lg overflow-hidden border border-[#1e293b]">
+                <span className="block text-[11px] font-medium text-ink mb-1.5">Corners</span>
+                <div className="flex rounded-lg overflow-hidden border border-rule">
                   {(['pill', 'rounded', 'sharp'] as RadiusId[]).map((r) => (
                     <button
                       key={r}
@@ -574,7 +574,7 @@ export default function PollCreator() {
                       onClick={() => setRadius(r)}
                       aria-pressed={radius === r}
                       className={`flex-1 px-2 py-2 text-[11px] font-medium capitalize transition ${
-                        radius === r ? 'bg-blue-600 text-white' : 'bg-[#0b0f19] text-[#94a3b8] hover:text-white'
+                        radius === r ? 'bg-accent text-accent-ink' : 'bg-paper-inset text-ink-3 hover:text-ink'
                       }`}
                     >
                       {r}
@@ -584,14 +584,14 @@ export default function PollCreator() {
               </div>
 
               <div>
-                <label htmlFor="poll-font" className="block text-[11px] font-medium text-white mb-1.5">
+                <label htmlFor="poll-font" className="block text-[11px] font-medium text-ink mb-1.5">
                   Font
                 </label>
                 <select
                   id="poll-font"
                   value={appearanceFont}
                   onChange={(e) => setAppearanceFont(e.target.value as AppearanceFont)}
-                  className="w-full px-2.5 py-2 bg-[#0b0f19] border border-[#1e293b] rounded-lg text-xs text-white focus:border-blue-500 focus:outline-hidden"
+                  className="w-full px-2.5 py-2 bg-paper-inset border border-rule rounded-lg text-xs text-ink focus:border-accent focus:outline-hidden"
                 >
                   <option value="system">System</option>
                   <option value="serif">Serif</option>
@@ -601,14 +601,14 @@ export default function PollCreator() {
               </div>
 
               <div>
-                <label htmlFor="poll-layout" className="block text-[11px] font-medium text-white mb-1.5">
+                <label htmlFor="poll-layout" className="block text-[11px] font-medium text-ink mb-1.5">
                   Layout
                 </label>
                 <select
                   id="poll-layout"
                   value={layout}
                   onChange={(e) => setLayout(e.target.value as 'list' | 'grid')}
-                  className="w-full px-2.5 py-2 bg-[#0b0f19] border border-[#1e293b] rounded-lg text-xs text-white focus:border-blue-500 focus:outline-hidden"
+                  className="w-full px-2.5 py-2 bg-paper-inset border border-rule rounded-lg text-xs text-ink focus:border-accent focus:outline-hidden"
                 >
                   <option value="list">List</option>
                   <option value="grid">Grid (thumbnails)</option>
@@ -616,15 +616,15 @@ export default function PollCreator() {
               </div>
 
               <div>
-                <span className="block text-[11px] font-medium text-white mb-1.5">On vote</span>
+                <span className="block text-[11px] font-medium text-ink mb-1.5">On vote</span>
                 <button
                   type="button"
                   onClick={() => setEffect(effect === 'confetti' ? 'none' : 'confetti')}
                   aria-pressed={effect === 'confetti'}
                   className={`w-full px-2.5 py-2 rounded-lg text-xs font-medium border transition ${
                     effect === 'confetti'
-                      ? 'bg-blue-600 border-blue-600 text-white'
-                      : 'bg-[#0b0f19] border-[#1e293b] text-[#94a3b8] hover:text-white'
+                      ? 'bg-accent border-accent text-accent-ink'
+                      : 'bg-paper-inset border-rule text-ink-3 hover:text-ink'
                   }`}
                 >
                   {effect === 'confetti' ? 'Confetti on' : 'Confetti off'}
@@ -635,15 +635,15 @@ export default function PollCreator() {
 
           {/* Optional Close Date */}
           <div className="pt-2">
-            <label htmlFor="poll-close-at" className="block text-xs font-medium text-white mb-1.5">
-              Close Date & Time <span className="text-[#64748b] font-normal">(optional deadline)</span>
+            <label htmlFor="poll-close-at" className="block text-xs font-medium text-ink mb-1.5">
+              Close Date & Time <span className="text-ink-4 font-normal">(optional deadline)</span>
             </label>
             <input
               id="poll-close-at"
               type="datetime-local"
               value={closeAt}
               onChange={(e) => setCloseAt(e.target.value)}
-              className="w-full px-3 py-2 bg-[#0b0f19] border border-[#1e293b] rounded-xl text-xs text-white focus:border-blue-500 focus:outline-hidden"
+              className="w-full px-3 py-2 bg-paper-inset border border-rule rounded-xl text-xs text-ink focus:border-accent focus:outline-hidden"
             />
           </div>
 
@@ -651,11 +651,11 @@ export default function PollCreator() {
           <button
             type="submit"
             disabled={isPending || title.trim().length === 0}
-            className="btn-interactive w-full py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:bg-[#1e293b] disabled:text-[#64748b] disabled:cursor-not-allowed text-white font-semibold text-sm shadow-md transition flex items-center justify-center gap-2"
+            className="btn-interactive w-full py-3 px-4 rounded-xl bg-accent hover:bg-accent-strong disabled:bg-paper-3 disabled:text-ink-4 disabled:cursor-not-allowed text-accent-ink font-semibold text-sm shadow-md transition flex items-center justify-center gap-2"
           >
             {isPending ? (
               <>
-                <svg className="animate-spin w-4 h-4 text-white" fill="none" viewBox="0 0 24 24">
+                <svg className="animate-spin w-4 h-4 text-ink" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
                 </svg>
@@ -671,11 +671,11 @@ export default function PollCreator() {
       {/* Right: Real-time Live Preview */}
       <div className="lg:col-span-5 space-y-4 lg:sticky lg:top-24">
         <div className="flex items-center justify-between px-1">
-          <span className="text-xs font-mono text-[#94a3b8] flex items-center gap-1.5">
+          <span className="text-xs font-mono text-ink-3 flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-blue-400"></span>
             Simulated Live Preview
           </span>
-          <span className="text-[11px] font-mono text-emerald-400">
+          <span className="text-[11px] font-mono text-accent">
             {visibility.toUpperCase()}
           </span>
         </div>
@@ -685,16 +685,16 @@ export default function PollCreator() {
           className="border rounded-2xl p-5 shadow-xl space-y-4"
           style={{
             background: bg.trim() || (theme === 'minimal' ? '#111827' : preset.swatches[0]),
-            borderColor: '#1e293b',
+            borderColor: 'var(--color-rule)',
             fontFamily: FONT_STACK[appearanceFont],
           }}
         >
           <div className="space-y-1.5">
-            <h3 className="font-bold text-base text-white leading-snug">
+            <h3 className="font-bold text-base text-ink leading-snug">
               {title || 'Your poll question will appear here...'}
             </h3>
             {description && (
-              <p className="text-xs text-[#94a3b8] leading-relaxed">
+              <p className="text-xs text-ink-3 leading-relaxed">
                 {description}
               </p>
             )}
@@ -705,14 +705,14 @@ export default function PollCreator() {
             {options.map((opt, i) => (
               <div
                 key={opt.id}
-                className="w-full text-left px-3.5 py-2.5 border border-[#1e293b] bg-[#0b0f19] text-xs font-medium text-[#f8fafc] flex items-center gap-2.5"
+                className="w-full text-left px-3.5 py-2.5 border border-rule bg-paper-inset text-xs font-medium text-ink flex items-center gap-2.5"
                 style={{ borderRadius: RADIUS_PX[radius] }}
               >
                 {maxSelections > 1 ? (
-                  <span className="w-4 h-4 rounded border border-[#334155] flex-shrink-0 flex items-center justify-center">
+                  <span className="w-4 h-4 rounded border border-rule-strong flex-shrink-0 flex items-center justify-center">
                   </span>
                 ) : (
-                  <span className="w-4 h-4 rounded-full border border-[#334155] flex-shrink-0 flex items-center justify-center">
+                  <span className="w-4 h-4 rounded-full border border-rule-strong flex-shrink-0 flex items-center justify-center">
                     <span className="w-2 h-2 rounded-full" style={{ background: 'transparent' }} />
                   </span>
                 )}
@@ -729,12 +729,12 @@ export default function PollCreator() {
                 {isQuiz && correctOptions.includes(opt.id) && (
                   <span className="text-green-400 text-[11px] font-bold">✓</span>
                 )}
-                <span className="text-[11px] font-mono text-[#64748b]">0%</span>
+                <span className="text-[11px] font-mono text-ink-4">0%</span>
               </div>
             ))}
           </div>
 
-          <div className="pt-3 border-t border-[#1e293b] flex justify-between items-center text-[11px] text-[#64748b] font-mono">
+          <div className="pt-3 border-t border-rule flex justify-between items-center text-[11px] text-ink-4 font-mono">
             <span>Mode: {resultDisplay}</span>
             <span>
               {maxSelections > 1 ? `${maxSelections}-select` : 'single'}
@@ -746,8 +746,8 @@ export default function PollCreator() {
         </div>
 
         {/* Tip Box */}
-        <div className="p-4 rounded-xl bg-[#0b0f19] border border-[#1e293b] text-xs text-[#94a3b8] space-y-1.5">
-          <strong className="text-white block font-medium">Developer Tip:</strong>
+        <div className="p-4 rounded-xl bg-paper-inset border border-rule text-xs text-ink-3 space-y-1.5">
+          <strong className="text-ink block font-medium">Developer Tip:</strong>
           Once published, you will receive an embed code suitable for GitHub READMEs, Astro sites, and blogs with zero iframe overhead.
         </div>
       </div>
@@ -755,40 +755,40 @@ export default function PollCreator() {
       {/* Success Modal */}
       {createdPoll && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs">
-          <div className="bg-[#111827] border border-[#1e293b] rounded-2xl max-w-lg w-full p-6 space-y-5 shadow-2xl">
+          <div className="bg-paper-2 border border-rule rounded-2xl max-w-lg w-full p-6 space-y-5 shadow-2xl">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-full bg-emerald-950 border border-emerald-700/50 text-emerald-400 flex items-center justify-center text-sm font-bold">
+                <div className="w-7 h-7 rounded-full bg-accent-soft border border-accent text-accent flex items-center justify-center text-sm font-bold">
                   ✓
                 </div>
-                <h3 className="font-bold text-white text-base">Poll Published Successfully!</h3>
+                <h3 className="font-bold text-ink text-base">Poll Published Successfully!</h3>
               </div>
               <button
                 type="button"
                 onClick={() => setCreatedPoll(null)}
-                className="text-[#94a3b8] hover:text-white text-sm"
+                className="text-ink-3 hover:text-ink text-sm"
               >
                 ✕
               </button>
             </div>
 
-            <p className="text-xs text-[#94a3b8]">
-              Your poll <strong className="text-white">"{createdPoll.title}"</strong> is now live. Grab the embed code below to display it anywhere:
+            <p className="text-xs text-ink-3">
+              Your poll <strong className="text-ink">"{createdPoll.title}"</strong> is now live. Grab the embed code below to display it anywhere:
             </p>
 
             <div className="space-y-3 text-xs">
               <div>
-                <label className="block font-medium text-[#94a3b8] mb-1">GitHub README Badge (Markdown)</label>
+                <label className="block font-medium text-ink-3 mb-1">GitHub README Badge (Markdown)</label>
                 <div className="flex gap-2">
                   <input
                     readOnly
                     value={getMarkdownBadgeSnippet(createdPoll.title, createdPoll.id)}
-                    className="flex-1 px-2.5 py-1.5 bg-[#0b0f19] border border-[#1e293b] rounded-lg font-mono text-[11px] text-emerald-300"
+                    className="flex-1 px-2.5 py-1.5 bg-paper-inset border border-rule rounded-lg font-mono text-[11px] text-accent"
                   />
                   <button
                     type="button"
                     onClick={() => copySnippet(getMarkdownBadgeSnippet(createdPoll.title, createdPoll.id), 'badge')}
-                    className="px-3 py-1.5 rounded-lg bg-[#1e293b] hover:bg-[#334155] text-white text-xs font-medium transition"
+                    className="px-3 py-1.5 rounded-lg bg-paper-3 hover:bg-paper-3 text-ink text-xs font-medium transition"
                   >
                     {copiedType === 'badge' ? '✓ Copied' : 'Copy'}
                   </button>
@@ -796,17 +796,17 @@ export default function PollCreator() {
               </div>
 
               <div>
-                <label className="block font-medium text-[#94a3b8] mb-1">Interactive Iframe (HTML)</label>
+                <label className="block font-medium text-ink-3 mb-1">Interactive Iframe (HTML)</label>
                 <div className="flex gap-2">
                   <input
                     readOnly
                     value={getIframeSnippet(createdPoll.id, 340)}
-                    className="flex-1 px-2.5 py-1.5 bg-[#0b0f19] border border-[#1e293b] rounded-lg font-mono text-[11px] text-cyan-300"
+                    className="flex-1 px-2.5 py-1.5 bg-paper-inset border border-rule rounded-lg font-mono text-[11px] text-accent"
                   />
                   <button
                     type="button"
                     onClick={() => copySnippet(getIframeSnippet(createdPoll.id, 340), 'iframe')}
-                    className="px-3 py-1.5 rounded-lg bg-[#1e293b] hover:bg-[#334155] text-white text-xs font-medium transition"
+                    className="px-3 py-1.5 rounded-lg bg-paper-3 hover:bg-paper-3 text-ink text-xs font-medium transition"
                   >
                     {copiedType === 'iframe' ? '✓ Copied' : 'Copy'}
                   </button>
@@ -815,22 +815,22 @@ export default function PollCreator() {
             </div>
 
             <div className="pt-1">
-              <label className="block font-medium text-[#94a3b8] mb-1">
+              <label className="block font-medium text-ink-3 mb-1">
                 Live preview: the real widget with your {preset.name} theme
               </label>
               <iframe
                 src={`${getSiteUrl()}/embed?id=${createdPoll.id}`}
                 title={`Live preview of ${createdPoll.title}`}
-                className="w-full rounded-xl border border-[#1e293b] bg-white"
+                className="w-full rounded-xl border border-rule bg-white"
                 height={380}
                 loading="lazy"
               />
             </div>
 
-            <div className="pt-3 border-t border-[#1e293b] flex justify-end gap-2">
+            <div className="pt-3 border-t border-rule flex justify-end gap-2">
               <a
                 href="/dashboard"
-                className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-xs"
+                className="px-4 py-2 rounded-lg bg-accent hover:bg-accent-strong text-accent-ink text-xs font-semibold shadow-xs"
               >
                 Go to Dashboard
               </a>

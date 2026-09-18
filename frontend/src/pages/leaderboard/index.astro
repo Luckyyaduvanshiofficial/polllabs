@@ -95,21 +95,22 @@ const tabs = [
   }
 
   .board__title {
-    font-size: var(--text-2xl);
+    font-size: var(--text-3xl);
   }
 
   .board__lede {
-    margin-top: var(--space-xs);
-    font-size: var(--text-sm);
+    margin-top: var(--space-sm);
+    font-size: var(--text-base);
     color: var(--color-ink-3);
-    max-width: 62ch;
-    min-height: 1.5rem;
+    max-width: 58ch;
+    min-height: 1.6rem;
+    line-height: var(--leading-body);
   }
 
   .tabs {
     display: flex;
-    gap: var(--space-2xs);
-    margin-block: var(--space-xl) 0;
+    gap: var(--space-lg);
+    margin-block: var(--space-2xl) 0;
     border-bottom: var(--rule-hair) solid var(--color-rule);
   }
 
@@ -118,11 +119,13 @@ const tabs = [
     background: none;
     border: none;
     border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
     color: var(--color-ink-3);
-    font-family: var(--font-mono);
+    font-family: inherit;
     font-size: var(--text-sm);
-    padding: var(--space-xs) var(--space-sm);
-    min-height: 2.5rem;
+    font-weight: 500;
+    padding: var(--space-sm) 0;
+    min-height: 2.75rem;
     cursor: pointer;
     transition:
       color var(--dur-fast) var(--ease-out),
@@ -134,12 +137,12 @@ const tabs = [
   }
 
   .tab[aria-selected='true'] {
-    color: var(--color-accent);
+    color: var(--color-accent-strong);
     border-bottom-color: var(--color-accent);
   }
 
   .board__body {
-    margin-top: var(--space-lg);
+    margin-top: var(--space-xl);
   }
 
   .rank {
@@ -151,21 +154,23 @@ const tabs = [
 
   .rank__item {
     display: grid;
-    grid-template-columns: 2.5rem 1fr auto;
-    gap: var(--space-md);
+    grid-template-columns: 2.75rem 1fr auto;
+    gap: var(--space-lg);
     align-items: baseline;
-    padding-block: var(--space-md);
+    padding-block: var(--space-lg);
     border-bottom: var(--rule-hair) solid var(--color-rule);
   }
 
   .rank__n {
-    font-size: var(--text-xs);
-    color: var(--color-ink-4);
+    font-family: var(--font-mono);
     font-variant-numeric: tabular-nums;
+    font-size: var(--text-sm);
+    color: var(--color-ink-4);
   }
 
   .rank__item:nth-child(-n + 3) .rank__n {
     color: var(--color-accent);
+    font-weight: 600;
   }
 
   .rank__main {
@@ -173,48 +178,49 @@ const tabs = [
   }
 
   .rank__link {
-    font-size: var(--text-base);
+    font-size: var(--text-lg);
+    font-weight: 500;
+    letter-spacing: var(--tracking-snug);
     color: var(--color-ink);
-    text-decoration: underline;
-    text-decoration-color: transparent;
-    text-underline-offset: 3px;
-    transition: text-decoration-color var(--dur-fast) var(--ease-out);
   }
 
-  .rank__link:hover {
-    color: var(--color-accent);
-    text-decoration-color: var(--color-accent);
+  a.rank__link:hover {
+    color: var(--color-accent-strong);
   }
 
   .rank__sub {
     margin-top: var(--space-2xs);
-    font-size: var(--text-2xs);
+    font-size: var(--text-sm);
     color: var(--color-ink-4);
-    letter-spacing: var(--tracking-label);
-    text-transform: uppercase;
+  }
+
+  .rank__sub a:hover {
+    color: var(--color-accent-strong);
   }
 
   .rank__bar {
-    margin-top: var(--space-xs);
-    max-width: 22rem;
+    margin-top: var(--space-sm);
+    max-width: 24rem;
   }
 
   .rank__value {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
     font-size: var(--text-sm);
     color: var(--color-ink-2);
-    font-variant-numeric: tabular-nums;
     white-space: nowrap;
   }
 
   .state {
-    padding-block: var(--space-2xl);
+    padding-block: var(--space-3xl);
     display: grid;
-    gap: var(--space-sm);
+    gap: var(--space-md);
     justify-items: start;
   }
 
   .state__msg {
-    font-size: var(--text-base);
+    font-size: var(--text-lg);
+    font-weight: 500;
     color: var(--color-ink);
   }
 
@@ -223,14 +229,16 @@ const tabs = [
   }
 
   .state__hint {
-    font-size: var(--text-xs);
+    font-size: var(--text-sm);
     color: var(--color-ink-3);
-    max-width: 54ch;
+    max-width: 52ch;
+    line-height: var(--leading-body);
   }
 
   @media (max-width: 40rem) {
     .rank__item {
-      grid-template-columns: 1.75rem 1fr;
+      grid-template-columns: 2rem 1fr;
+      gap: var(--space-md);
     }
 
     .rank__value {
@@ -239,6 +247,7 @@ const tabs = [
 
     .tabs {
       overflow-x: auto;
+      gap: var(--space-md);
     }
   }
 </style>
@@ -298,7 +307,7 @@ const tabs = [
     const bits = [`${poll.options.length} options`];
     if (poll.max_selections > 1) bits.push('multi-select');
     if (poll.is_quiz) bits.push('quiz');
-    sub.textContent = bits.join('  /  ');
+    sub.textContent = bits.join(' · ');
     main.append(sub);
 
     const votes = poll.total_votes ?? 0;

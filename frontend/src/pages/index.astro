@@ -1,11 +1,11 @@
 ---
 /**
- * Landing page. Workbench macrostructure (05): the working product is the
- * argument, so the fold pairs the one line a developer actually copies with a
- * live widget voting against the real API.
+ * Landing page. Workbench macrostructure: the working product is the argument,
+ * so the fold pairs the line a developer actually copies with a live widget
+ * voting against the real API.
  *
- * Sections use four different layout families: split fold, tabular spec sheet,
- * step sequence, and a typographic close. No repeated card triplets.
+ * Sections use four different layout families: split fold, copy surfaces,
+ * guarantee spec sheet, and a verb-labelled flow, closing on a statement.
  */
 import RootLayout from '../layouts/RootLayout.astro';
 import PollWidget from '../components/embed/PollWidget.svelte';
@@ -13,18 +13,18 @@ import { DEMO_FRAMEWORKS_POLL } from '../lib/demo-poll';
 
 const demoId = DEMO_FRAMEWORKS_POLL.id;
 
-// Shown as the copyable snippet. Placeholders resolve client-side to the
-// deployed origins so what a visitor copies is what actually works.
+// Snippets ship with API/SITE placeholders and resolve client-side, so what a
+// visitor copies always points at the origin actually serving them.
 const surfaces = [
   {
     surface: 'README badge',
-    detail: 'GitHub renders the SVG and links it to the poll page.',
+    detail: 'GitHub renders the SVG and links it back to the poll.',
     lang: 'markdown',
     snippet: `[![Poll](API/api/v1/badges/${demoId}.svg)](SITE/polls/${demoId})`,
   },
   {
     surface: 'Interactive embed',
-    detail: 'An iframe that accepts votes inline, roughly 5 KB gzipped.',
+    detail: 'An iframe that accepts votes inline, about 7 KB gzipped.',
     lang: 'html',
     snippet: `<iframe src="SITE/embed?id=${demoId}"\n        width="100%" height="380"\n        style="border:0" loading="lazy"></iframe>`,
   },
@@ -37,160 +37,207 @@ const surfaces = [
 ];
 
 const guarantees = [
-  { key: 'Voting', value: 'Anonymous', note: 'No account needed to vote.' },
-  { key: 'Duplicate control', value: 'Device token', note: 'httpOnly cookie, issued server-side.' },
+  { key: 'Voting', value: 'Anonymous', note: 'No account needed to cast a vote.' },
+  { key: 'Duplicate control', value: 'Device token', note: 'An httpOnly cookie issued server-side.' },
   { key: 'IP handling', value: 'Salted SHA-256', note: 'Raw addresses are never stored.' },
-  { key: 'Trackers', value: 'None', note: 'No analytics scripts on embeds.' },
-  { key: 'Result masking', value: 'Server-side', note: 'Hidden counts never reach the client.' },
-  { key: 'Licence', value: 'Apache 2.0', note: 'Self-host the whole stack.' },
+  { key: 'Trackers', value: 'None', note: 'No analytics scripts ship with an embed.' },
+  { key: 'Result masking', value: 'Server-side', note: 'Hidden counts never reach the browser.' },
+  { key: 'Licence', value: 'Apache 2.0', note: 'Self-host the entire stack.' },
 ];
 
 const steps = [
   {
     verb: 'Create',
-    body: 'Sign in with GitHub, write a question and up to ten options. Pick single-choice, multi-select or quiz mode.',
+    body: 'Sign in with GitHub, write a question and up to ten options. Choose single-choice, multi-select or quiz mode.',
   },
   {
     verb: 'Embed',
     body: 'Copy one line for a badge or an iframe. The snippet carries your poll id and needs no build step.',
   },
   {
-    verb: 'Read',
-    body: 'Watch votes land in the dashboard, broken down by option, referrer and day. Export CSV or JSON.',
+    verb: 'Measure',
+    body: 'Watch votes arrive in the dashboard, split by option, referrer and day. Export CSV or JSON.',
   },
 ];
 ---
 
 <RootLayout>
   <!-- Fold: the snippet a developer copies, beside the widget it produces. -->
-  <section class="fold shell">
-    <div class="fold__text">
-      <h1 class="fold__title">Polls that live in your README.</h1>
-      <p class="fold__lede">
-        One line of markdown renders a live SVG badge. One iframe accepts votes inline. Both stay in
-        sync with the same poll.
-      </p>
-      <div class="fold__actions">
-        <a href="/dashboard/create" class="btn btn--primary">Create a poll</a>
-        <a href="/docs" class="btn btn--ghost">Read the docs</a>
+  <section class="fold">
+    <div class="shell fold__grid">
+      <div class="fold__text">
+        <h1 class="fold__title">Polls that live in your README.</h1>
+        <p class="fold__lede">
+          One line of markdown renders a live SVG badge. One iframe accepts votes inline. Both stay
+          in sync with the same poll.
+        </p>
+        <div class="fold__actions">
+          <a href="/dashboard/create" class="btn btn--primary">Create a poll</a>
+          <a href="/docs" class="btn btn--ghost">Read the docs</a>
+        </div>
       </div>
-    </div>
 
-    <div class="fold__proof">
-      <p class="field-label fold__proof-label">Live poll, real votes</p>
-      <div class="fold__widget">
-        <PollWidget client:load pollId={demoId} />
+      <div class="fold__proof">
+        <p class="fold__proof-label">A live poll, taking real votes</p>
+        <div class="fold__widget card">
+          <PollWidget client:load pollId={demoId} />
+        </div>
       </div>
     </div>
   </section>
 
-  <!-- Surfaces: three copyable snippets, tabbed rather than stacked as cards. -->
-  <section class="surfaces shell rule-top" aria-labelledby="surfaces-title">
-    <h2 id="surfaces-title" class="section-title">Three ways to embed one poll</h2>
+  <!-- Copy surfaces. -->
+  <section class="section" aria-labelledby="surfaces-title">
+    <div class="shell">
+      <header class="section__head">
+        <h2 id="surfaces-title" class="section__title">Three ways to embed one poll</h2>
+        <p class="section__lede">
+          Every surface reads from the same poll, so results agree wherever you place them.
+        </p>
+      </header>
 
-    <div class="surfaces__grid">
-      {
-        surfaces.map((item) => (
-          <article class="surface">
-            <header class="surface__head">
+      <div class="surfaces">
+        {
+          surfaces.map((item) => (
+            <article class="surface">
               <h3 class="surface__name">{item.surface}</h3>
               <p class="surface__detail">{item.detail}</p>
-            </header>
-            <div class="code surface__code">
-              <pre data-snippet={item.snippet}><code>{item.snippet}</code></pre>
-            </div>
-            <button type="button" class="btn btn--quiet surface__copy" data-copy>
-              copy {item.lang}
-            </button>
-          </article>
-        ))
-      }
+              <div class="code surface__code">
+                <pre data-snippet={item.snippet}><code>{item.snippet}</code></pre>
+              </div>
+              <button type="button" class="btn btn--quiet surface__copy" data-copy>
+                Copy {item.lang}
+              </button>
+            </article>
+          ))
+        }
+      </div>
     </div>
   </section>
 
-  <!-- Guarantees: F3 tabular spec sheet. Real properties, no invented metrics. -->
-  <section class="specs shell rule-top" aria-labelledby="specs-title">
-    <h2 id="specs-title" class="section-title">What the platform guarantees</h2>
-    <dl class="specs__list">
-      {
-        guarantees.map((row) => (
-          <div class="specs__row">
-            <dt class="specs__key">{row.key}</dt>
-            <dd class="specs__value">{row.value}</dd>
-            <dd class="specs__note">{row.note}</dd>
-          </div>
-        ))
-      }
-    </dl>
+  <!-- Guarantees: a spec sheet of real properties, no invented metrics. -->
+  <section class="section section--tint" aria-labelledby="specs-title">
+    <div class="shell">
+      <header class="section__head">
+        <h2 id="specs-title" class="section__title">What the platform guarantees</h2>
+        <p class="section__lede">
+          Privacy and abuse handling are decided on the server, not in the widget.
+        </p>
+      </header>
+
+      <dl class="specs">
+        {
+          guarantees.map((row) => (
+            <div class="specs__row">
+              <dt class="specs__key">{row.key}</dt>
+              <dd class="specs__value">{row.value}</dd>
+              <dd class="specs__note">{row.note}</dd>
+            </div>
+          ))
+        }
+      </dl>
+    </div>
   </section>
 
-  <!-- Flow: F4 step sequence, verbs as labels rather than "Step 1". -->
-  <section class="flow shell rule-top" aria-labelledby="flow-title">
-    <h2 id="flow-title" class="section-title">From question to results</h2>
-    <ol class="flow__list">
-      {
-        steps.map((step) => (
-          <li class="flow__step">
-            <h3 class="flow__verb">{step.verb}</h3>
-            <p class="flow__body">{step.body}</p>
-          </li>
-        ))
-      }
-    </ol>
+  <!-- Flow: verbs as labels, never "Step 1". -->
+  <section class="section" aria-labelledby="flow-title">
+    <div class="shell">
+      <header class="section__head">
+        <h2 id="flow-title" class="section__title">From question to results</h2>
+      </header>
+
+      <ol class="flow">
+        {
+          steps.map((step) => (
+            <li class="flow__step">
+              <h3 class="flow__verb">{step.verb}</h3>
+              <p class="flow__body">{step.body}</p>
+            </li>
+          ))
+        }
+      </ol>
+    </div>
   </section>
 
-  <!-- Close: Ft5-adjacent statement, typographic CTA. -->
-  <section class="close shell rule-top">
-    <p class="close__line">
-      Everything above runs on a stack you can host yourself: FastAPI, PocketBase and a static Astro
-      front end.
-    </p>
-    <div class="close__actions">
-      <a href="/dashboard/create" class="btn btn--primary">Create a poll</a>
-      <a
-        href="https://github.com/Luckyyaduvanshiofficial/polls-lab/blob/main/docs/self-hosting.md"
-        target="_blank"
-        rel="noopener noreferrer"
-        class="btn btn--ghost"
-      >
-        Self-hosting guide
-      </a>
+  <!-- Close. -->
+  <section class="close">
+    <div class="shell close__inner">
+      <p class="close__line">
+        Everything here runs on a stack you can host yourself: FastAPI, PocketBase and a static Astro
+        front end.
+      </p>
+      <div class="close__actions">
+        <a href="/dashboard/create" class="btn btn--primary">Create a poll</a>
+        <a
+          href="https://github.com/Luckyyaduvanshiofficial/polls-lab/blob/main/docs/self-hosting.md"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="btn btn--ghost"
+        >
+          Self-hosting guide
+        </a>
+      </div>
     </div>
   </section>
 </RootLayout>
 
 <style>
-  .section-title {
-    font-size: var(--text-lg);
+  /* ---- Shared section rhythm ---- */
+  .section {
+    padding-block: var(--space-3xl);
+  }
+
+  .section--tint {
+    background: var(--color-paper-2);
+    border-block: var(--rule-hair) solid var(--color-rule);
+  }
+
+  .section__head {
+    max-width: 46ch;
+    margin-bottom: var(--space-2xl);
+  }
+
+  .section__title {
+    font-size: var(--text-2xl);
     color: var(--color-ink);
-    margin-bottom: var(--space-lg);
+  }
+
+  .section__lede {
+    margin-top: var(--space-sm);
+    font-size: var(--text-base);
+    color: var(--color-ink-3);
+    line-height: var(--leading-body);
   }
 
   /* ---- Fold ---- */
   .fold {
+    padding-block: var(--space-4xl) var(--space-3xl);
+  }
+
+  .fold__grid {
     display: grid;
-    grid-template-columns: 1.05fr 0.95fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 0.9fr);
     gap: var(--space-3xl);
     align-items: center;
-    padding-block: var(--space-4xl) var(--space-3xl);
   }
 
   .fold__title {
     font-size: var(--text-display);
-    max-width: 22ch;
+    max-width: 20ch;
   }
 
   .fold__lede {
-    margin-top: var(--space-md);
+    margin-top: var(--space-lg);
     max-width: 46ch;
-    color: var(--color-ink-2);
-    font-size: var(--text-base);
+    font-size: var(--text-lg);
+    color: var(--color-ink-3);
+    line-height: var(--leading-snug);
   }
 
   .fold__actions {
     display: flex;
-    gap: var(--space-xs);
-    margin-top: var(--space-lg);
+    gap: var(--space-sm);
+    margin-top: var(--space-xl);
     flex-wrap: wrap;
   }
 
@@ -199,48 +246,40 @@ const steps = [
   }
 
   .fold__proof-label {
-    margin-bottom: var(--space-xs);
+    font-size: var(--text-xs);
+    color: var(--color-ink-4);
+    margin-bottom: var(--space-sm);
   }
 
   .fold__widget {
-    border: var(--rule-hair) solid var(--color-rule);
-    border-radius: var(--radius-md);
-    background: var(--color-paper-inset);
-    padding: var(--space-sm);
+    padding: var(--space-md);
     min-width: 0;
+    box-shadow: var(--shadow-lg);
   }
 
   /* ---- Surfaces ---- */
-  .surfaces,
-  .specs,
-  .flow,
-  .close {
-    padding-block: var(--space-3xl);
-  }
-
-  .surfaces__grid {
+  .surfaces {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: var(--space-lg);
+    gap: var(--space-xl);
   }
 
   .surface {
     display: grid;
-    grid-template-rows: auto 1fr auto;
+    grid-template-rows: auto auto 1fr auto;
     gap: var(--space-sm);
     min-width: 0;
   }
 
   .surface__name {
-    font-size: var(--text-sm);
-    color: var(--color-accent);
+    font-size: var(--text-base);
+    color: var(--color-ink);
   }
 
   .surface__detail {
-    margin-top: var(--space-2xs);
-    font-size: var(--text-xs);
+    font-size: var(--text-sm);
     color: var(--color-ink-3);
-    line-height: 1.6;
+    line-height: var(--leading-body);
   }
 
   .surface__code pre {
@@ -253,24 +292,22 @@ const steps = [
   }
 
   /* ---- Specs ---- */
-  .specs__list {
+  .specs {
     margin: 0;
-    border-top: var(--rule-hair) solid var(--color-rule);
+    border-top: var(--rule-hair) solid var(--color-rule-strong);
   }
 
   .specs__row {
     display: grid;
-    grid-template-columns: 12rem 12rem 1fr;
-    gap: var(--space-md);
+    grid-template-columns: 14rem 12rem 1fr;
+    gap: var(--space-lg);
     align-items: baseline;
-    padding-block: var(--space-sm);
+    padding-block: var(--space-md);
     border-bottom: var(--rule-hair) solid var(--color-rule);
   }
 
   .specs__key {
-    font-size: var(--text-xs);
-    letter-spacing: var(--tracking-label);
-    text-transform: uppercase;
+    font-size: var(--text-sm);
     color: var(--color-ink-3);
   }
 
@@ -283,12 +320,12 @@ const steps = [
 
   .specs__note {
     margin: 0;
-    font-size: var(--text-xs);
+    font-size: var(--text-sm);
     color: var(--color-ink-3);
   }
 
   /* ---- Flow ---- */
-  .flow__list {
+  .flow {
     list-style: none;
     margin: 0;
     padding: 0;
@@ -298,54 +335,68 @@ const steps = [
   }
 
   .flow__step {
-    padding-top: var(--space-sm);
-    border-top: 2px solid var(--color-accent-dim);
+    padding-top: var(--space-md);
+    border-top: 2px solid var(--color-accent);
     min-width: 0;
   }
 
   .flow__verb {
-    font-size: var(--text-base);
+    font-size: var(--text-lg);
     color: var(--color-ink);
   }
 
   .flow__body {
-    margin-top: var(--space-xs);
-    font-size: var(--text-xs);
+    margin-top: var(--space-sm);
+    font-size: var(--text-sm);
     color: var(--color-ink-3);
-    line-height: 1.7;
+    line-height: var(--leading-body);
   }
 
   /* ---- Close ---- */
+  .close {
+    padding-block: var(--space-3xl) var(--space-4xl);
+    border-top: var(--rule-hair) solid var(--color-rule);
+  }
+
+  .close__inner {
+    display: grid;
+    justify-items: start;
+    gap: var(--space-xl);
+  }
+
   .close__line {
     font-size: var(--text-xl);
     color: var(--color-ink);
-    max-width: 48ch;
-    line-height: 1.35;
-    letter-spacing: var(--tracking-tight);
+    max-width: 42ch;
+    line-height: var(--leading-snug);
+    letter-spacing: var(--tracking-snug);
   }
 
   .close__actions {
     display: flex;
-    gap: var(--space-xs);
-    margin-top: var(--space-lg);
+    gap: var(--space-sm);
     flex-wrap: wrap;
   }
 
   /* ---- Responsive ---- */
   @media (max-width: 60rem) {
     .fold {
-      grid-template-columns: minmax(0, 1fr);
-      gap: var(--space-xl);
       padding-block: var(--space-2xl);
     }
 
-    .surfaces__grid,
-    .flow__list {
+    .fold__grid {
+      grid-template-columns: minmax(0, 1fr);
+      gap: var(--space-2xl);
+    }
+
+    .surfaces,
+    .flow {
       grid-template-columns: minmax(0, 1fr);
     }
 
     .specs__row {
-      grid-template-columns: 10rem 1fr;
+      grid-template-columns: 11rem 1fr;
+      gap: var(--space-sm) var(--space-lg);
     }
 
     .specs__note {
@@ -358,6 +409,10 @@ const steps = [
       font-size: var(--text-display-s);
     }
 
+    .fold__lede {
+      font-size: var(--text-base);
+    }
+
     .specs__row {
       grid-template-columns: minmax(0, 1fr);
       gap: var(--space-2xs);
@@ -368,17 +423,12 @@ const steps = [
 <script>
   import { getApiUrl, getSiteUrl } from '../lib/config';
 
-  /**
-   * Snippets ship with API/SITE placeholders so the static build stays origin
-   * agnostic; they resolve here to whatever origin is actually serving.
-   */
   function resolveSnippets() {
     const api = getApiUrl();
     const site = getSiteUrl();
 
     document.querySelectorAll<HTMLElement>('pre[data-snippet]').forEach((pre) => {
-      const raw = pre.dataset.snippet ?? '';
-      const resolved = raw.replaceAll('API', api).replaceAll('SITE', site);
+      const resolved = (pre.dataset.snippet ?? '').replaceAll('API', api).replaceAll('SITE', site);
       pre.dataset.resolved = resolved;
       const code = pre.querySelector('code');
       if (code) code.textContent = resolved;
@@ -395,11 +445,11 @@ const steps = [
         const original = btn.textContent;
         try {
           await navigator.clipboard.writeText(text);
-          btn.textContent = 'copied';
+          btn.textContent = 'Copied';
         } catch {
-          btn.textContent = 'press ctrl+c';
-          const range = document.createRange();
+          btn.textContent = 'Press Ctrl+C';
           if (pre) {
+            const range = document.createRange();
             range.selectNodeContents(pre);
             const selection = window.getSelection();
             selection?.removeAllRanges();

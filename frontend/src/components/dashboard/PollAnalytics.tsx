@@ -130,7 +130,7 @@ export default function PollAnalytics({ pollId }: Props) {
     <div className="an">
       <header className="an__head">
         <div className="an__ident">
-          <p className="field-label">poll {data.poll_id}</p>
+          <p className="field-label">Poll {data.poll_id}</p>
           <h2 className="an__title">{data.title}</h2>
         </div>
 
@@ -141,7 +141,7 @@ export default function PollAnalytics({ pollId }: Props) {
             disabled={exporting !== null || !hasVotes}
             onClick={() => onExport('csv')}
           >
-            {exporting === 'csv' ? 'exporting' : 'export csv'}
+            {exporting === 'csv' ? 'Exporting' : 'Export CSV'}
           </button>
           <button
             type="button"
@@ -149,7 +149,7 @@ export default function PollAnalytics({ pollId }: Props) {
             disabled={exporting !== null || !hasVotes}
             onClick={() => onExport('json')}
           >
-            {exporting === 'json' ? 'exporting' : 'export json'}
+            {exporting === 'json' ? 'Exporting' : 'Export JSON'}
           </button>
         </div>
       </header>
@@ -261,75 +261,90 @@ export default function PollAnalytics({ pollId }: Props) {
       )}
 
       <style>{`
-        .an { display: grid; gap: var(--space-xl); }
+        .an { display: grid; gap: var(--space-2xl); }
 
         .an__head {
           display: flex; align-items: flex-end; justify-content: space-between;
-          gap: var(--space-md); flex-wrap: wrap;
-          padding-bottom: var(--space-md);
+          gap: var(--space-lg); flex-wrap: wrap;
+          padding-bottom: var(--space-lg);
           border-bottom: var(--rule-hair) solid var(--color-rule);
         }
-        .an__title { font-size: var(--text-xl); margin-top: var(--space-2xs); }
-        .an__exports { display: flex; gap: var(--space-xs); }
+        .an__title { font-size: var(--text-2xl); margin-top: var(--space-2xs); }
+        .an__exports { display: flex; gap: var(--space-sm); }
 
         .an__inline-error {
-          padding: var(--space-xs) var(--space-sm);
-          background: var(--color-danger-wash);
-          border-left: 2px solid var(--color-danger);
-          color: var(--color-ink); font-size: var(--text-xs);
+          padding: var(--space-sm) var(--space-md);
+          background: var(--color-danger-soft);
+          border-radius: var(--radius-md);
+          color: var(--color-danger); font-size: var(--text-sm);
         }
 
         .an__kpis {
           display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
           gap: var(--space-lg); margin: 0;
         }
-        .an__kpi { border-top: 2px solid var(--color-accent-dim); padding-top: var(--space-sm); }
-        .an__kpi-num {
-          margin: var(--space-2xs) 0 0;
-          font-size: var(--text-2xl); color: var(--color-ink); font-weight: 600;
+        .an__kpi {
+          padding: var(--space-lg);
+          background: var(--color-paper-2);
+          border: var(--rule-hair) solid var(--color-rule);
+          border-radius: var(--radius-lg);
         }
-        .an__kpi-note { margin: var(--space-2xs) 0 0; font-size: var(--text-2xs); color: var(--color-ink-4); }
+        .an__kpi-num {
+          margin: var(--space-xs) 0 0;
+          font-family: var(--font-mono); font-variant-numeric: tabular-nums;
+          font-size: var(--text-3xl); color: var(--color-ink); font-weight: 600;
+          letter-spacing: var(--tracking-tight);
+        }
+        .an__kpi-note { margin: var(--space-xs) 0 0; font-size: var(--text-xs); color: var(--color-ink-4); }
 
-        .an__panel { display: grid; gap: var(--space-md); min-width: 0; }
+        .an__panel { display: grid; gap: var(--space-lg); min-width: 0; }
         .an__panel-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-md); }
-        .an__panel-title { font-size: var(--text-sm); color: var(--color-ink); }
-        .an__panel-meta { font-size: var(--text-xs); color: var(--color-ink-4); }
+        .an__panel-title { font-size: var(--text-lg); color: var(--color-ink); }
+        .an__panel-meta { font-size: var(--text-sm); color: var(--color-ink-4); }
 
         .an__chart {
-          display: flex; align-items: flex-end; gap: var(--space-2xs);
-          height: 11rem; padding-top: var(--space-md);
+          display: flex; align-items: flex-end; gap: var(--space-xs);
+          height: 12rem; padding-top: var(--space-lg);
           border-bottom: var(--rule-hair) solid var(--color-rule);
           overflow-x: auto;
         }
         .an__bar-col {
-          flex: 1 1 0; min-width: 1.75rem;
+          flex: 1 1 0; min-width: 2rem;
           display: flex; flex-direction: column; align-items: center; gap: var(--space-2xs);
           height: 100%; justify-content: flex-end;
         }
         .an__bar {
-          width: 100%; max-width: 2.5rem;
-          background: var(--color-accent-dim);
+          width: 100%; max-width: 2.75rem;
+          background: var(--color-accent-soft);
+          border: var(--rule-hair) solid var(--color-accent);
+          border-bottom: none;
           border-radius: var(--radius-sm) var(--radius-sm) 0 0;
           transition: background-color var(--dur-fast) var(--ease-out);
         }
         .an__bar-col:hover .an__bar { background: var(--color-accent); }
-        .an__bar-val { font-size: var(--text-2xs); color: var(--color-ink-3); }
-        .an__bar-date { font-size: var(--text-2xs); color: var(--color-ink-4); white-space: nowrap; }
+        .an__bar-val {
+          font-family: var(--font-mono); font-variant-numeric: tabular-nums;
+          font-size: var(--text-xs); color: var(--color-ink-3);
+        }
+        .an__bar-date { font-size: var(--text-xs); color: var(--color-ink-4); white-space: nowrap; }
 
         .an__split { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-2xl); }
 
-        .an__list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-md); }
+        .an__list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-lg); }
         .an__list--flat { gap: 0; border-top: var(--rule-hair) solid var(--color-rule); }
-        .an__list-row { display: grid; gap: var(--space-2xs); }
+        .an__list-row { display: grid; gap: var(--space-xs); }
         .an__list-line { display: flex; justify-content: space-between; gap: var(--space-md); font-size: var(--text-sm); }
         .an__list-label { color: var(--color-ink); min-width: 0; overflow-wrap: anywhere; }
-        .an__list-val { color: var(--color-ink-2); white-space: nowrap; }
+        .an__list-val {
+          font-family: var(--font-mono); font-variant-numeric: tabular-nums;
+          color: var(--color-ink-2); white-space: nowrap;
+        }
 
         .an__ref-row {
           display: flex; justify-content: space-between; gap: var(--space-md);
-          padding-block: var(--space-sm);
+          padding-block: var(--space-md);
           border-bottom: var(--rule-hair) solid var(--color-rule);
-          font-size: var(--text-xs);
+          font-size: var(--text-sm);
         }
         .an__ref-name {
           color: var(--color-ink-2); min-width: 0;
@@ -337,13 +352,13 @@ export default function PollAnalytics({ pollId }: Props) {
         }
 
         .an__state {
-          display: grid; gap: var(--space-sm); justify-items: start;
-          padding-block: var(--space-2xl);
+          display: grid; gap: var(--space-md); justify-items: start;
+          padding-block: var(--space-3xl);
         }
-        .an__state-msg { font-size: var(--text-base); color: var(--color-ink); }
+        .an__state-msg { font-size: var(--text-lg); font-weight: 500; color: var(--color-ink); }
         .an__state--error .an__state-msg { color: var(--color-danger); }
-        .an__state-hint { font-size: var(--text-xs); color: var(--color-ink-3); max-width: 54ch; line-height: 1.7; }
-        .an__state-actions { display: flex; gap: var(--space-xs); flex-wrap: wrap; }
+        .an__state-hint { font-size: var(--text-sm); color: var(--color-ink-3); max-width: 52ch; line-height: var(--leading-body); }
+        .an__state-actions { display: flex; gap: var(--space-sm); flex-wrap: wrap; }
 
         @media (max-width: 60rem) {
           .an__kpis, .an__split { grid-template-columns: minmax(0, 1fr); }
