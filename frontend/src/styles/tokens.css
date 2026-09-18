@@ -1,77 +1,95 @@
-/* Hallmark · macrostructure: Workbench · genre: modern-minimal · theme: Terminal
- * nav: N8 Terminal command · footer: Ft4 Dense typographic
- * paper: dark (L 14%) · display: mono · accent: phosphor (145°)
- * tone: utilitarian · audience: developers embedding polls in READMEs
+/* Hallmark · macrostructure: Workbench · genre: modern-minimal · theme: Paper
+ * nav: N1b canonical three-section · footer: Ft1 mast-headed
+ * paper: light (L 99.5%) · display: geometric-sans · accent: cool blue (259°)
+ * tone: premium-minimal · audience: developers embedding polls in READMEs
  * pre-emit critique: P5 H5 E5 S5 R5 V5
  *
- * Design tokens for Polls Lab. Every colour, size, and duration in the app
- * references a name from this file. No component inlines a raw value.
+ * Design tokens for Polls Lab. Every colour, size and duration in the app
+ * references a name from this file; no component inlines a raw value.
+ *
+ * Light is the default and does not follow the system preference, the way
+ * Google's own surfaces stay light until you opt out. Dark is available by
+ * setting data-theme="dark" on the root element.
  */
 
 :root {
-  color-scheme: dark;
+  color-scheme: light;
 
-  /* ---- Paper + ink -------------------------------------------------------
-   * A near-black neutral, warmed very slightly off blue so the phosphor
-   * accent reads as light on a surface rather than as another hue.
+  /* ---- Paper -------------------------------------------------------------
+   * Reads as white, with a trace of chroma so stacked surfaces still separate.
+   * Pure #fff on every layer flattens the page.
    */
-  --color-paper: oklch(14% 0.006 200);
-  --color-paper-2: oklch(18% 0.007 200);
-  --color-paper-3: oklch(22% 0.008 200);
-  --color-paper-inset: oklch(11% 0.005 200);
+  --color-paper: oklch(99.5% 0.0015 265);
+  --color-paper-2: oklch(98.2% 0.002 265);
+  --color-paper-3: oklch(96.2% 0.003 265);
+  --color-paper-inset: oklch(97.6% 0.002 265);
 
-  --color-ink: oklch(96% 0.003 200);
-  --color-ink-2: oklch(76% 0.008 210);
-  --color-ink-3: oklch(58% 0.010 215);
-  --color-ink-4: oklch(44% 0.010 220);
-
-  /* ---- Rules -------------------------------------------------------------
-   * Dense layouts separate data with hairlines, not card boxes.
+  /* ---- Ink --------------------------------------------------------------
+   * Near-black rather than #000. ink-4 is the lightest tier that still clears
+   * 4.5:1 on paper, so it is safe for small print.
    */
-  --color-rule: oklch(26% 0.008 205);
-  --color-rule-strong: oklch(34% 0.010 205);
+  --color-ink: oklch(21% 0.012 265);
+  --color-ink-2: oklch(38% 0.012 265);
+  --color-ink-3: oklch(46% 0.012 265);
+  --color-ink-4: oklch(54% 0.012 265);
+
+  /* ---- Rules ------------------------------------------------------------ */
+  --color-rule: oklch(92.5% 0.003 265);
+  --color-rule-strong: oklch(86% 0.005 265);
   --rule-hair: 1px;
 
-  /* ---- Accent ------------------------------------------------------------
-   * One accent, chroma held under 0.18 so it never glows. Phosphor green
-   * carries the terminal lineage without neon.
+  /* ---- Accent -----------------------------------------------------------
+   * One accent, one hue. Deep enough to hold white text at AA, restrained
+   * enough that it never reads as a glow.
    */
-  --color-accent: oklch(80% 0.155 148);
-  --color-accent-dim: oklch(62% 0.120 148);
-  --color-accent-wash: oklch(80% 0.155 148 / 0.10);
-  --color-accent-ink: oklch(16% 0.020 148);
+  --color-accent: oklch(52% 0.172 259);
+  --color-accent-strong: oklch(45% 0.165 259);
+  --color-accent-soft: oklch(96% 0.022 259);
+  --color-accent-wash: oklch(52% 0.172 259 / 0.08);
+  --color-accent-ink: oklch(100% 0 0);
 
-  /* ---- Semantic state ---------------------------------------------------- */
-  --color-danger: oklch(66% 0.180 22);
-  --color-danger-wash: oklch(66% 0.180 22 / 0.12);
-  --color-warn: oklch(80% 0.140 78);
-  --color-warn-wash: oklch(80% 0.140 78 / 0.12);
-  --color-focus: oklch(84% 0.140 148);
+  /* ---- Semantic state --------------------------------------------------- */
+  --color-danger: oklch(52% 0.195 25);
+  --color-danger-soft: oklch(96.5% 0.02 25);
+  --color-danger-wash: oklch(52% 0.195 25 / 0.08);
+  --color-warn: oklch(52% 0.115 65);
+  --color-warn-soft: oklch(97% 0.03 75);
+  --color-warn-wash: oklch(52% 0.115 65 / 0.09);
+  --color-ok: oklch(52% 0.13 155);
+  --color-focus: oklch(52% 0.172 259);
 
   /* ---- Type -------------------------------------------------------------
-   * Mono-forward by intent: this is a terminal-adjacent product, so mono is
-   * the interface face, not an accent. Sans is reserved for running prose in
-   * docs, where mono measure hurts reading speed.
+   * Sans is the interface face. Mono is reserved for what is genuinely code
+   * or a figure: snippets, ids, counts.
    */
+  --font-sans:
+    'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
-  --font-sans: 'Geist', system-ui, -apple-system, sans-serif;
 
-  --text-2xs: 0.6875rem;
-  --text-xs: 0.75rem;
-  --text-sm: 0.8125rem;
-  --text-base: 0.9375rem;
-  --text-lg: 1.0625rem;
+  --text-2xs: 0.75rem;
+  --text-xs: 0.8125rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
   --text-xl: 1.375rem;
   --text-2xl: 1.75rem;
   --text-3xl: 2.25rem;
-  --text-display-s: clamp(2rem, 5vw, 3rem);
-  --text-display: clamp(2.25rem, 6.5vw, 4rem);
+  --text-display-s: clamp(2rem, 4.5vw, 2.75rem);
+  --text-display: clamp(2.5rem, 6vw, 4rem);
 
-  --tracking-tight: -0.02em;
+  --tracking-tight: -0.021em;
+  --tracking-snug: -0.011em;
   --tracking-flat: 0;
-  --tracking-label: 0.12em;
+  --tracking-label: 0.04em;
 
-  /* ---- Space (4pt scale) ------------------------------------------------- */
+  --leading-tight: 1.14;
+  --leading-snug: 1.35;
+  --leading-body: 1.65;
+
+  /* ---- Space (4pt scale) ------------------------------------------------
+   * Premium-minimal buys its calm with air, so the section steps are larger
+   * than the dense scale they replace.
+   */
   --space-2xs: 0.25rem;
   --space-xs: 0.5rem;
   --space-sm: 0.75rem;
@@ -79,26 +97,78 @@
   --space-lg: 1.5rem;
   --space-xl: 2rem;
   --space-2xl: 3rem;
-  --space-3xl: 4.5rem;
-  --space-4xl: 6rem;
+  --space-3xl: 5rem;
+  --space-4xl: 7.5rem;
 
-  --page-gutter: clamp(1rem, 4vw, 2rem);
-  --page-max: 78rem;
+  --page-gutter: clamp(1rem, 5vw, 2.5rem);
+  --page-max: 72rem;
   --prose-max: 68ch;
 
-  /* ---- Radius -----------------------------------------------------------
-   * One scale, sharp. A terminal surface has corners.
+  /* ---- Radius ----------------------------------------------------------
+   * Generously rounded. Corner softness is most of what separates a premium
+   * consumer surface from a utility one.
    */
   --radius-none: 0;
-  --radius-sm: 2px;
-  --radius-md: 4px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
   --radius-pill: 999px;
 
-  /* ---- Motion ----------------------------------------------------------- */
+  /* ---- Elevation -------------------------------------------------------
+   * Tinted toward the paper hue, never pure black, and used sparingly: most
+   * grouping here is done with space and a hairline.
+   */
+  --shadow-sm: 0 1px 2px oklch(21% 0.012 265 / 0.05);
+  --shadow-md:
+    0 1px 3px oklch(21% 0.012 265 / 0.06), 0 6px 16px oklch(21% 0.012 265 / 0.05);
+  --shadow-lg:
+    0 2px 6px oklch(21% 0.012 265 / 0.06), 0 18px 40px oklch(21% 0.012 265 / 0.09);
+
+  /* ---- Motion ---------------------------------------------------------- */
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
   --dur-instant: 90ms;
-  --dur-fast: 140ms;
-  --dur-mid: 220ms;
+  --dur-fast: 150ms;
+  --dur-mid: 240ms;
+}
+
+/* ---- Dark, opt-in only -------------------------------------------------
+ * Not wired to prefers-color-scheme on purpose: the product's default surface
+ * is white, and a system-driven flip would hide that from most viewers.
+ */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --color-paper: oklch(17% 0.008 265);
+  --color-paper-2: oklch(21% 0.009 265);
+  --color-paper-3: oklch(25% 0.010 265);
+  --color-paper-inset: oklch(14% 0.007 265);
+
+  --color-ink: oklch(97% 0.003 265);
+  --color-ink-2: oklch(80% 0.008 265);
+  --color-ink-3: oklch(68% 0.010 265);
+  --color-ink-4: oklch(56% 0.011 265);
+
+  --color-rule: oklch(28% 0.010 265);
+  --color-rule-strong: oklch(36% 0.012 265);
+
+  --color-accent: oklch(72% 0.145 259);
+  --color-accent-strong: oklch(80% 0.130 259);
+  --color-accent-soft: oklch(28% 0.055 259);
+  --color-accent-wash: oklch(72% 0.145 259 / 0.14);
+  --color-accent-ink: oklch(17% 0.02 259);
+
+  --color-danger: oklch(70% 0.165 25);
+  --color-danger-soft: oklch(27% 0.06 25);
+  --color-danger-wash: oklch(70% 0.165 25 / 0.14);
+  --color-warn: oklch(80% 0.125 75);
+  --color-warn-soft: oklch(28% 0.05 75);
+  --color-warn-wash: oklch(80% 0.125 75 / 0.14);
+  --color-ok: oklch(75% 0.145 155);
+  --color-focus: oklch(78% 0.135 259);
+
+  --shadow-sm: 0 1px 2px oklch(0% 0 0 / 0.4);
+  --shadow-md: 0 1px 3px oklch(0% 0 0 / 0.5), 0 6px 16px oklch(0% 0 0 / 0.4);
+  --shadow-lg: 0 2px 6px oklch(0% 0 0 / 0.5), 0 18px 40px oklch(0% 0 0 / 0.45);
 }
