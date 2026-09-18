@@ -1,0 +1,12 @@
+[
+  {
+    "date": "2026-09-18",
+    "macrostructure": "Workbench",
+    "theme": "Terminal",
+    "theme_axes": "dark / mono / phosphor-green",
+    "nav": "N8 Terminal command",
+    "footer": "Ft4 Dense typographic",
+    "enrichment": "none (live widget is the proof)",
+    "brief": "Polls Lab frontend rebuild: developer-tool dense, mono-forward, data-dense"
+  }
+]
