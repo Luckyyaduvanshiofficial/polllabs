@@ -23,10 +23,10 @@ interface ThemePreset {
 }
 
 const THEME_PRESETS: ThemePreset[] = [
-  { id: 'minimal', name: 'Minimal', blurb: 'Clean default', swatches: ['#ffffff', '#3b82f6', '#111827'], layout: 'list' },
+  { id: 'minimal', name: 'Minimal', blurb: 'Clean default', swatches: ['#ffffff', '#b47a0a', '#1a1612'], layout: 'list' },
   { id: 'whatsapp', name: 'WhatsApp', blurb: 'Chat bubble', swatches: ['#dcf8c6', '#00a884', '#111b21'], layout: 'list' },
   { id: 'telegram', name: 'Telegram', blurb: 'Classic blue', swatches: ['#ffffff', '#3390ec', '#000000'], layout: 'list' },
-  { id: 'story', name: 'Story', blurb: 'Sticker card', swatches: ['#ffffff', '#3b82f6', '#1e293b'], layout: 'list' },
+  { id: 'story', name: 'Story', blurb: 'Sticker card', swatches: ['#ffffff', '#b47a0a', '#1a1612'], layout: 'list' },
   { id: 'youtube-grid', name: 'Thumbnail grid', blurb: 'Image tiles', swatches: ['#ffffff', '#ff0033', '#0f0f0f'], layout: 'grid' },
 ];
 

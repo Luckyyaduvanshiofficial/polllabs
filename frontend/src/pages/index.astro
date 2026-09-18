@@ -1,11 +1,10 @@
 ---
 /**
- * Landing page. Workbench macrostructure: the working product is the argument,
- * so the fold pairs the line a developer actually copies with a live widget
- * voting against the real API.
+ * Landing page.
  *
- * Sections use four different layout families: split fold, copy surfaces,
- * guarantee spec sheet, and a verb-labelled flow, closing on a statement.
+ * Sections use four different layout families: asymmetric fold, editorial
+ * two-column, spec sheet, and a vertical flow — each chosen for the content
+ * it carries rather than for visual symmetry.
  */
 import RootLayout from '../layouts/RootLayout.astro';
 import PollWidget from '../components/embed/PollWidget.svelte';
@@ -13,42 +12,40 @@ import { DEMO_FRAMEWORKS_POLL } from '../lib/demo-poll';
 
 const demoId = DEMO_FRAMEWORKS_POLL.id;
 
-// Snippets ship with API/SITE placeholders and resolve client-side, so what a
-// visitor copies always points at the origin actually serving them.
 const surfaces = [
   {
     surface: 'README badge',
-    detail: 'GitHub renders the SVG and links it back to the poll.',
+    detail: 'GitHub renders the SVG and links it back to the poll. Works in any Markdown renderer that supports image links.',
     lang: 'markdown',
     snippet: `[![Poll](API/api/v1/badges/${demoId}.svg)](SITE/polls/${demoId})`,
   },
   {
     surface: 'Interactive embed',
-    detail: 'An iframe that accepts votes inline, about 7 KB gzipped.',
+    detail: 'An iframe that accepts votes inline, about 7 KB gzipped. Responds to theme overrides via URL params.',
     lang: 'html',
     snippet: `<iframe src="SITE/embed?id=${demoId}"\n        width="100%" height="380"\n        style="border:0" loading="lazy"></iframe>`,
   },
   {
-    surface: 'Plain image',
-    detail: 'For Markdown that strips iframes, such as Hugo or Dev.to.',
+    surface: 'Static image',
+    detail: 'For Markdown that strips iframes — Hugo, Dev.to, Notion. The badge updates as votes arrive.',
     lang: 'markdown',
     snippet: `![Poll](API/api/v1/badges/${demoId}.png)`,
   },
 ];
 
 const guarantees = [
-  { key: 'Voting', value: 'Anonymous', note: 'No account needed to cast a vote.' },
-  { key: 'Duplicate control', value: 'Device token', note: 'An httpOnly cookie issued server-side.' },
-  { key: 'IP handling', value: 'Salted SHA-256', note: 'Raw addresses are never stored.' },
-  { key: 'Trackers', value: 'None', note: 'No analytics scripts ship with an embed.' },
-  { key: 'Result masking', value: 'Server-side', note: 'Hidden counts never reach the browser.' },
-  { key: 'Licence', value: 'Apache 2.0', note: 'Self-host the entire stack.' },
+  { key: 'Voting', value: 'Anonymous', note: 'No account needed to cast a vote. No cookies tracked for analytics.' },
+  { key: 'Duplicate control', value: 'Device token', note: 'An httpOnly cookie issued server-side. Not readable by JavaScript.' },
+  { key: 'IP handling', value: 'Salted SHA-256', note: 'Raw addresses are never stored. The hash is non-reversible.' },
+  { key: 'Trackers', value: 'None', note: 'No analytics scripts ship with an embed. No third-party requests.' },
+  { key: 'Result masking', value: 'Server-side', note: 'Hidden counts never reach the browser. The widget cannot leak early results.' },
+  { key: 'Licence', value: 'Apache 2.0', note: 'Self-host the entire stack. No vendor lock-in, no usage fees.' },
 ];
 
 const steps = [
   {
     verb: 'Create',
-    body: 'Sign in with GitHub, write a question and up to ten options. Choose single-choice, multi-select or quiz mode.',
+    body: 'Sign in with GitHub, write a question and up to ten options. Choose single-choice, multi-select, or quiz mode.',
   },
   {
     verb: 'Embed',
@@ -56,20 +53,28 @@ const steps = [
   },
   {
     verb: 'Measure',
-    body: 'Watch votes arrive in the dashboard, split by option, referrer and day. Export CSV or JSON.',
+    body: 'Watch votes arrive in the dashboard, split by option, referrer, and day. Export CSV or JSON.',
   },
+];
+
+const placements = [
+  { where: 'GitHub READMEs', how: 'The badge renders inline and links to your poll. Forks and mirrors keep working because the badge URL is absolute.' },
+  { where: 'Documentation sites', how: 'Embed in Docusaurus, VitePress, or any static generator. The iframe adapts to container width.' },
+  { where: 'Blog posts', how: 'Drop a badge in a Markdown post on Dev.to, Hashnode, or your own site. Readers vote without leaving the page.' },
+  { where: 'Course materials', how: 'Add a quick-check poll after a lesson. Students vote once, you see the spread.' },
 ];
 ---
 
 <RootLayout>
-  <!-- Fold: the snippet a developer copies, beside the widget it produces. -->
+  <!-- Fold: the serif headline does the heavy lifting, the widget proves it works. -->
   <section class="fold">
     <div class="shell fold__grid">
       <div class="fold__text">
         <h1 class="fold__title">Polls that live in your README.</h1>
         <p class="fold__lede">
-          One line of markdown renders a live SVG badge. One iframe accepts votes inline. Both stay
-          in sync with the same poll.
+          One line of markdown renders a live SVG badge. One iframe accepts votes
+          inline. Both stay in sync with the same poll — no build step, no
+          JavaScript dependency, no account required to vote.
         </p>
         <div class="fold__actions">
           <a href="/dashboard/create" class="btn btn--primary">Create a poll</a>
@@ -78,7 +83,6 @@ const steps = [
       </div>
 
       <div class="fold__proof">
-        <p class="fold__proof-label">A live poll, taking real votes</p>
         <div class="fold__widget card">
           <PollWidget client:load pollId={demoId} />
         </div>
@@ -86,13 +90,60 @@ const steps = [
     </div>
   </section>
 
-  <!-- Copy surfaces. -->
+  <!-- Why: editorial two-column, making the case. -->
+  <section class="section section--tint" aria-labelledby="why-title">
+    <div class="shell">
+      <div class="why">
+        <div class="why__text">
+          <h2 id="why-title" class="why__title">Your readers already have questions.<br />Give them a way to answer.</h2>
+          <p class="why__body">
+            A README without a poll is a monologue. Adding one turns your
+            documentation into a conversation — readers vote, you see the
+            results, and the badge on your repo updates in real time.
+          </p>
+          <p class="why__body">
+            No third-party analytics. No account walls. Just a question,
+            some options, and the actual distribution of what your audience
+            thinks.
+          </p>
+        </div>
+        <div class="why__examples">
+          <div class="why__example">
+            <span class="why__example-label">In a README</span>
+            <p class="why__example-text">
+              "Which framework should we support next?" — the badge sits
+              right next to your feature list, and the results speak for
+              themselves.
+            </p>
+          </div>
+          <div class="why__example">
+            <span class="why__example-label">In a blog post</span>
+            <p class="why__example-text">
+              "How do you handle rate limiting?" — embed at the end of a
+              technical post to see what your readers actually do vs. what
+              they say.
+            </p>
+          </div>
+          <div class="why__example">
+            <span class="why__example-label">In course materials</span>
+            <p class="why__example-text">
+              "Which concept was hardest?" — a quick-check poll after each
+              lesson gives you signal without a survey tool.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Surfaces: vertical list, not three identical columns. -->
   <section class="section" aria-labelledby="surfaces-title">
     <div class="shell">
       <header class="section__head">
-        <h2 id="surfaces-title" class="section__title">Three ways to embed one poll</h2>
+        <h2 id="surfaces-title" class="section__title">Three surfaces, one poll</h2>
         <p class="section__lede">
-          Every surface reads from the same poll, so results agree wherever you place them.
+          Every surface reads from the same poll, so results agree wherever
+          you place them. Pick the one that fits your platform.
         </p>
       </header>
 
@@ -100,14 +151,18 @@ const steps = [
         {
           surfaces.map((item) => (
             <article class="surface">
-              <h3 class="surface__name">{item.surface}</h3>
-              <p class="surface__detail">{item.detail}</p>
-              <div class="code surface__code">
-                <pre data-snippet={item.snippet}><code>{item.snippet}</code></pre>
+              <div class="surface__meta">
+                <h3 class="surface__name">{item.surface}</h3>
+                <p class="surface__detail">{item.detail}</p>
               </div>
-              <button type="button" class="btn btn--quiet surface__copy" data-copy>
-                Copy {item.lang}
-              </button>
+              <div class="surface__code-wrap">
+                <div class="code surface__code">
+                  <pre data-snippet={item.snippet}><code>{item.snippet}</code></pre>
+                </div>
+                <button type="button" class="btn btn--quiet surface__copy" data-copy>
+                  Copy {item.lang}
+                </button>
+              </div>
             </article>
           ))
         }
@@ -115,13 +170,14 @@ const steps = [
     </div>
   </section>
 
-  <!-- Guarantees: a spec sheet of real properties, no invented metrics. -->
+  <!-- Guarantees: spec sheet with more presence. -->
   <section class="section section--tint" aria-labelledby="specs-title">
     <div class="shell">
       <header class="section__head">
         <h2 id="specs-title" class="section__title">What the platform guarantees</h2>
         <p class="section__lede">
-          Privacy and abuse handling are decided on the server, not in the widget.
+          Privacy and abuse handling are decided on the server, not in the
+          widget. These are real properties, not marketing claims.
         </p>
       </header>
 
@@ -139,11 +195,15 @@ const steps = [
     </div>
   </section>
 
-  <!-- Flow: verbs as labels, never "Step 1". -->
+  <!-- Flow: verb-led cards with accent borders. -->
   <section class="section" aria-labelledby="flow-title">
     <div class="shell">
       <header class="section__head">
         <h2 id="flow-title" class="section__title">From question to results</h2>
+        <p class="section__lede">
+          Three steps. No infrastructure to manage. The stack is FastAPI,
+          PocketBase and a static Astro front end — all of it self-hostable.
+        </p>
       </header>
 
       <ol class="flow">
@@ -159,15 +219,41 @@ const steps = [
     </div>
   </section>
 
-  <!-- Close. -->
+  <!-- Placements: where your polls actually appear. -->
+  <section class="section section--tint" aria-labelledby="places-title">
+    <div class="shell">
+      <div class="places">
+        <div class="places__text">
+          <h2 id="places-title" class="places__title">Polls everywhere you already write</h2>
+          <p class="places__lede">
+            The badge and iframe work anywhere Markdown or HTML renders.
+            No SDK, no client library, no build plugin.
+          </p>
+        </div>
+        <div class="places__list">
+          {
+            placements.map((item) => (
+              <div class="places__item">
+                <h3 class="places__where">{item.where}</h3>
+                <p class="places__how">{item.how}</p>
+              </div>
+            ))
+          }
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Close: the stack you can own. -->
   <section class="close">
     <div class="shell close__inner">
-      <p class="close__line">
-        Everything here runs on a stack you can host yourself: FastAPI, PocketBase and a static Astro
-        front end.
+      <h2 class="close__title">Everything here runs on a stack you can host yourself.</h2>
+      <p class="close__sub">
+        FastAPI, PocketBase and a static Astro front end. Apache 2.0.
+        No usage fees, no vendor lock-in, no surprise bills.
       </p>
       <div class="close__actions">
-        <a href="/dashboard/create" class="btn btn--primary">Create a poll</a>
+        <a href="/dashboard/create" class="btn btn--primary btn--lg">Create a poll</a>
         <a
           href="https://github.com/Luckyyaduvanshiofficial/polls-lab/blob/main/docs/self-hosting.md"
           target="_blank"
@@ -193,12 +279,13 @@ const steps = [
   }
 
   .section__head {
-    max-width: 46ch;
+    max-width: 50ch;
     margin-bottom: var(--space-2xl);
   }
 
   .section__title {
     font-size: var(--text-2xl);
+    font-family: var(--font-display);
     color: var(--color-ink);
   }
 
@@ -207,6 +294,7 @@ const steps = [
     font-size: var(--text-base);
     color: var(--color-ink-3);
     line-height: var(--leading-body);
+    max-width: 52ch;
   }
 
   /* ---- Fold ---- */
@@ -216,19 +304,21 @@ const steps = [
 
   .fold__grid {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 0.9fr);
+    grid-template-columns: 1.1fr 0.9fr;
     gap: var(--space-3xl);
     align-items: center;
   }
 
   .fold__title {
-    font-size: var(--text-display);
-    max-width: 20ch;
+    font-size: var(--text-display-xl);
+    font-family: var(--font-display);
+    max-width: 18ch;
+    line-height: 1.05;
   }
 
   .fold__lede {
     margin-top: var(--space-lg);
-    max-width: 46ch;
+    max-width: 44ch;
     font-size: var(--text-lg);
     color: var(--color-ink-3);
     line-height: var(--leading-snug);
@@ -243,43 +333,105 @@ const steps = [
 
   .fold__proof {
     min-width: 0;
-  }
-
-  .fold__proof-label {
-    font-size: var(--text-xs);
-    color: var(--color-ink-4);
-    margin-bottom: var(--space-sm);
+    display: flex;
+    justify-content: end;
   }
 
   .fold__widget {
-    padding: var(--space-md);
+    padding: var(--space-lg);
     min-width: 0;
+    max-width: 380px;
     box-shadow: var(--shadow-lg);
   }
 
-  /* ---- Surfaces ---- */
+  /* ---- Why (editorial two-column) ---- */
+  .why {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-3xl);
+    align-items: start;
+  }
+
+  .why__title {
+    font-size: var(--text-3xl);
+    font-family: var(--font-display);
+    line-height: 1.15;
+    color: var(--color-ink);
+  }
+
+  .why__body {
+    margin-top: var(--space-lg);
+    font-size: var(--text-base);
+    color: var(--color-ink-2);
+    line-height: var(--leading-body);
+    max-width: 48ch;
+  }
+
+  .why__examples {
+    display: grid;
+    gap: var(--space-lg);
+    padding-top: var(--space-sm);
+  }
+
+  .why__example {
+    padding-left: var(--space-lg);
+    border-left: 2px solid var(--color-accent);
+  }
+
+  .why__example-label {
+    display: block;
+    font-size: var(--text-xs);
+    font-weight: 600;
+    color: var(--color-accent-strong);
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    margin-bottom: var(--space-2xs);
+  }
+
+  .why__example-text {
+    font-size: var(--text-sm);
+    color: var(--color-ink-2);
+    line-height: var(--leading-body);
+  }
+
+  /* ---- Surfaces (vertical list) ---- */
   .surfaces {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: var(--space-xl);
   }
 
   .surface {
     display: grid;
-    grid-template-rows: auto auto 1fr auto;
-    gap: var(--space-sm);
-    min-width: 0;
+    grid-template-columns: minmax(0, 0.4fr) minmax(0, 0.6fr);
+    gap: var(--space-xl);
+    align-items: start;
+    padding-bottom: var(--space-xl);
+    border-bottom: var(--rule-hair) solid var(--color-rule);
+  }
+
+  .surface:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
   }
 
   .surface__name {
-    font-size: var(--text-base);
+    font-size: var(--text-lg);
+    font-family: var(--font-display);
     color: var(--color-ink);
   }
 
   .surface__detail {
+    margin-top: var(--space-xs);
     font-size: var(--text-sm);
     color: var(--color-ink-3);
     line-height: var(--leading-body);
+    max-width: 38ch;
+  }
+
+  .surface__code-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
   }
 
   .surface__code pre {
@@ -291,15 +443,15 @@ const steps = [
     justify-self: start;
   }
 
-  /* ---- Specs ---- */
+  /* ---- Specs (spec sheet) ---- */
   .specs {
     margin: 0;
-    border-top: var(--rule-hair) solid var(--color-rule-strong);
+    border-top: 2px solid var(--color-ink);
   }
 
   .specs__row {
     display: grid;
-    grid-template-columns: 14rem 12rem 1fr;
+    grid-template-columns: 12rem 12rem 1fr;
     gap: var(--space-lg);
     align-items: baseline;
     padding-block: var(--space-md);
@@ -308,23 +460,25 @@ const steps = [
 
   .specs__key {
     font-size: var(--text-sm);
-    color: var(--color-ink-3);
+    font-weight: 600;
+    color: var(--color-ink);
   }
 
   .specs__value {
     margin: 0;
     font-size: var(--text-sm);
-    color: var(--color-ink);
     font-weight: 500;
+    color: var(--color-accent-strong);
   }
 
   .specs__note {
     margin: 0;
     font-size: var(--text-sm);
     color: var(--color-ink-3);
+    line-height: var(--leading-body);
   }
 
-  /* ---- Flow ---- */
+  /* ---- Flow (verb-led cards) ---- */
   .flow {
     list-style: none;
     margin: 0;
@@ -335,13 +489,16 @@ const steps = [
   }
 
   .flow__step {
-    padding-top: var(--space-md);
-    border-top: 2px solid var(--color-accent);
-    min-width: 0;
+    padding: var(--space-lg) var(--space-lg) var(--space-xl);
+    background: var(--color-paper);
+    border: var(--rule-hair) solid var(--color-rule);
+    border-top: 3px solid var(--color-accent);
+    border-radius: var(--radius-lg);
   }
 
   .flow__verb {
-    font-size: var(--text-lg);
+    font-size: var(--text-xl);
+    font-family: var(--font-display);
     color: var(--color-ink);
   }
 
@@ -352,30 +509,91 @@ const steps = [
     line-height: var(--leading-body);
   }
 
+  /* ---- Places (where polls appear) ---- */
+  .places {
+    display: grid;
+    grid-template-columns: 0.45fr 0.55fr;
+    gap: var(--space-3xl);
+    align-items: start;
+  }
+
+  .places__title {
+    font-size: var(--text-3xl);
+    font-family: var(--font-display);
+    line-height: 1.15;
+    color: var(--color-ink);
+  }
+
+  .places__lede {
+    margin-top: var(--space-md);
+    font-size: var(--text-base);
+    color: var(--color-ink-3);
+    line-height: var(--leading-body);
+    max-width: 38ch;
+  }
+
+  .places__list {
+    display: grid;
+    gap: var(--space-lg);
+  }
+
+  .places__item {
+    padding: var(--space-md) var(--space-lg);
+    background: var(--color-paper);
+    border: var(--rule-hair) solid var(--color-rule);
+    border-radius: var(--radius-md);
+  }
+
+  .places__where {
+    font-size: var(--text-base);
+    font-weight: 600;
+    color: var(--color-ink);
+  }
+
+  .places__how {
+    margin-top: var(--space-2xs);
+    font-size: var(--text-sm);
+    color: var(--color-ink-3);
+    line-height: var(--leading-body);
+  }
+
   /* ---- Close ---- */
   .close {
-    padding-block: var(--space-3xl) var(--space-4xl);
+    padding-block: var(--space-4xl) var(--space-4xl);
     border-top: var(--rule-hair) solid var(--color-rule);
   }
 
   .close__inner {
     display: grid;
     justify-items: start;
-    gap: var(--space-xl);
+    gap: var(--space-lg);
+    max-width: 56ch;
   }
 
-  .close__line {
-    font-size: var(--text-xl);
+  .close__title {
+    font-size: var(--text-display-s);
+    font-family: var(--font-display);
     color: var(--color-ink);
-    max-width: 42ch;
+    line-height: 1.15;
+  }
+
+  .close__sub {
+    font-size: var(--text-lg);
+    color: var(--color-ink-3);
     line-height: var(--leading-snug);
-    letter-spacing: var(--tracking-snug);
   }
 
   .close__actions {
     display: flex;
     gap: var(--space-sm);
     flex-wrap: wrap;
+    margin-top: var(--space-sm);
+  }
+
+  .btn--lg {
+    min-height: 3rem;
+    padding: 0 var(--space-xl);
+    font-size: var(--text-base);
   }
 
   /* ---- Responsive ---- */
@@ -389,13 +607,31 @@ const steps = [
       gap: var(--space-2xl);
     }
 
-    .surfaces,
+    .fold__proof {
+      justify-content: start;
+    }
+
+    .fold__widget {
+      max-width: 100%;
+    }
+
+    .why,
+    .places {
+      grid-template-columns: minmax(0, 1fr);
+      gap: var(--space-2xl);
+    }
+
+    .surface {
+      grid-template-columns: minmax(0, 1fr);
+      gap: var(--space-md);
+    }
+
     .flow {
       grid-template-columns: minmax(0, 1fr);
     }
 
     .specs__row {
-      grid-template-columns: 11rem 1fr;
+      grid-template-columns: 10rem 1fr;
       gap: var(--space-sm) var(--space-lg);
     }
 
@@ -407,10 +643,16 @@ const steps = [
   @media (max-width: 40rem) {
     .fold__title {
       font-size: var(--text-display-s);
+      max-width: 100%;
     }
 
     .fold__lede {
       font-size: var(--text-base);
+    }
+
+    .why__title,
+    .places__title {
+      font-size: var(--text-2xl);
     }
 
     .specs__row {

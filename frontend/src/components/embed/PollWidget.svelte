@@ -128,7 +128,7 @@
   let effect = $derived(poll?.appearance?.effect === 'confetti' ? 'confetti' : 'none');
 
   // --- Phase 6: canvas confetti (hand-rolled, ~1.5KB) ---
-  const CONFETTI_COLORS = ['#3b82f6', '#ef4444', '#f59e0b', '#10b981', '#8b5cf6', '#ec4899'];
+  const CONFETTI_COLORS = ['#b47a0a', '#ef4444', '#f59e0b', '#10b981', '#8b5cf6', '#ec4899'];
   const CONFETTI_COUNT = 60;
   const CONFETTI_DURATION = 2000;
 
@@ -717,11 +717,11 @@
      `minimal` intentionally has no visual rules: Tailwind carries it. */
   .poll-widget-container {
     --pw-bg: #ffffff;
-    --pw-ink: #111827;
-    --pw-muted: #6b7280;
-    --pw-line: #e5e7eb;
-    --pw-accent: #3b82f6;
-    --pw-accent-soft: #dbeafe;
+    --pw-ink: #1a1612;
+    --pw-muted: #6b6560;
+    --pw-line: #e8e4df;
+    --pw-accent: #b47a0a;
+    --pw-accent-soft: #fef3cd;
   }
 
   /* Corner shapes (user override, wins over themes — declared last) */
@@ -871,11 +871,11 @@
   /* Story: navy question band + sticker pills */
   .poll-widget-container[data-theme='story'] {
     --pw-bg: #ffffff;
-    --pw-ink: #0f172a;
-    --pw-muted: #64748b;
+    --pw-ink: #1a1612;
+    --pw-muted: #6b6560;
     --pw-line: transparent;
-    --pw-accent: #3b82f6;
-    --pw-accent-soft: #e2e8f0;
+    --pw-accent: #b47a0a;
+    --pw-accent-soft: #e8e4df;
     overflow: hidden;
   }
   .poll-widget-container[data-theme='story'] .pw-head {
@@ -971,30 +971,30 @@
     transition: background-color 0.15s, border-color 0.15s;
   }
   .pw-checkbox.checked {
-    background-color: var(--pw-accent, #3b82f6);
-    border-color: var(--pw-accent, #3b82f6);
+    background-color: var(--pw-accent, #b47a0a);
+    border-color: var(--pw-accent, #b47a0a);
   }
 
   /* Phase 5: selected vote button highlight */
   .pw-vote-btn.selected {
-    border-color: var(--pw-accent, #3b82f6);
+    border-color: var(--pw-accent, #b47a0a);
     background-color: var(--pw-accent-soft, #dbeafe);
   }
   .pw-vote-btn.selected .pw-checkbox {
-    background-color: var(--pw-accent, #3b82f6);
-    border-color: var(--pw-accent, #3b82f6);
+    background-color: var(--pw-accent, #b47a0a);
+    border-color: var(--pw-accent, #b47a0a);
   }
   .pw-vote-btn.selected .pw-radio {
-    border-color: var(--pw-accent, #3b82f6);
+    border-color: var(--pw-accent, #b47a0a);
   }
   .pw-vote-btn.selected .pw-radio > span {
     opacity: 1;
-    background-color: var(--pw-accent, #3b82f6);
+    background-color: var(--pw-accent, #b47a0a);
   }
 
   /* Phase 5: submit button */
   .pw-submit-btn {
-    background-color: var(--pw-accent, #3b82f6);
+    background-color: var(--pw-accent, #b47a0a);
   }
   .pw-submit-btn:hover:not(:disabled) {
     filter: brightness(0.9);
