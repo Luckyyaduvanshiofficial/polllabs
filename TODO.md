@@ -153,3 +153,52 @@ This document tracks all tasks, deliverables, and implementation phases accordin
 - [x] Template `.env.production.example` for secure secret management
 - [x] Frontend, Backend, and Database live deployment verified on Dokploy
 
+
+---
+
+## 🔐 Phase 9: Backend Security & Spec-Conformance Remediation
+Two-axis review (standards vs. PRD) of the whole FastAPI backend, then remediation. 72 tests pass.
+
+### Critical — authentication
+- [x] Verify auth tokens with PocketBase (`pb.verify_user_token` → `/api/collections/users/auth-refresh`) instead of base64-decoding the JWT payload. A forged unsigned token previously resolved to any user id, making every ownership check decorative
+- [x] Remove hardcoded admin fallback key `"polls-lab-admin-secret"`; administrative endpoints now require `ADMIN_API_KEY` and are disabled when it is unset, compared with `secrets.compare_digest`
+- [x] Remove published default `IP_HASH_SALT`; production refuses to start without a salt, development generates an ephemeral per-process one
+- [x] Gate the `x-dev-user-id` shortcut behind `ALLOW_DEV_AUTH_HEADERS` (default off, rejected in production)
+- [x] Default `ENVIRONMENT=production` in `backend/Dockerfile` so an image deployed without it fails closed
+- [x] Regression suite `tests/test_auth_security.py` (11 tests) covering token forgery, admin key, and fail-closed startup
+
+### Deployment config
+- [x] Fix env var name mismatch: compose exported `SECRET_SALT`/`ALLOWED_ORIGINS`, backend read `IP_HASH_SALT`/`BACKEND_CORS_ORIGINS`. Canonical names now used, old names accepted as aliases
+- [x] Pin all backend dependencies to exact versions; drop unused `pocketbase` SDK (service uses raw `httpx`)
+
+### Abuse mitigation & privacy
+- [x] Device token precedence: server-issued cookie/header now wins over the request body, which allowed unlimited voting via per-request token rotation
+- [x] Bound rate-limiter memory (sweep + `MAX_TRACKED_IPS`); documented that it is per-worker, not a global quota
+- [x] Stop leaking raw PocketBase error text to clients (logged server-side instead)
+- [x] Whitelist poll `sort` fields; previously passed through to PocketBase unsanitized
+- [x] Escape CSV formula injection via client-supplied `embed_referrer` in analytics export
+
+### PRD §3.2 result-display masking
+- [x] `show_counts` reveals raw counts only after the viewer has voted; `/polls/{id}` detects this via the device token
+- [x] Badges mask raw counts for `show_percentage` polls (previously emitted `62% (418)`)
+- [x] `/leaderboard/most-voted-options` excludes polls that mask counts rather than republishing them
+
+### Correctness
+- [x] Fix multi-select double-count: repeat votes update the existing record and count only newly added options
+- [x] Fix `TypeError: unhashable type: 'list'` crashing analytics and export on every multi-select poll
+- [x] Rewrite moderation filter: topic words (`hate`, `spam`, `crypto`) no longer rejected; profanity matched on whole words, scam solicitation on phrases
+- [x] Trending keyed on `updated` (vote activity) rather than `created`, so surging older polls trend
+- [x] Purge deletes owned polls before the user record, since `polls.owner` is not a cascading relation and they were orphaned
+- [x] Expose `deletion_status`/`deletion_scheduled_for` on `/auth/me`; previously written but never read back
+
+### Standards (AGENTS.md §4)
+- [x] Replace `File(...)` ellipsis default with `Annotated[UploadFile, File()]`
+- [x] Add `ConfigDict` to `VoteRequest` and type its validator
+- [x] Validate export `format` as `Literal["json","csv"]` without shadowing the builtin
+- [x] Remove dead code (`has_device_voted`, `list_voters_for_poll`, unused `pb=None` param); unify client timeout; move `PurgeResponse` to `app/schemas/`
+
+### Known remaining gaps (not addressed)
+- [ ] SPDX headers in source files (PRD §9) — 0 of 22 backend modules have one
+- [ ] No scheduler invokes `/auth/purge-expired-accounts`; the 7-day lifecycle needs a cron trigger
+- [ ] `show_voters` is non-functional (always returns `[]`); the PRD defers it, so it was left inert rather than built out
+- [ ] Rate limiting is per-worker in-memory; a strict global quota needs Redis

@@ -160,8 +160,8 @@ polls-lab/
 - Size limits enforced: `options` max 20,000 bytes, `appearance` max 5,000 bytes
 
 ### VoteRequest (vote.py)
-- `option_ids: list[str]` — supports multiple selections for `allow_multi_select` polls
-- `option_id: str | None` — legacy single-vote field (still accepted)
+- `option_id: str | list[str]` — a list carries multiple selections; a bare string is single-choice.
+  There is no separate `option_ids` field on the request schema.
 - Backend enforces quiz correct-answer check when `is_quiz = True`
 
 ### Multi-Framework Isolation
@@ -303,7 +303,7 @@ d830125  feat(frontend): complete Phase 5 redesign from scratch with UI/UX Pro M
 7. **View Transitions**: `<ClientRouter />` is in `RootLayout.astro`. All navigations cross-fade.
 8. **Dev auth**: `localStorage.polls-lab_auth_token` — Navbar reads this to show/hide Sign In/Out.
 9. **JSON size limits**: `options` field max 20,000 bytes, `appearance` max 5,000 bytes (enforced in migration `1789639490`).
-10. **Multi-select voting**: `VoteRequest.option_ids` (list) takes priority over legacy `option_id` (str).
+10. **Multi-select voting**: `VoteRequest.option_id` accepts either a list or a bare string.
 11. **graphify knowledge graph**: `graphify-out/graph.html` (349 nodes, 596 edges) — open in browser for visual codebase navigation.
 
 ---
