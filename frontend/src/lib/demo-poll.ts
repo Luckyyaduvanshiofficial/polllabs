@@ -6,6 +6,17 @@ export interface DemoPollOption {
   percentage?: number;
 }
 
+export interface DemoPollAppearance {
+  theme?: string;
+  bg?: string;
+  accent?: string;
+  ink?: string;
+  radius?: string;
+  font?: string;
+  effect?: string;
+  layout?: string;
+}
+
 export interface DemoPoll {
   id: string;
   title: string;
@@ -15,6 +26,8 @@ export interface DemoPoll {
   owner: string;
   total_votes: number;
   options: DemoPollOption[];
+  /** Optional per-poll appearance, used by the theme reference page. */
+  appearance?: DemoPollAppearance;
 }
 
 export const DEMO_FRAMEWORKS_POLL: DemoPoll = {
