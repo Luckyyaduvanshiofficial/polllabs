@@ -19,6 +19,10 @@ COPY app/ ./app/
 RUN adduser --disabled-password --gecos "" appuser && chown -R appuser /app
 USER appuser
 
+# Default to production so an image deployed without an explicit ENVIRONMENT
+# still refuses dev auth headers and missing secrets, rather than failing open.
+ENV ENVIRONMENT=production
+
 EXPOSE 8000
 
 # Health check
